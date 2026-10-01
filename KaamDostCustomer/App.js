@@ -21,6 +21,8 @@ import CustomerRegisterScreen from './src/screens/CustomerRegisterScreen';
 import CustomerStep4Screen from './src/screens/CustomerStep4Screen';
 // Step 5: Customer Aadhaar + Live Selfie Verification Screen
 import CustomerStep5Screen from './src/screens/CustomerStep5Screen';
+// Step 6: Customer Account Completion Screen
+import AccountCompleteScreen from './src/screens/AccountCompleteScreen';
 
 import {
   getStoredLanguage,
@@ -36,7 +38,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [preferredLanguage, setPreferredLanguage] = useState(null);
   const [session, setSession] = useState(null);
-  const [currentScreen, setCurrentScreen] = useState('loading'); // 'language' | 'mobileLogin' | 'otpVerify' | 'register' | 'step4' | 'authenticated'
+  const [currentScreen, setCurrentScreen] = useState('loading'); // 'language' | 'mobileLogin' | 'otpVerify' | 'register' | 'step4' | 'step5' | 'step6' | 'authenticated'
   const [mobileNumber, setMobileNumber] = useState('');
   const [registrationToken, setRegistrationToken] = useState(null);
   const [devOtp, setDevOtp] = useState(null);
@@ -59,13 +61,16 @@ export default function App() {
         const storedSession = await getStoredSession();
         if (storedSession && storedSession.customer?.authenticated) {
           setSession(storedSession);
-          // Flow Rule: Step 4 missing -> Step 4; Step 5 missing -> Step 5; Complete -> Authenticated
+          // Flow Rule: Step 4 missing -> Step 4; Step 5 missing -> Step 5; Step 6 missing -> Step 6; Complete -> Authenticated
           const isStep4Done = Boolean(storedSession.customer?.step4Complete);
           const isStep5Done = Boolean(storedSession.customer?.step5Complete || storedSession.customer?.isVerified);
+          const isStep6Done = Boolean(storedSession.customer?.step6Complete || storedSession.customer?.accountCompleted);
           if (!isStep4Done) {
             setCurrentScreen('step4');
           } else if (!isStep5Done) {
             setCurrentScreen('step5');
+          } else if (!isStep6Done) {
+            setCurrentScreen('step6');
           } else {
             setCurrentScreen('authenticated');
           }
@@ -113,10 +118,13 @@ export default function App() {
       const isComplete = Boolean(result.step4Complete || cust.step4Complete);
       const isStep4Done = isComplete;
       const isStep5Done = Boolean(result.step5Complete || cust.step5Complete || cust.isVerified);
+      const isStep6Done = Boolean(result.step6Complete || cust.step6Complete || cust.accountCompleted);
       if (!isStep4Done) {
         setCurrentScreen('step4');
       } else if (!isStep5Done) {
         setCurrentScreen('step5');
+      } else if (!isStep6Done) {
+        setCurrentScreen('step6');
       } else {
         setCurrentScreen('authenticated');
       }
@@ -135,9 +143,17 @@ export default function App() {
     setCurrentScreen('step5');
   };
 
-  // Step 5: Aadhaar + Live Selfie Verified Successfully -> Authenticated Session
+  // Step 5: Aadhaar + Live Selfie Verified Successfully -> Step 6 (Account Completion Checklist)
   const handleStep5Complete = (verifiedSession) => {
     setSession(verifiedSession);
+    setCurrentScreen('step6');
+  };
+
+  // Step 6: All 5 Requirements Verified -> Account Complete
+  const handleStep6Complete = (completedSession) => {
+    if (completedSession) {
+      setSession(completedSession);
+    }
     setCurrentScreen('authenticated');
   };
 
@@ -256,7 +272,19 @@ export default function App() {
     );
   }
 
-  // 7. Authenticated Customer Flow (Step 5 Completed)
+  // 7. Step 6: Customer Account Completion Checklist Screen
+  if (currentScreen === 'step6') {
+    return (
+      <AccountCompleteScreen
+        onComplete={handleStep6Complete}
+        onProceedHome={handleStep6Complete}
+        onNavigateStep={(step) => setCurrentScreen(step)}
+        onBack={() => setCurrentScreen('step5')}
+      />
+    );
+  }
+
+  // 8. Authenticated Customer Flow (All Onboarding Steps Completed)
   const currentLangObj = getLanguageByCode(preferredLanguage);
   const customer = session?.customer || {};
 
@@ -342,7 +370,7 @@ export default function App() {
 
           <View style={styles.statusPill}>
             <Text style={styles.statusPillText}>
-              ✓ Step 4 Complete • Ready for Step 5
+              ✓ Step 6 Complete • Account Verified & Active
             </Text>
           </View>
         </View>

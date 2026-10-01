@@ -489,6 +489,19 @@ class ApiService {
     });
   }
 
+  // Step 6: Customer Account Completion API
+  getCustomerChecklist() {
+    return this.request('/api/customer/checklist');
+  }
+
+  completeCustomerAccount(customerId = null) {
+    const payload = customerId ? { customerId } : {};
+    return this.request('/api/customer/account/complete', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
   verifyCustomerAadhaar(aadhaarData) {
     return this.request('/api/customer/verify-aadhaar', {
       method: 'POST',
