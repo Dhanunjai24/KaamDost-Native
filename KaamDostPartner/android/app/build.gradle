@@ -2,6 +2,18 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+react {
+    def nodeModules = file("../../node_modules/react-native").exists()
+        ? file("../../node_modules")
+        : file("../../../node_modules")
+
+    root.set(file(nodeModules.parentFile))
+    reactNativeDir.set(file("${nodeModules}/react-native"))
+    codegenDir.set(file("${nodeModules}/@react-native/codegen"))
+}
+
+def jscFlavor = 'org.webkit:android-jsc:+'
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -37,9 +49,9 @@ android {
 }
 
 dependencies {
-    implementation("com.facebook.react:react-android")
+    implementation("com.facebook.react:react-android:0.76.5")
     if (hermesEnabled.toBoolean()) {
-        implementation("com.facebook.react:hermes-android")
+        implementation("com.facebook.react:hermes-android:0.76.5")
     } else {
         implementation jscFlavor
     }

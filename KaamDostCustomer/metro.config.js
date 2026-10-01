@@ -11,6 +11,12 @@ const config = {
       path.resolve(projectRoot, 'node_modules'),
       path.resolve(monorepoRoot, 'node_modules'),
     ],
+    // Block Android Gradle build cache & outputs from file watching
+    blockList: [
+      /.*[/\\]android[/\\]\.gradle[/\\].*/,
+      /.*[/\\]android[/\\]build[/\\].*/,
+      /.*[/\\]\.gradle[/\\].*/,
+    ],
   },
 };
 

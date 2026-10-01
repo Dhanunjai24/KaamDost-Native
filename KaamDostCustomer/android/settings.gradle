@@ -1,3 +1,27 @@
+pluginManagement {
+    includeBuild(file('../node_modules/@react-native/gradle-plugin').exists()
+        ? '../node_modules/@react-native/gradle-plugin'
+        : '../../node_modules/@react-native/gradle-plugin')
+}
+
+plugins {
+    id("com.facebook.react.settings")
+}
+
+def nodeModules = file('../node_modules/react-native').exists()
+    ? file('../node_modules')
+    : file('../../node_modules')
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    ex.autolinkLibrariesFromCommand(
+        ["node", "${nodeModules}/@react-native-community/cli/build/bin.js".toString(), "config"],
+        settingsDir.parentFile
+    )
+}
+
 rootProject.name = 'KaamDostCustomer'
 include ':app'
-includeBuild('../node_modules/@react-native/gradle-plugin')
+
+includeBuild(file('../node_modules/@react-native/gradle-plugin').exists()
+    ? file('../node_modules/@react-native/gradle-plugin')
+    : file('../../node_modules/@react-native/gradle-plugin'))
