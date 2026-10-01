@@ -15,6 +15,8 @@ import LanguageSelectScreen from './src/screens/LanguageSelectScreen';
 // Step 2: Mobile Number + OTP Login Screens
 import PhoneLoginScreen from './src/screens/PhoneLoginScreen';
 import OtpVerificationScreen from './src/screens/OtpVerificationScreen';
+// Step 3: Customer Registration Screen (New Customers)
+import CustomerRegisterScreen from './src/screens/CustomerRegisterScreen';
 
 import {
   getStoredLanguage,
@@ -30,8 +32,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [preferredLanguage, setPreferredLanguage] = useState(null);
   const [session, setSession] = useState(null);
-  const [currentScreen, setCurrentScreen] = useState('loading'); // 'language' | 'mobileLogin' | 'otpVerify' | 'authenticated'
+  const [currentScreen, setCurrentScreen] = useState('loading'); // 'language' | 'mobileLogin' | 'otpVerify' | 'register' | 'authenticated'
   const [mobileNumber, setMobileNumber] = useState('');
+  const [registrationToken, setRegistrationToken] = useState(null);
   const [devOtp, setDevOtp] = useState(null);
 
   // 1. Startup Flow Check: Language -> Session Authentication
@@ -51,7 +54,7 @@ export default function App() {
         // Flow: Check Authentication
         const storedSession = await getStoredSession();
         if (storedSession && storedSession.customer?.authenticated) {
-          // Flow: If authenticated -> Continue to existing/next Customer flow
+          // Flow: If authenticated -> Continue to existing/next Customer flow (Skip registration & login)
           setSession(storedSession);
           setCurrentScreen('authenticated');
         } else {
@@ -83,8 +86,21 @@ export default function App() {
     setCurrentScreen('otpVerify');
   };
 
-  // Step 2: OTP Verification -> Authenticated Session
-  const handleVerifySuccess = (sessionData) => {
+  // Step 3: OTP Verification Decision (New vs. Existing Customer)
+  const handleVerifySuccess = (result) => {
+    if (result.isNewCustomer) {
+      // NEW CUSTOMER: Branch to Step 3 Registration Screen
+      setRegistrationToken(result.registrationToken);
+      setCurrentScreen('register');
+    } else {
+      // EXISTING CUSTOMER: Skip Registration Form, directly proceed to Authenticated Session
+      setSession({ customer: result.customer, token: result.token });
+      setCurrentScreen('authenticated');
+    }
+  };
+
+  // Step 3: Registration Success -> Authenticated Customer
+  const handleRegisterSuccess = (sessionData) => {
     setSession(sessionData);
     setCurrentScreen('authenticated');
   };
@@ -99,6 +115,7 @@ export default function App() {
     await clearStoredSession();
     setSession(null);
     setDevOtp(null);
+    setRegistrationToken(null);
     setCurrentScreen('mobileLogin');
   };
 
@@ -110,6 +127,7 @@ export default function App() {
     setPreferredLanguage(null);
     setMobileNumber('');
     setDevOtp(null);
+    setRegistrationToken(null);
     setCurrentScreen('language');
   };
 
@@ -159,7 +177,19 @@ export default function App() {
     );
   }
 
-  // 4. Authenticated Customer Flow (Step 2 Completed - Stop before Step 3)
+  // 4. Step 3: Customer Registration Screen (New Customers Only)
+  if (currentScreen === 'register') {
+    return (
+      <CustomerRegisterScreen
+        phone={mobileNumber}
+        registrationToken={registrationToken}
+        onRegisterSuccess={handleRegisterSuccess}
+        onBack={() => setCurrentScreen('otpVerify')}
+      />
+    );
+  }
+
+  // 5. Authenticated Customer Flow (Step 3 Completed - Ready for Step 4)
   const currentLangObj = getLanguageByCode(preferredLanguage);
   const customer = session?.customer || {};
 
@@ -191,21 +221,33 @@ export default function App() {
             </View>
 
             <View style={styles.sessionRow}>
+              <Text style={styles.sessionKey}>fullName:</Text>
+              <Text style={styles.sessionVal}>{customer.fullName || customer.name || 'N/A'}</Text>
+            </View>
+
+            <View style={styles.sessionRow}>
               <Text style={styles.sessionKey}>mobileNumber:</Text>
               <Text style={styles.sessionVal}>+91 {customer.mobileNumber || customer.phone || mobileNumber}</Text>
             </View>
+
+            {customer.email ? (
+              <View style={styles.sessionRow}>
+                <Text style={styles.sessionKey}>email:</Text>
+                <Text style={styles.sessionVal}>{customer.email}</Text>
+              </View>
+            ) : null}
+
+            {customer.referralCode ? (
+              <View style={styles.sessionRow}>
+                <Text style={styles.sessionKey}>referralCode:</Text>
+                <Text style={styles.sessionVal}>{customer.referralCode}</Text>
+              </View>
+            ) : null}
 
             <View style={styles.sessionRow}>
               <Text style={styles.sessionKey}>phoneVerified:</Text>
               <Text style={styles.sessionValSuccess}>✓ Verified via OTP</Text>
             </View>
-
-            {customer.name ? (
-              <View style={styles.sessionRow}>
-                <Text style={styles.sessionKey}>name:</Text>
-                <Text style={styles.sessionVal}>{customer.name}</Text>
-              </View>
-            ) : null}
 
             <View style={styles.sessionRow}>
               <Text style={styles.sessionKey}>language:</Text>
@@ -217,7 +259,7 @@ export default function App() {
 
           <View style={styles.statusPill}>
             <Text style={styles.statusPillText}>
-              ✓ Step 2 Complete • Ready for Step 3 Onboarding
+              ✓ Step 3 Complete • Ready for Step 4
             </Text>
           </View>
         </View>

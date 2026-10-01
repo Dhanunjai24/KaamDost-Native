@@ -108,26 +108,43 @@ export default function OtpVerificationScreen({
       const response = await client.verifyCustomerOtp(cleanPhone, fullOtp);
 
       if (response && response.success) {
-        // Prepare session object
-        const sessionCustomer = {
-          authenticated: true,
-          customerId: response.data?.customerId || response.data?.id || `c_${cleanPhone}`,
-          id: response.data?.customerId || response.data?.id || `c_${cleanPhone}`,
-          mobileNumber: cleanPhone,
-          phone: cleanPhone,
-          phoneVerified: true,
-          isNewCustomer: !!response.isNewCustomer,
-          role: 'customer',
-          name: response.data?.name || response.data?.fullName || null,
-        };
+        if (response.isNewCustomer) {
+          // NEW CUSTOMER: Proceed to Step 3 Registration Screen
+          if (onVerifySuccess) {
+            onVerifySuccess({
+              isNewCustomer: true,
+              phone: cleanPhone,
+              registrationToken: response.registrationToken || null,
+            });
+          }
+        } else {
+          // EXISTING CUSTOMER: Skip Registration Form, create/restore session immediately
+          const sessionCustomer = {
+            authenticated: true,
+            customerId: response.data?.customerId || response.data?.id || `c_${cleanPhone}`,
+            id: response.data?.customerId || response.data?.id || `c_${cleanPhone}`,
+            mobileNumber: cleanPhone,
+            phone: cleanPhone,
+            phoneVerified: true,
+            isNewCustomer: false,
+            role: 'customer',
+            name: response.data?.fullName || response.data?.name || null,
+            fullName: response.data?.fullName || response.data?.name || null,
+            email: response.data?.email || null,
+          };
 
-        const token = response.token || response.registrationToken || 'kaamdost_customer_session';
+          const token = response.token || 'kaamdost_customer_session';
 
-        // Persist session in storage
-        await setStoredSession(sessionCustomer, token);
+          // Persist session in storage
+          await setStoredSession(sessionCustomer, token);
 
-        if (onVerifySuccess) {
-          onVerifySuccess({ customer: sessionCustomer, token });
+          if (onVerifySuccess) {
+            onVerifySuccess({
+              isNewCustomer: false,
+              customer: sessionCustomer,
+              token,
+            });
+          }
         }
       } else {
         // Specific error messages as per requirements

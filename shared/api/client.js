@@ -216,11 +216,37 @@ class ApiService {
   }
 
 
-  registerCustomer(data) {
-    return this.request('/api/customer/register', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
+  // Step 3: Customer Registration API
+  async registerCustomer(customerData) {
+    const url = `${this.baseUrl}/api/customer/register`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(customerData.registrationToken ? { Authorization: `Bearer ${customerData.registrationToken}` } : {})
+        },
+        body: JSON.stringify({
+          ...customerData,
+          isStep3: true
+        })
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return {
+        success: false,
+        status: response.status,
+        error: data?.error || "We couldn't create your account. Please try again."
+      };
+    } catch (err) {
+      return {
+        success: false,
+        networkError: true,
+        error: "We couldn't create your account. Please try again."
+      };
+    }
   }
 
   saveCustomerAddress(addressData) {
