@@ -1,8 +1,8 @@
 /**
  * KaamDost Customer App - Step 4 Verification Suite
- * Tests: Customer Gender + Service Address Flow (13 Production Specifications)
+ * Tests: Customer Gender + Service Address Flow + Multiple Saved Addresses (Home, Work, Other)
  *
- * Verifies all requirements from Section 34 of the STEP 4 Specification:
+ * Verifies all requirements from the STEP 4 Specification:
  *  1. TEST 1 — New customer: Registration -> Step 4 appears.
  *  2. TEST 2 — Existing customer with complete profile/address: Step 4 is skipped.
  *  3. TEST 3 — Existing customer missing address: Step 4 appears.
@@ -16,6 +16,9 @@
  * 11. TEST 11 — Duplicate submission: Debounce/guard prevents multiple submissions.
  * 12. TEST 12 — Application restart: Session persistence ensures completed Step 4 is skipped on restart.
  * 13. TEST 13 — Security: Customer ID spoofing protection (403 Forbidden).
+ * 14. TEST 14 — Multiple Addresses: Home, Work, Other types supported with custom label for Other.
+ * 15. TEST 15 — Address Limits & Duplication Prevention: Max 3 addresses, duplicate type blocked.
+ * 16. TEST 16 — Default Address Management: Exactly 1 default, safe reassignment on deletion.
  */
 
 const fs = require('fs');
@@ -164,14 +167,14 @@ async function runTests() {
       GENDER_OPTIONS.some((g) => g.value === 'other' && g.label === 'Others');
 
     const singleSelection =
-      step4Source.includes('setSelectedGender(opt.value)') &&
+      step4Source.includes('handleSelectGender(opt.value)') &&
       step4Source.includes('selectedGender === opt.value');
 
     recordTest(
       4,
       'Gender selection',
       'Male, Female, Others choices available; single selection only',
-      `GENDER_OPTIONS contains male/female/other; single state selection implemented`,
+      `GENDER_OPTIONS contains male/female/other; single selection state verified`,
       hasOptions && singleSelection
     );
   } catch (err) {
@@ -217,14 +220,13 @@ async function runTests() {
 
     const handlesDenied =
       step4Source.includes('err.code === 1') &&
-      step4Source.includes('Location permission was denied. You can enter your address manually.') &&
-      step4Source.includes('setShowManualForm(true)');
+      step4Source.includes('Location permission was denied. You can enter your address manually.');
 
     recordTest(
       6,
       'GPS permission denied',
       'Manual address option remains available with clear explanation',
-      'Permission denial (code 1) shows friendly error message and activates manual form',
+      'Permission denial (code 1) shows friendly error message and preserves manual entry fields',
       handlesDenied
     );
   } catch (err) {
@@ -242,8 +244,7 @@ async function runTests() {
 
     const handlesFailure =
       step4Source.includes('err.code === 3') &&
-      step4Source.includes("We couldn't detect your location. Please try again or enter your address manually.") &&
-      step4Source.includes('setShowManualForm(true)');
+      step4Source.includes("We couldn't detect your location. Please try again or enter your address manually.");
 
     recordTest(
       7,
@@ -272,6 +273,7 @@ async function runTests() {
 
     const manualData = {
       gender: 'male',
+      type: 'home',
       houseNumber: 'Flat 301, Sri Sai Residency',
       street: 'Subhash Road',
       landmark: 'Near Water Tank',
@@ -335,6 +337,7 @@ async function runTests() {
     // 1. Initial GPS auto-detected address
     store.saveCustomerStep4(testCustomerId, {
       gender: 'female',
+      type: 'home',
       houseNumber: 'Plot 42',
       street: 'Old Highway',
       city: 'Sangareddy',
@@ -348,6 +351,7 @@ async function runTests() {
     // 2. Customer edits house number and landmark before continuing
     const editedResult = store.saveCustomerStep4(testCustomerId, {
       gender: 'female',
+      type: 'home',
       houseNumber: 'Plot 42/B (2nd Floor)',
       street: 'Old Highway',
       landmark: 'Opposite State Bank',
@@ -386,15 +390,15 @@ async function runTests() {
     );
 
     const hasDebounce =
-      step4Source.includes('if (isSaving) return;') &&
-      step4Source.includes('setIsSaving(true);') &&
-      step4Source.includes('disabled={!isFormValid || isSaving}');
+      step4Source.includes('if (isSavingAddress) return;') &&
+      step4Source.includes('if (isContinuing) return;') &&
+      step4Source.includes('disabled={!canContinue}');
 
     recordTest(
       11,
       'Duplicate submission protection',
-      'Tap Continue repeatedly only triggers one submission',
-      'isSaving guard prevents concurrent calls and disables submit button',
+      'Tap Continue / Save repeatedly only triggers one submission',
+      'isSavingAddress & isContinuing guards prevent duplicate requests',
       hasDebounce
     );
   } catch (err) {
@@ -416,12 +420,15 @@ async function runTests() {
         authenticated: true,
         savedAddresses: [
           {
+            id: 'addr_restart_1',
+            type: 'home',
             houseNumber: 'House 88',
             street: 'MG Road',
             city: 'Sangareddy',
             district: 'Sangareddy',
             state: 'Telangana',
             pincode: '502001',
+            isDefault: true,
           },
         ],
       },
@@ -475,6 +482,204 @@ async function runTests() {
   }
 
   // ----------------------------------------------------
+  // TEST 14 — Multiple Addresses: Home, Work, Other
+  // ----------------------------------------------------
+  try {
+    const testCustId = 'cust_multi_addr_test';
+    const testCust = {
+      id: testCustId,
+      fullName: 'Sunil Rao',
+      phone: '9876543250',
+      savedAddresses: [],
+    };
+    store.customers = store.customers.filter((c) => c.id !== testCustId);
+    store.customers.push(testCust);
+
+    // Add Home
+    const homeAddr = store.addCustomerAddress(testCustId, {
+      type: 'home',
+      houseNumber: '101',
+      street: 'Home Street',
+      city: 'Sangareddy',
+      district: 'Sangareddy',
+      state: 'Telangana',
+      pincode: '502001',
+    });
+
+    // Add Work
+    const workAddr = store.addCustomerAddress(testCustId, {
+      type: 'work',
+      houseNumber: 'Tech Park B',
+      street: 'IT Corridor',
+      city: 'Hyderabad',
+      district: 'Hyderabad',
+      state: 'Telangana',
+      pincode: '500081',
+    });
+
+    // Add Other with custom label
+    const otherAddr = store.addCustomerAddress(testCustId, {
+      type: 'other',
+      customLabel: "Parents' House",
+      houseNumber: '45/C',
+      street: 'Old Town',
+      city: 'Medak',
+      district: 'Medak',
+      state: 'Telangana',
+      pincode: '502110',
+    });
+
+    const addresses = store.getCustomerAddresses(testCustId);
+    const hasAllThree =
+      addresses.length === 3 &&
+      addresses.some((a) => a.type === 'home') &&
+      addresses.some((a) => a.type === 'work') &&
+      addresses.some((a) => a.type === 'other' && a.customLabel === "Parents' House");
+
+    recordTest(
+      14,
+      'Multiple Saved Addresses (Home, Work, Other)',
+      'Customer can save Home, Work, and Other addresses with custom label for Other',
+      `Saved ${addresses.length} addresses: Home, Work, Other (customLabel: "${otherAddr.customLabel}")`,
+      hasAllThree
+    );
+  } catch (err) {
+    recordTest(14, 'Multiple addresses', 'Home, Work, Other', err.message, false);
+  }
+
+  // ----------------------------------------------------
+  // TEST 15 — Duplicate Type Prevention & Max 3 Addresses Limit
+  // ----------------------------------------------------
+  try {
+    const testCustId = 'cust_multi_addr_test'; // already has 3 addresses
+
+    // 1. Try to add a 4th address -> should throw error
+    let maxLimitBlocked = false;
+    try {
+      store.addCustomerAddress(testCustId, {
+        type: 'home',
+        houseNumber: '99',
+        street: 'Fourth St',
+        city: 'Sangareddy',
+        district: 'Sangareddy',
+        state: 'Telangana',
+        pincode: '502001',
+      });
+    } catch (e) {
+      maxLimitBlocked = e.message.includes('Maximum 3 saved addresses');
+    }
+
+    // 2. Try to add duplicate Home address on a customer with only Home
+    const dupTestId = 'cust_dup_test_1';
+    store.customers = store.customers.filter((c) => c.id !== dupTestId);
+    store.customers.push({
+      id: dupTestId,
+      fullName: 'Dup Tester',
+      phone: '9876543260',
+      savedAddresses: [],
+    });
+
+    store.addCustomerAddress(dupTestId, {
+      type: 'home',
+      houseNumber: '1',
+      street: 'First St',
+      city: 'Sangareddy',
+      district: 'Sangareddy',
+      state: 'Telangana',
+      pincode: '502001',
+    });
+
+    let duplicateTypeBlocked = false;
+    try {
+      store.addCustomerAddress(dupTestId, {
+        type: 'home',
+        houseNumber: '2',
+        street: 'Second St',
+        city: 'Sangareddy',
+        district: 'Sangareddy',
+        state: 'Telangana',
+        pincode: '502001',
+      });
+    } catch (e) {
+      duplicateTypeBlocked = e.message.includes('already exists');
+    }
+
+    recordTest(
+      15,
+      'Address limits & duplicate type prevention',
+      'Max 3 addresses enforced and duplicate Home/Work/Other blocked with friendly error',
+      `Max 3 blocked: ${maxLimitBlocked}, Duplicate type blocked: ${duplicateTypeBlocked}`,
+      maxLimitBlocked && duplicateTypeBlocked
+    );
+  } catch (err) {
+    recordTest(15, 'Duplicate type prevention', 'Max 3 limit', err.message, false);
+  }
+
+  // ----------------------------------------------------
+  // TEST 16 — Default Address Management & Reassignment on Delete
+  // ----------------------------------------------------
+  try {
+    const testCustId = 'cust_default_mgmt_test';
+    store.customers = store.customers.filter((c) => c.id !== testCustId);
+    store.customers.push({
+      id: testCustId,
+      fullName: 'Default Tester',
+      phone: '9876543270',
+      savedAddresses: [],
+    });
+
+    // Add first address -> automatically becomes default
+    const addr1 = store.addCustomerAddress(testCustId, {
+      type: 'home',
+      houseNumber: '10',
+      street: 'Home Ave',
+      city: 'Sangareddy',
+      district: 'Sangareddy',
+      state: 'Telangana',
+      pincode: '502001',
+    });
+
+    const isFirstDefault = addr1.isDefault === true;
+
+    // Add second address -> not default unless specified
+    const addr2 = store.addCustomerAddress(testCustId, {
+      type: 'work',
+      houseNumber: '20',
+      street: 'Office Blvd',
+      city: 'Hyderabad',
+      district: 'Hyderabad',
+      state: 'Telangana',
+      pincode: '500081',
+      isDefault: false,
+    });
+
+    // Explicitly set addr2 as default
+    store.setDefaultCustomerAddress(testCustId, addr2.id);
+    const custAfterSet = store.getCustomerById(testCustId);
+    const addr2IsDefaultNow =
+      custAfterSet.savedAddresses.find((a) => a.id === addr2.id)?.isDefault === true &&
+      custAfterSet.savedAddresses.find((a) => a.id === addr1.id)?.isDefault === false;
+
+    // Delete current default address (addr2) -> addr1 should be automatically reassigned as default!
+    store.deleteCustomerAddress(testCustId, addr2.id);
+    const custAfterDelete = store.getCustomerById(testCustId);
+    const reassignedDefault =
+      custAfterDelete.savedAddresses.length === 1 &&
+      custAfterDelete.savedAddresses[0].id === addr1.id &&
+      custAfterDelete.savedAddresses[0].isDefault === true;
+
+    recordTest(
+      16,
+      'Default address management & reassignment on deletion',
+      'Single default address maintained; deleting default safely reassigns to remaining address',
+      `Auto-default first: ${isFirstDefault}, Set default: ${addr2IsDefaultNow}, Reassigned on delete: ${reassignedDefault}`,
+      isFirstDefault && addr2IsDefaultNow && reassignedDefault
+    );
+  } catch (err) {
+    recordTest(16, 'Default address management', 'Auto reassignment', err.message, false);
+  }
+
+  // ----------------------------------------------------
   // SUMMARY REPORT
   // ----------------------------------------------------
   const passedCount = testResults.filter((r) => r.result === 'PASS').length;
@@ -488,7 +693,7 @@ async function runTests() {
     console.error('Some tests failed!');
     process.exit(1);
   } else {
-    console.log('All 13 Step 4 tests passed with flying colors!');
+    console.log('All 16 Step 4 tests passed with flying colors!');
   }
 }
 

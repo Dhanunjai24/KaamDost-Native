@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Alert,
 } from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import client from '../../../shared/api/client';
@@ -20,41 +21,58 @@ import { INDIAN_STATES_AND_UTS, GENDER_OPTIONS } from '../../../shared/constants
 
 export default function CustomerStep4Screen({
   initialGender = '',
-  initialAddress = null,
+  initialAddresses = [],
   onComplete,
   onBack,
 }) {
-  // Gender State
+  // 1. Gender State
   const [selectedGender, setSelectedGender] = useState(initialGender || '');
 
-  // Address State
-  const [houseNumber, setHouseNumber] = useState(initialAddress?.houseNumber || '');
-  const [street, setStreet] = useState(initialAddress?.street || '');
-  const [landmark, setLandmark] = useState(initialAddress?.landmark || '');
-  const [city, setCity] = useState(initialAddress?.city || 'Sangareddy');
-  const [district, setDistrict] = useState(initialAddress?.district || 'Sangareddy');
-  const [stateName, setStateName] = useState(initialAddress?.state || 'Telangana');
-  const [pincode, setPincode] = useState(initialAddress?.pincode || '');
-  const [latitude, setLatitude] = useState(initialAddress?.latitude || null);
-  const [longitude, setLongitude] = useState(initialAddress?.longitude || null);
+  // 2. Saved Addresses List State
+  const [savedAddresses, setSavedAddresses] = useState(initialAddresses || []);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
-  // Mode & Async States
-  const [showManualForm, setShowManualForm] = useState(false);
+  // 3. Address Setup Modal (Add / Edit) State
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [formType, setFormType] = useState('home'); // 'home' | 'work' | 'other'
+  const [customLabel, setCustomLabel] = useState('');
+  const [houseNumber, setHouseNumber] = useState('');
+  const [street, setStreet] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [city, setCity] = useState('Sangareddy');
+  const [district, setDistrict] = useState('Sangareddy');
+  const [stateName, setStateName] = useState('Telangana');
+  const [pincode, setPincode] = useState('');
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const [isDefaultAddress, setIsDefaultAddress] = useState(false);
+
+  // Address Type Duplicate warning banner
+  const [duplicateTypeNotice, setDuplicateTypeNotice] = useState(null);
+
+  // GPS & Async States
   const [isDetectingGps, setIsDetectingGps] = useState(false);
   const [gpsStatusText, setGpsStatusText] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [gpsSuccessMessage, setGpsSuccessMessage] = useState('');
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [isContinuing, setIsContinuing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [modalErrorMessage, setModalErrorMessage] = useState('');
 
-  // Indian State Selector Modal State
+  // Delete Confirmation Modal State
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // State Picker Modal
   const [showStateModal, setShowStateModal] = useState(false);
   const [stateSearch, setStateSearch] = useState('');
 
-  // Validation
+  // Validation constants
   const PINCODE_RE = /^\d{6}$/;
   const isPincodeValid = PINCODE_RE.test(pincode.trim());
   const isGenderValid = ['male', 'female', 'other'].includes(selectedGender);
-  const isAddressComplete =
+  const isFormValid =
     houseNumber.trim().length > 0 &&
     street.trim().length > 0 &&
     city.trim().length > 0 &&
@@ -62,19 +80,161 @@ export default function CustomerStep4Screen({
     stateName.trim().length > 0 &&
     isPincodeValid;
 
-  const isFormValid = isGenderValid && isAddressComplete;
+  // Onboarding completion readiness: gender selected AND at least 1 saved address
+  const canContinue = isGenderValid && savedAddresses.length > 0 && !isContinuing;
 
-  // Handle GPS Location Detection
-  const handleDetectLocation = () => {
-    if (isDetectingGps || isSaving) return;
+  // ----------------------------------------------------
+  // Load Saved Addresses & Gender on Startup
+  // ----------------------------------------------------
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const stored = await getStoredSession();
+        const cust = stored?.customer || {};
+        const token = stored?.token || null;
 
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setErrorMessage("We couldn't detect your location. Please enter your address manually.");
-      setShowManualForm(true);
+        if (cust.gender && !selectedGender) {
+          setSelectedGender(cust.gender);
+        }
+
+        if (Array.isArray(cust.savedAddresses) && cust.savedAddresses.length > 0 && savedAddresses.length === 0) {
+          setSavedAddresses(cust.savedAddresses);
+        }
+
+        // Fetch fresh addresses from backend if token present
+        if (token) {
+          setIsLoadingAddresses(true);
+          const res = await client.getCustomerAddresses(token);
+          if (res && res.success && Array.isArray(res.data)) {
+            setSavedAddresses(res.data);
+          }
+        }
+      } catch (e) {
+        console.warn('[Step4] Failed to load saved addresses:', e);
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  // ----------------------------------------------------
+  // Gender Selection Handler
+  // ----------------------------------------------------
+  const handleSelectGender = async (genderValue) => {
+    setSelectedGender(genderValue);
+    if (errorMessage.includes('gender')) setErrorMessage('');
+
+    // Persist gender to backend if session exists
+    try {
+      const stored = await getStoredSession();
+      const token = stored?.token || null;
+      if (token) {
+        await client.saveCustomerGender(genderValue, token);
+        const updatedCustomer = {
+          ...(stored?.customer || {}),
+          gender: genderValue,
+        };
+        await setStoredSession(updatedCustomer, token);
+      }
+    } catch (e) {
+      // Non-blocking background sync
+    }
+  };
+
+  // ----------------------------------------------------
+  // Open Add Address Modal
+  // ----------------------------------------------------
+  const handleOpenAddAddress = () => {
+    if (savedAddresses.length >= 3) {
+      setErrorMessage('Maximum 3 saved addresses (Home, Work, Other) allowed.');
       return;
     }
 
-    setErrorMessage('');
+    // Determine first available type
+    const existingTypes = savedAddresses.map((a) => (a.type || a.title || '').toLowerCase());
+    let nextType = 'home';
+    if (existingTypes.includes('home')) {
+      nextType = existingTypes.includes('work') ? 'other' : 'work';
+    }
+
+    setEditingAddressId(null);
+    setFormType(nextType);
+    setCustomLabel('');
+    setHouseNumber('');
+    setStreet('');
+    setLandmark('');
+    setCity('Sangareddy');
+    setDistrict('Sangareddy');
+    setStateName('Telangana');
+    setPincode('');
+    setLatitude(null);
+    setLongitude(null);
+    setIsDefaultAddress(savedAddresses.length === 0);
+    setDuplicateTypeNotice(null);
+    setModalErrorMessage('');
+    setGpsSuccessMessage('');
+    setShowAddressModal(true);
+  };
+
+  // ----------------------------------------------------
+  // Open Edit Address Modal
+  // ----------------------------------------------------
+  const handleOpenEditAddress = (addr) => {
+    setEditingAddressId(addr.id);
+    setFormType(addr.type || 'home');
+    setCustomLabel(addr.customLabel || '');
+    setHouseNumber(addr.houseNumber || '');
+    setStreet(addr.street || '');
+    setLandmark(addr.landmark || '');
+    setCity(addr.city || 'Sangareddy');
+    setDistrict(addr.district || 'Sangareddy');
+    setStateName(addr.state || 'Telangana');
+    setPincode(addr.pincode || '');
+    setLatitude(addr.latitude || null);
+    setLongitude(addr.longitude || null);
+    setIsDefaultAddress(!!addr.isDefault);
+    setDuplicateTypeNotice(null);
+    setModalErrorMessage('');
+    setGpsSuccessMessage('');
+    setShowAddressModal(true);
+  };
+
+  // ----------------------------------------------------
+  // Handle Address Type Selection & Duplicate Detection
+  // ----------------------------------------------------
+  const handleSelectAddressType = (typeKey) => {
+    // If adding a new address and this type already exists, warn user
+    if (!editingAddressId) {
+      const existing = savedAddresses.find(
+        (a) => (a.type || a.title || '').toLowerCase() === typeKey
+      );
+      if (existing) {
+        setDuplicateTypeNotice({
+          type: typeKey,
+          existingAddress: existing,
+        });
+        return;
+      }
+    }
+
+    setDuplicateTypeNotice(null);
+    setFormType(typeKey);
+  };
+
+  // ----------------------------------------------------
+  // GPS Location Detection Handler
+  // ----------------------------------------------------
+  const handleDetectLocation = () => {
+    if (isDetectingGps || isSavingAddress) return;
+
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setModalErrorMessage("We couldn't detect your location. Please enter your address manually.");
+      return;
+    }
+
+    setModalErrorMessage('');
     setGpsSuccessMessage('');
     setIsDetectingGps(true);
     setGpsStatusText('Detecting your location...');
@@ -86,10 +246,9 @@ export default function CustomerStep4Screen({
           const lng = pos.coords.longitude;
           const accuracy = pos.coords.accuracy;
 
-          // Section 18: Accuracy verification
+          // Section 18: Accuracy verification (> 3000m considered inaccurate)
           if (accuracy && accuracy > 3000) {
-            setErrorMessage("Your location seems inaccurate. Please move to an open area or enter your address manually.");
-            setShowManualForm(true);
+            setModalErrorMessage('Your location seems inaccurate. Please move to an open area or enter your address manually.');
             setIsDetectingGps(false);
             setGpsStatusText('');
             return;
@@ -112,14 +271,11 @@ export default function CustomerStep4Screen({
             if (d.pincode && PINCODE_RE.test(d.pincode)) setPincode(d.pincode);
 
             setGpsSuccessMessage('✓ Location detected! Please review and customize your address below.');
-            setShowManualForm(true);
           } else {
-            setErrorMessage("We found your location but couldn't determine the full address. Please review or enter your address manually.");
-            setShowManualForm(true);
+            setModalErrorMessage("We found your location but couldn't determine the full address. Please review or enter your address manually.");
           }
         } catch (err) {
-          setErrorMessage("We couldn't detect your location. Please try again or enter your address manually.");
-          setShowManualForm(true);
+          setModalErrorMessage("We couldn't detect your location. Please try again or enter your address manually.");
         } finally {
           setIsDetectingGps(false);
           setGpsStatusText('');
@@ -129,45 +285,41 @@ export default function CustomerStep4Screen({
         setIsDetectingGps(false);
         setGpsStatusText('');
         if (err.code === 1) {
-          // PERMISSION_DENIED
-          setErrorMessage('Location permission was denied. You can enter your address manually.');
+          setModalErrorMessage('Location permission was denied. You can enter your address manually.');
         } else if (err.code === 3) {
-          // TIMEOUT
-          setErrorMessage("We couldn't detect your location. Please try again or enter your address manually.");
+          setModalErrorMessage("We couldn't detect your location. Please try again or enter your address manually.");
         } else {
-          setErrorMessage("We couldn't access your location. You can enter your address manually.");
+          setModalErrorMessage("We couldn't access your location. You can enter your address manually.");
         }
-        setShowManualForm(true);
       },
       { timeout: 8000, enableHighAccuracy: true }
     );
   };
 
-  // Handle Form Submission
-  const handleContinue = async () => {
-    if (!isGenderValid) {
-      setErrorMessage('Please select your gender.');
-      return;
-    }
-    if (!isAddressComplete) {
+  // ----------------------------------------------------
+  // Save or Update Address
+  // ----------------------------------------------------
+  const handleSaveAddress = async () => {
+    if (!isFormValid) {
       if (!isPincodeValid && pincode.trim().length > 0) {
-        setErrorMessage('Please enter a valid 6-digit pincode.');
+        setModalErrorMessage('Please enter a valid 6-digit pincode.');
       } else {
-        setErrorMessage('Please complete your address to continue.');
+        setModalErrorMessage('Please fill all required address fields marked with *');
       }
       return;
     }
 
-    if (isSaving) return; // Prevent duplicate submission
-    setIsSaving(true);
-    setErrorMessage('');
+    if (isSavingAddress) return;
+    setIsSavingAddress(true);
+    setModalErrorMessage('');
 
     try {
       const stored = await getStoredSession();
       const token = stored?.token || null;
 
-      const payload = {
-        gender: selectedGender,
+      const addressPayload = {
+        type: formType,
+        customLabel: formType === 'other' ? customLabel.trim() : '',
         houseNumber: houseNumber.trim(),
         street: street.trim(),
         landmark: landmark.trim(),
@@ -177,33 +329,165 @@ export default function CustomerStep4Screen({
         pincode: pincode.trim(),
         latitude: latitude ? Number(latitude) : null,
         longitude: longitude ? Number(longitude) : null,
+        isDefault: isDefaultAddress || savedAddresses.length === 0,
       };
 
-      const response = await client.saveCustomerStep4(payload, token);
+      let response;
+      if (editingAddressId) {
+        response = await client.updateCustomerAddress(editingAddressId, addressPayload, token);
+      } else {
+        response = await client.addCustomerAddress(addressPayload, token);
+      }
 
       if (response && response.success) {
-        const existingCust = stored?.customer || {};
-        const updatedCustomer = {
-          ...existingCust,
-          ...(response.data || {}),
-          gender: selectedGender,
-          step4Complete: true,
-          authenticated: true,
+        // Fetch updated address list
+        const freshRes = await client.getCustomerAddresses(token);
+        const updatedList = freshRes && freshRes.success && Array.isArray(freshRes.data)
+          ? freshRes.data
+          : editingAddressId
+            ? savedAddresses.map((a) => (a.id === editingAddressId ? { ...a, ...addressPayload } : a))
+            : [...savedAddresses, response.data];
+
+        setSavedAddresses(updatedList);
+
+        // Update local session
+        const currentCust = stored?.customer || {};
+        const updatedCust = {
+          ...currentCust,
+          savedAddresses: updatedList,
+          gender: selectedGender || currentCust.gender,
         };
+        await setStoredSession(updatedCust, token);
 
-        await setStoredSession(updatedCustomer, token);
-
-        if (onComplete) {
-          onComplete({ customer: updatedCustomer, token });
-        }
+        setShowAddressModal(false);
       } else {
-        setErrorMessage(response?.error || "We couldn't save your address. Please try again.");
+        setModalErrorMessage(response?.error || "We couldn't save your address. Please try again.");
       }
     } catch (err) {
-      setErrorMessage("We couldn't save your address. Please try again.");
+      setModalErrorMessage("We couldn't save your address. Please try again.");
     } finally {
-      setIsSaving(false);
+      setIsSavingAddress(false);
     }
+  };
+
+  // ----------------------------------------------------
+  // Set Address as Default
+  // ----------------------------------------------------
+  const handleSetDefault = async (addrId) => {
+    try {
+      const stored = await getStoredSession();
+      const token = stored?.token || null;
+
+      // Optimistic UI update
+      const updated = savedAddresses.map((a) => ({
+        ...a,
+        isDefault: a.id === addrId,
+      }));
+      setSavedAddresses(updated);
+
+      if (token) {
+        await client.setDefaultCustomerAddress(addrId, token);
+        const currentCust = stored?.customer || {};
+        await setStoredSession({ ...currentCust, savedAddresses: updated }, token);
+      }
+    } catch (e) {
+      console.warn('Failed to set default address:', e);
+    }
+  };
+
+  // ----------------------------------------------------
+  // Delete Address Handler
+  // ----------------------------------------------------
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId || isDeleting) return;
+    setIsDeleting(true);
+
+    try {
+      const stored = await getStoredSession();
+      const token = stored?.token || null;
+
+      const res = await client.deleteCustomerAddress(deleteTargetId, token);
+      if (res && res.success) {
+        const remaining = Array.isArray(res.data)
+          ? res.data
+          : savedAddresses.filter((a) => a.id !== deleteTargetId);
+
+        // Handle default reassignment if needed
+        if (remaining.length > 0 && !remaining.some((a) => a.isDefault)) {
+          remaining[0].isDefault = true;
+        }
+
+        setSavedAddresses(remaining);
+        const currentCust = stored?.customer || {};
+        await setStoredSession({ ...currentCust, savedAddresses: remaining }, token);
+      } else {
+        setErrorMessage(res?.error || "We couldn't delete this address.");
+      }
+    } catch (e) {
+      setErrorMessage("We couldn't delete this address. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
+    }
+  };
+
+  // ----------------------------------------------------
+  // Continue to Next Step (Step 4 Completion)
+  // ----------------------------------------------------
+  const handleContinue = async () => {
+    if (!isGenderValid) {
+      setErrorMessage('Please select your gender.');
+      return;
+    }
+    if (savedAddresses.length === 0) {
+      setErrorMessage('Please add at least one service address to continue.');
+      return;
+    }
+
+    if (isContinuing) return;
+    setIsContinuing(true);
+    setErrorMessage('');
+
+    try {
+      const stored = await getStoredSession();
+      const token = stored?.token || null;
+
+      // Ensure gender and step4 are persisted
+      if (token) {
+        await client.saveCustomerGender(selectedGender, token);
+      }
+
+      const existingCust = stored?.customer || {};
+      const updatedCustomer = {
+        ...existingCust,
+        gender: selectedGender,
+        savedAddresses,
+        step4Complete: true,
+        authenticated: true,
+      };
+
+      await setStoredSession(updatedCustomer, token);
+
+      if (onComplete) {
+        onComplete({ customer: updatedCustomer, token });
+      }
+    } catch (err) {
+      setErrorMessage("We couldn't complete setup. Please try again.");
+    } finally {
+      setIsContinuing(false);
+    }
+  };
+
+  // Helper to format address for display card
+  const getFormattedAddress = (addr) => {
+    const parts = [
+      addr.houseNumber,
+      addr.street,
+      addr.landmark ? `Near ${addr.landmark}` : null,
+      addr.city,
+      addr.state ? `${addr.state} - ${addr.pincode}` : addr.pincode,
+    ].filter(Boolean);
+    return parts.join(', ');
   };
 
   return (
@@ -245,14 +529,14 @@ export default function CustomerStep4Screen({
           <View style={styles.headerSection}>
             <Text style={styles.mainHeading}>Tell Us About You</Text>
             <Text style={styles.supportingText}>
-              Select your gender and service address to get started
+              Set up your profile and service addresses for fast bookings
             </Text>
           </View>
 
           {/* SECTION 1: GENDER */}
           <View style={styles.card}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>1. Select Gender</Text>
+              <Text style={styles.sectionTitle}>1. Select Your Gender</Text>
               <Text style={styles.requiredTag}>* Required</Text>
             </View>
 
@@ -266,10 +550,7 @@ export default function CustomerStep4Screen({
                       styles.genderCard,
                       isSelected ? styles.genderCardSelected : null,
                     ]}
-                    onPress={() => {
-                      setSelectedGender(opt.value);
-                      if (errorMessage.includes('gender')) setErrorMessage('');
-                    }}
+                    onPress={() => handleSelectGender(opt.value)}
                     activeOpacity={0.8}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: isSelected }}
@@ -307,95 +588,338 @@ export default function CustomerStep4Screen({
             </View>
           </View>
 
-          {/* SECTION 2: SERVICE ADDRESS */}
+          {/* SECTION 2: SAVED ADDRESSES */}
           <View style={styles.card}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>2. Your Service Address</Text>
-              <Text style={styles.requiredTag}>* Required</Text>
-            </View>
-
-            {/* GPS Detection Box */}
-            <View style={styles.gpsBanner}>
-              <Text style={styles.gpsIcon}>📍</Text>
-              <View style={styles.gpsTextWrapper}>
-                <Text style={styles.gpsHeader}>Detect Address via GPS</Text>
-                <Text style={styles.gpsExplanation}>
-                  We use your location to detect your address and help connect you with nearby service professionals.
+              <View>
+                <Text style={styles.sectionTitle}>2. Saved Addresses</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Save up to 3 addresses (Home, Work, Other)
                 </Text>
               </View>
+              <Text style={styles.requiredTag}>* At least 1 required</Text>
             </View>
 
-            {/* GPS Detection Action Button */}
+            {/* List of Saved Addresses */}
+            {savedAddresses.length > 0 ? (
+              <View style={styles.addressListContainer}>
+                {savedAddresses.map((addr) => {
+                  const typeIcon = addr.type === 'home' ? '🏠' : addr.type === 'work' ? '💼' : '📍';
+                  const typeTitle =
+                    addr.type === 'other' && addr.customLabel
+                      ? `Other • ${addr.customLabel}`
+                      : (addr.type || 'Other').toUpperCase();
+
+                  return (
+                    <View key={addr.id} style={styles.addressCard}>
+                      <View style={styles.addressHeaderRow}>
+                        <View style={styles.addressTypeBadge}>
+                          <Text style={styles.addressTypeIcon}>{typeIcon}</Text>
+                          <Text style={styles.addressTypeTitle}>{typeTitle}</Text>
+                        </View>
+
+                        {addr.isDefault ? (
+                          <View style={styles.defaultBadge}>
+                            <Text style={styles.defaultBadgeText}>DEFAULT</Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            onPress={() => handleSetDefault(addr.id)}
+                            style={styles.setDefaultBtn}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.setDefaultBtnText}>Set as Default</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      <Text style={styles.formattedAddressText}>
+                        {getFormattedAddress(addr)}
+                      </Text>
+
+                      {/* Card Action Buttons: Edit & Delete */}
+                      <View style={styles.addressActionRow}>
+                        <TouchableOpacity
+                          style={styles.cardEditBtn}
+                          onPress={() => handleOpenEditAddress(addr)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.cardEditBtnText}>✏️ Edit</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.cardDeleteBtn}
+                          onPress={() => setDeleteTargetId(addr.id)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.cardDeleteBtnText}>🗑️ Delete</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              /* Empty State */
+              <View style={styles.emptyAddressBox}>
+                <Text style={styles.emptyAddressIcon}>📍</Text>
+                <Text style={styles.emptyAddressTitle}>No saved addresses yet</Text>
+                <Text style={styles.emptyAddressSubtitle}>
+                  Add your Home, Work, or Other address for fast service bookings.
+                </Text>
+                <TouchableOpacity
+                  style={styles.addAddressPrimaryBtn}
+                  onPress={handleOpenAddAddress}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.addAddressPrimaryBtnText}>+ Add Address</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* "+ Add New Address" button if addresses exist and < 3 */}
+            {savedAddresses.length > 0 && savedAddresses.length < 3 ? (
+              <TouchableOpacity
+                style={styles.addNewAddressBtn}
+                onPress={handleOpenAddAddress}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.addNewAddressBtnText}>+ Add Another Address ({savedAddresses.length}/3)</Text>
+              </TouchableOpacity>
+            ) : null}
+
+            {savedAddresses.length >= 3 ? (
+              <View style={styles.maxAddressesPill}>
+                <Text style={styles.maxAddressesText}>
+                  ✓ Maximum 3 addresses saved (Home, Work, Other)
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Global Error Message */}
+          {errorMessage ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorIcon}>⚠️</Text>
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          ) : null}
+
+          {/* Bottom Primary Continue Button */}
+          <View style={styles.bottomCtaContainer}>
             <TouchableOpacity
               style={[
-                styles.detectLocationBtn,
-                isDetectingGps ? styles.detectLocationBtnActive : null,
+                styles.continueBtn,
+                !canContinue ? styles.continueBtnDisabled : styles.continueBtnActive,
               ]}
-              onPress={handleDetectLocation}
-              disabled={isDetectingGps || isSaving}
+              onPress={handleContinue}
+              disabled={!canContinue}
               activeOpacity={0.85}
+              accessibilityLabel="Continue"
               accessibilityRole="button"
             >
-              {isDetectingGps ? (
+              {isContinuing ? (
                 <View style={styles.loadingRow}>
-                  <ActivityIndicator size="small" color="#2563eb" />
-                  <Text style={styles.detectLocationBtnTextActive}>
-                    {gpsStatusText || 'Detecting your location...'}
-                  </Text>
+                  <ActivityIndicator size="small" color="#ffffff" />
+                  <Text style={styles.continueBtnText}>Saving Profile...</Text>
                 </View>
               ) : (
-                <View style={styles.loadingRow}>
-                  <Text style={{ fontSize: 16 }}>🎯</Text>
-                  <Text style={styles.detectLocationBtnText}>Use My Current Location</Text>
-                </View>
+                <Text
+                  style={[
+                    styles.continueBtnText,
+                    !canContinue ? styles.continueBtnTextDisabled : null,
+                  ]}
+                >
+                  Continue
+                </Text>
               )}
             </TouchableOpacity>
 
-            {/* GPS Success Feedback */}
-            {gpsSuccessMessage ? (
-              <View style={styles.successContainer}>
-                <Text style={styles.successText}>{gpsSuccessMessage}</Text>
-              </View>
-            ) : null}
-
-            {/* Toggle Manual Entry */}
-            <View style={styles.orDividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <TouchableOpacity
-              style={styles.manualToggleBtn}
-              onPress={() => setShowManualForm(!showManualForm)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-            >
-              <Text style={styles.manualToggleBtnText}>
-                {showManualForm ? 'Hide Address Fields ▴' : 'Enter Address Manually ▾'}
+            {!canContinue ? (
+              <Text style={styles.continueHint}>
+                {!isGenderValid
+                  ? 'Please select your gender to continue'
+                  : 'Please add at least one address to continue'}
               </Text>
-            </TouchableOpacity>
+            ) : null}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
-            {/* Address Input Form Fields (Always visible if expanded or location detected) */}
-            {showManualForm ? (
-              <View style={styles.manualFieldsContainer}>
-                {/* House No. */}
+      {/* ==================================================== */}
+      {/* ADD / EDIT ADDRESS MODAL */}
+      {/* ==================================================== */}
+      <Modal
+        visible={showAddressModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAddressModal(false)}
+      >
+        <SafeAreaView style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ width: '100%', alignItems: 'center' }}
+          >
+            <View style={styles.addressModalContent}>
+              {/* Modal Header */}
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>
+                    {editingAddressId ? 'Edit Address' : 'Add New Address'}
+                  </Text>
+                  <Text style={styles.modalSubtitle}>
+                    {editingAddressId ? 'Update your saved location' : 'Save address for quick booking'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.modalCloseBtn}
+                  onPress={() => setShowAddressModal(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                style={styles.modalScrollArea}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* 1. Address Type Selection */}
+                <Text style={styles.fieldLabel}>Address Type *</Text>
+                <View style={styles.typeSelectorRow}>
+                  {[
+                    { key: 'home', label: 'Home', icon: '🏠' },
+                    { key: 'work', label: 'Work', icon: '💼' },
+                    { key: 'other', label: 'Other', icon: '📍' },
+                  ].map((t) => {
+                    const isSelected = formType === t.key;
+                    return (
+                      <TouchableOpacity
+                        key={t.key}
+                        style={[
+                          styles.typeChip,
+                          isSelected ? styles.typeChipSelected : null,
+                        ]}
+                        onPress={() => handleSelectAddressType(t.key)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.typeChipIcon}>{t.icon}</Text>
+                        <Text
+                          style={[
+                            styles.typeChipText,
+                            isSelected ? styles.typeChipTextSelected : null,
+                          ]}
+                        >
+                          {t.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* Duplicate Address Type Warning Notice */}
+                {duplicateTypeNotice ? (
+                  <View style={styles.duplicateNoticeBox}>
+                    <Text style={styles.duplicateNoticeText}>
+                      You already have a {duplicateTypeNotice.type.toUpperCase()} address. Would you like to edit it?
+                    </Text>
+                    <View style={styles.duplicateActionRow}>
+                      <TouchableOpacity
+                        style={styles.duplicateEditBtn}
+                        onPress={() => handleOpenEditAddress(duplicateTypeNotice.existingAddress)}
+                      >
+                        <Text style={styles.duplicateEditBtnText}>Edit Existing</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.duplicateCancelBtn}
+                        onPress={() => setDuplicateTypeNotice(null)}
+                      >
+                        <Text style={styles.duplicateCancelBtnText}>Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : null}
+
+                {/* Custom Label for Other Type */}
+                {formType === 'other' ? (
+                  <View style={styles.formGroup}>
+                    <Text style={styles.fieldLabel}>Custom Label (e.g. Friend's House, Site)</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="Enter a label"
+                      placeholderTextColor="#94a3b8"
+                      value={customLabel}
+                      onChangeText={setCustomLabel}
+                    />
+                  </View>
+                ) : null}
+
+                {/* GPS Detection Box */}
+                <View style={styles.gpsBanner}>
+                  <Text style={styles.gpsIcon}>📍</Text>
+                  <View style={styles.gpsTextWrapper}>
+                    <Text style={styles.gpsHeader}>Detect Address via GPS</Text>
+                    <Text style={styles.gpsExplanation}>
+                      We use your location to detect your address and help connect you with nearby service professionals.
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Detect Location Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.detectLocationBtn,
+                    isDetectingGps ? styles.detectLocationBtnActive : null,
+                  ]}
+                  onPress={handleDetectLocation}
+                  disabled={isDetectingGps || isSavingAddress}
+                  activeOpacity={0.85}
+                >
+                  {isDetectingGps ? (
+                    <View style={styles.loadingRow}>
+                      <ActivityIndicator size="small" color="#2563eb" />
+                      <Text style={styles.detectLocationBtnTextActive}>
+                        {gpsStatusText || 'Detecting your location...'}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.loadingRow}>
+                      <Text style={{ fontSize: 16 }}>🎯</Text>
+                      <Text style={styles.detectLocationBtnText}>Use My Current Location</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                {/* GPS Success Feedback */}
+                {gpsSuccessMessage ? (
+                  <View style={styles.successContainer}>
+                    <Text style={styles.successText}>{gpsSuccessMessage}</Text>
+                  </View>
+                ) : null}
+
+                {/* OR Divider */}
+                <View style={styles.orDividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>OR ENTER MANUALLY</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                {/* Address Form Fields */}
                 <View style={styles.formGroup}>
                   <Text style={styles.fieldLabel}>House No. / Flat / Building *</Text>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Enter house number / flat / plot"
+                    placeholder="Enter house number / plot"
                     placeholderTextColor="#94a3b8"
                     value={houseNumber}
                     onChangeText={(val) => {
                       setHouseNumber(val);
-                      if (errorMessage) setErrorMessage('');
+                      if (modalErrorMessage) setModalErrorMessage('');
                     }}
-                    accessibilityLabel="House number input"
                   />
                 </View>
 
-                {/* Street */}
                 <View style={styles.formGroup}>
                   <Text style={styles.fieldLabel}>Street / Locality / Area *</Text>
                   <TextInput
@@ -405,13 +929,11 @@ export default function CustomerStep4Screen({
                     value={street}
                     onChangeText={(val) => {
                       setStreet(val);
-                      if (errorMessage) setErrorMessage('');
+                      if (modalErrorMessage) setModalErrorMessage('');
                     }}
-                    accessibilityLabel="Street name input"
                   />
                 </View>
 
-                {/* Landmark */}
                 <View style={styles.formGroup}>
                   <View style={styles.labelRow}>
                     <Text style={styles.fieldLabel}>Landmark</Text>
@@ -419,28 +941,26 @@ export default function CustomerStep4Screen({
                   </View>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Enter landmark (e.g. Near Temple, Opp. Bus Stand)"
+                    placeholder="e.g. Near Clock Tower, Opp. Bus Stand"
                     placeholderTextColor="#94a3b8"
                     value={landmark}
                     onChangeText={setLandmark}
-                    accessibilityLabel="Landmark input"
                   />
                 </View>
 
-                {/* City & District (2-column row) */}
+                {/* City & District */}
                 <View style={styles.rowTwoCols}>
                   <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
                     <Text style={styles.fieldLabel}>City *</Text>
                     <TextInput
                       style={styles.textInput}
-                      placeholder="Enter city"
+                      placeholder="City"
                       placeholderTextColor="#94a3b8"
                       value={city}
                       onChangeText={(val) => {
                         setCity(val);
-                        if (errorMessage) setErrorMessage('');
+                        if (modalErrorMessage) setModalErrorMessage('');
                       }}
-                      accessibilityLabel="City input"
                     />
                   </View>
 
@@ -448,19 +968,18 @@ export default function CustomerStep4Screen({
                     <Text style={styles.fieldLabel}>District *</Text>
                     <TextInput
                       style={styles.textInput}
-                      placeholder="Enter district"
+                      placeholder="District"
                       placeholderTextColor="#94a3b8"
                       value={district}
                       onChangeText={(val) => {
                         setDistrict(val);
-                        if (errorMessage) setErrorMessage('');
+                        if (modalErrorMessage) setModalErrorMessage('');
                       }}
-                      accessibilityLabel="District input"
                     />
                   </View>
                 </View>
 
-                {/* State & Pincode (2-column row) */}
+                {/* State & 6-digit Pincode */}
                 <View style={styles.rowTwoCols}>
                   <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
                     <Text style={styles.fieldLabel}>State *</Text>
@@ -468,16 +987,8 @@ export default function CustomerStep4Screen({
                       style={styles.stateSelectBtn}
                       onPress={() => setShowStateModal(true)}
                       activeOpacity={0.8}
-                      accessibilityLabel="Select state"
-                      accessibilityRole="button"
                     >
-                      <Text
-                        style={[
-                          styles.stateSelectText,
-                          !stateName ? styles.stateSelectPlaceholder : null,
-                        ]}
-                        numberOfLines={1}
-                      >
+                      <Text style={styles.stateSelectText} numberOfLines={1}>
                         {stateName || 'Select State'}
                       </Text>
                       <Text style={styles.dropdownChevron}>▾</Text>
@@ -500,56 +1011,113 @@ export default function CustomerStep4Screen({
                       onChangeText={(val) => {
                         const digits = val.replace(/\D/g, '').slice(0, 6);
                         setPincode(digits);
-                        if (errorMessage) setErrorMessage('');
+                        if (modalErrorMessage) setModalErrorMessage('');
                       }}
-                      accessibilityLabel="6-digit pincode input"
                     />
                   </View>
                 </View>
-              </View>
-            ) : null}
 
-            {/* Error Message Display */}
-            {errorMessage ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorIcon}>⚠️</Text>
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              </View>
-            ) : null}
-
-            {/* Continue Button */}
-            <TouchableOpacity
-              style={[
-                styles.continueBtn,
-                !isFormValid || isSaving ? styles.continueBtnDisabled : styles.continueBtnActive,
-              ]}
-              onPress={handleContinue}
-              disabled={!isFormValid || isSaving}
-              activeOpacity={0.85}
-              accessibilityLabel="Continue"
-              accessibilityRole="button"
-            >
-              {isSaving ? (
-                <View style={styles.loadingRow}>
-                  <ActivityIndicator size="small" color="#ffffff" />
-                  <Text style={styles.continueBtnText}>Saving...</Text>
-                </View>
-              ) : (
-                <Text
-                  style={[
-                    styles.continueBtnText,
-                    !isFormValid ? styles.continueBtnTextDisabled : null,
-                  ]}
+                {/* Set as Default Checkbox */}
+                <TouchableOpacity
+                  style={styles.defaultCheckboxRow}
+                  onPress={() => setIsDefaultAddress(!isDefaultAddress)}
+                  activeOpacity={0.8}
                 >
-                  Continue
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+                  <View
+                    style={[
+                      styles.checkboxBox,
+                      isDefaultAddress || savedAddresses.length === 0 ? styles.checkboxBoxActive : null,
+                    ]}
+                  >
+                    {isDefaultAddress || savedAddresses.length === 0 ? (
+                      <Text style={styles.checkboxCheck}>✓</Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.checkboxLabel}>Make this my default service address</Text>
+                </TouchableOpacity>
 
-      {/* Indian States and UTs Picker Modal */}
+                {/* Modal Error Message */}
+                {modalErrorMessage ? (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.errorIcon}>⚠️</Text>
+                    <Text style={styles.errorText}>{modalErrorMessage}</Text>
+                  </View>
+                ) : null}
+
+                {/* Save Address Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.saveAddressBtn,
+                    !isFormValid || isSavingAddress ? styles.saveAddressBtnDisabled : styles.saveAddressBtnActive,
+                  ]}
+                  onPress={handleSaveAddress}
+                  disabled={!isFormValid || isSavingAddress}
+                  activeOpacity={0.85}
+                >
+                  {isSavingAddress ? (
+                    <View style={styles.loadingRow}>
+                      <ActivityIndicator size="small" color="#ffffff" />
+                      <Text style={styles.saveAddressBtnText}>Saving Address...</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.saveAddressBtnText}>
+                      {editingAddressId ? 'Update Address' : 'Save Address'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* ==================================================== */}
+      {/* DELETE CONFIRMATION MODAL */}
+      {/* ==================================================== */}
+      <Modal
+        visible={Boolean(deleteTargetId)}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setDeleteTargetId(null)}
+      >
+        <SafeAreaView style={styles.modalOverlay}>
+          <View style={styles.deleteDialogCard}>
+            <Text style={styles.deleteDialogIcon}>🗑️</Text>
+            <Text style={styles.deleteDialogTitle}>Delete Saved Address?</Text>
+            <Text style={styles.deleteDialogSubtitle}>
+              Are you sure you want to remove this address? If this is your default address, another address will be set as default.
+            </Text>
+
+            <View style={styles.deleteDialogActions}>
+              <TouchableOpacity
+                style={styles.deleteCancelBtn}
+                onPress={() => setDeleteTargetId(null)}
+                disabled={isDeleting}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.deleteCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.deleteConfirmBtn}
+                onPress={handleConfirmDelete}
+                disabled={isDeleting}
+                activeOpacity={0.8}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={styles.deleteConfirmBtnText}>Delete</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* ==================================================== */}
+      {/* INDIAN STATES PICKER MODAL */}
+      {/* ==================================================== */}
       <Modal
         visible={showStateModal}
         transparent={true}
@@ -557,29 +1125,26 @@ export default function CustomerStep4Screen({
         onRequestClose={() => setShowStateModal(false)}
       >
         <SafeAreaView style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {/* Modal Header */}
+          <View style={styles.stateModalCard}>
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalTitle}>Select State / UT</Text>
-                <Text style={styles.modalSubtitle}>36 States & Union Territories</Text>
+                <Text style={styles.modalSubtitle}>36 Indian States & Union Territories</Text>
               </View>
               <TouchableOpacity
                 style={styles.modalCloseBtn}
                 onPress={() => setShowStateModal(false)}
                 activeOpacity={0.7}
-                accessibilityLabel="Close"
               >
                 <Text style={styles.modalCloseText}>✕</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Search Input */}
             <View style={styles.modalSearchBox}>
               <Text style={styles.modalSearchIcon}>🔍</Text>
               <TextInput
                 style={styles.modalSearchInput}
-                placeholder="Search state or UT..."
+                placeholder="Search state..."
                 placeholderTextColor="#94a3b8"
                 value={stateSearch}
                 onChangeText={setStateSearch}
@@ -592,7 +1157,6 @@ export default function CustomerStep4Screen({
               ) : null}
             </View>
 
-            {/* States List */}
             <ScrollView
               style={styles.modalStateList}
               keyboardShouldPersistTaps="handled"
@@ -613,7 +1177,6 @@ export default function CustomerStep4Screen({
                         setStateName(st);
                         setShowStateModal(false);
                         setStateSearch('');
-                        if (errorMessage) setErrorMessage('');
                       }}
                       activeOpacity={0.7}
                     >
@@ -625,9 +1188,7 @@ export default function CustomerStep4Screen({
                       >
                         {st}
                       </Text>
-                      {isSelected ? (
-                        <Text style={styles.stateItemCheckmark}>✓</Text>
-                      ) : null}
+                      {isSelected ? <Text style={styles.stateItemCheckmark}>✓</Text> : null}
                     </TouchableOpacity>
                   );
                 })}
@@ -648,7 +1209,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 32,
+    paddingBottom: 36,
   },
   topBar: {
     flexDirection: 'row',
@@ -721,7 +1282,7 @@ const styles = StyleSheet.create({
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 14,
   },
   sectionTitle: {
@@ -730,6 +1291,12 @@ const styles = StyleSheet.create({
     color: '#0f2c6e',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
+    marginTop: 2,
   },
   requiredTag: {
     fontSize: 12,
@@ -797,6 +1364,335 @@ const styles = StyleSheet.create({
     borderRadius: 4.5,
     backgroundColor: '#2563eb',
   },
+  addressListContainer: {
+    gap: 12,
+    marginBottom: 12,
+  },
+  addressCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.2,
+    borderColor: '#e2e8f0',
+    ...SHADOWS.xs,
+  },
+  addressHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  addressTypeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  addressTypeIcon: {
+    fontSize: 16,
+  },
+  addressTypeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0f2c6e',
+    letterSpacing: 0.3,
+  },
+  defaultBadge: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#86efac',
+  },
+  defaultBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#166534',
+    letterSpacing: 0.5,
+  },
+  setDefaultBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: '#f1f5f9',
+  },
+  setDefaultBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2563eb',
+  },
+  formattedAddressText: {
+    fontSize: 13,
+    color: '#334155',
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  addressActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    paddingTop: 10,
+  },
+  cardEditBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  cardEditBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#2563eb',
+  },
+  cardDeleteBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  cardDeleteBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#dc2626',
+  },
+  emptyAddressBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#cbd5e1',
+    marginBottom: 8,
+  },
+  emptyAddressIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  emptyAddressTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f2c6e',
+    marginBottom: 4,
+  },
+  emptyAddressSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
+    maxWidth: 260,
+  },
+  addAddressPrimaryBtn: {
+    backgroundColor: '#2563eb',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    ...SHADOWS.sm,
+  },
+  addAddressPrimaryBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  addNewAddressBtn: {
+    backgroundColor: '#eff6ff',
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#2563eb',
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  addNewAddressBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2563eb',
+  },
+  maxAddressesPill: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  maxAddressesText: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  bottomCtaContainer: {
+    marginTop: 4,
+  },
+  continueBtn: {
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  continueBtnActive: {
+    backgroundColor: '#2563eb',
+    ...SHADOWS.md,
+  },
+  continueBtnDisabled: {
+    backgroundColor: '#cbd5e1',
+  },
+  continueBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.3,
+  },
+  continueBtnTextDisabled: {
+    color: '#64748b',
+  },
+  continueHint: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  addressModalContent: {
+    width: '100%',
+    maxWidth: 460,
+    maxHeight: '90%',
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 20,
+    ...SHADOWS.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    paddingBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f2c6e',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseText: {
+    fontSize: 16,
+    color: '#475569',
+    fontWeight: '700',
+  },
+  modalScrollArea: {
+    flexGrow: 1,
+  },
+  typeSelectorRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  typeChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
+  typeChipSelected: {
+    backgroundColor: '#eff6ff',
+    borderColor: '#2563eb',
+  },
+  typeChipIcon: {
+    fontSize: 16,
+  },
+  typeChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  typeChipTextSelected: {
+    color: '#2563eb',
+    fontWeight: '800',
+  },
+  duplicateNoticeBox: {
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fde68a',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+  },
+  duplicateNoticeText: {
+    fontSize: 12,
+    color: '#92400e',
+    fontWeight: '600',
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  duplicateActionRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  duplicateEditBtn: {
+    backgroundColor: '#f59e0b',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  duplicateEditBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  duplicateCancelBtn: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  duplicateCancelBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4b5563',
+  },
   gpsBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -805,7 +1701,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     borderColor: '#bfdbfe',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   gpsIcon: {
     fontSize: 20,
@@ -831,7 +1727,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#2563eb',
     borderRadius: 14,
-    paddingVertical: 13,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
@@ -840,7 +1736,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#dbeafe',
   },
   detectLocationBtnText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#2563eb',
   },
@@ -875,23 +1771,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#e2e8f0',
   },
   dividerText: {
-    paddingHorizontal: 10,
-    fontSize: 12,
+    paddingHorizontal: 8,
+    fontSize: 11,
     fontWeight: '700',
     color: '#94a3b8',
-  },
-  manualToggleBtn: {
-    paddingVertical: 8,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  manualToggleBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#2563eb',
-  },
-  manualFieldsContainer: {
-    marginTop: 4,
   },
   formGroup: {
     marginBottom: 12,
@@ -951,23 +1834,120 @@ const styles = StyleSheet.create({
     color: '#0f2c6e',
     flex: 1,
   },
-  stateSelectPlaceholder: {
-    color: '#94a3b8',
-  },
   dropdownChevron: {
     fontSize: 14,
     color: '#64748b',
     fontWeight: '700',
     marginLeft: 4,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
-    justifyContent: 'center',
+  defaultCheckboxRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    marginTop: 4,
+    marginBottom: 14,
   },
-  modalContent: {
+  checkboxBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    backgroundColor: '#ffffff',
+  },
+  checkboxBoxActive: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+  checkboxCheck: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  checkboxLabel: {
+    fontSize: 13,
+    color: '#334155',
+    fontWeight: '600',
+  },
+  saveAddressBtn: {
+    height: 50,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  saveAddressBtnActive: {
+    backgroundColor: '#2563eb',
+    ...SHADOWS.md,
+  },
+  saveAddressBtnDisabled: {
+    backgroundColor: '#cbd5e1',
+  },
+  saveAddressBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  deleteDialogCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    ...SHADOWS.lg,
+  },
+  deleteDialogIcon: {
+    fontSize: 36,
+    marginBottom: 10,
+  },
+  deleteDialogTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f2c6e',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  deleteDialogSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 18,
+  },
+  deleteDialogActions: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  deleteCancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+  },
+  deleteCancelBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  deleteConfirmBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#ef4444',
+    alignItems: 'center',
+  },
+  deleteConfirmBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  stateModalCard: {
     width: '100%',
     maxWidth: 420,
     maxHeight: '80%',
@@ -975,36 +1955,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 20,
     ...SHADOWS.lg,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0f2c6e',
-  },
-  modalSubtitle: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  modalCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f1f5f9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCloseText: {
-    fontSize: 16,
-    color: '#475569',
-    fontWeight: '700',
   },
   modalSearchBox: {
     flexDirection: 'row',
@@ -1063,8 +2013,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 12,
-    marginTop: 10,
-    marginBottom: 14,
+    marginTop: 8,
+    marginBottom: 12,
   },
   errorIcon: {
     fontSize: 14,
@@ -1075,29 +2025,6 @@ const styles = StyleSheet.create({
     color: '#b91c1c',
     fontWeight: '600',
     flex: 1,
-  },
-  continueBtn: {
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  continueBtnActive: {
-    backgroundColor: '#2563eb',
-    ...SHADOWS.md,
-  },
-  continueBtnDisabled: {
-    backgroundColor: '#cbd5e1',
-  },
-  continueBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.3,
-  },
-  continueBtnTextDisabled: {
-    color: '#64748b',
   },
   loadingRow: {
     flexDirection: 'row',

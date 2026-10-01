@@ -214,22 +214,12 @@ export default function App() {
   // 5. Step 4: Customer Gender + Service Address Screen
   if (currentScreen === 'step4') {
     const cust = session?.customer || {};
-    const defaultAddr = cust.savedAddresses?.[0] || {
-      houseNumber: cust.houseNumber || '',
-      street: cust.street || '',
-      landmark: cust.landmark || '',
-      city: cust.city || 'Sangareddy',
-      district: cust.district || 'Sangareddy',
-      state: cust.state || 'Telangana',
-      pincode: cust.pincode || '',
-      latitude: cust.latitude || null,
-      longitude: cust.longitude || null,
-    };
+    const addresses = Array.isArray(cust.savedAddresses) ? cust.savedAddresses : [];
 
     return (
       <CustomerStep4Screen
         initialGender={cust.gender || ''}
-        initialAddress={defaultAddr}
+        initialAddresses={addresses}
         onComplete={handleStep4Complete}
         onBack={() => {
           if (registrationToken) {

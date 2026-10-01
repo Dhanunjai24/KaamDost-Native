@@ -280,6 +280,120 @@ class ApiService {
     }
   }
 
+  // Multi-Address Management Endpoints
+  async getCustomerAddresses(token = null) {
+    const authToken = token || this.token;
+    try {
+      const response = await fetch(`${this.baseUrl}/api/customer/addresses`, {
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return { success: false, error: data?.error || 'Failed to load addresses.' };
+    } catch (err) {
+      return { success: false, error: 'Network error loading addresses.' };
+    }
+  }
+
+  async addCustomerAddress(addressData, token = null) {
+    const authToken = token || this.token;
+    try {
+      const response = await fetch(`${this.baseUrl}/api/customer/addresses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify(addressData)
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return { success: false, error: data?.error || "We couldn't save your address. Please try again." };
+    } catch (err) {
+      return { success: false, error: "We couldn't save your address. Please try again." };
+    }
+  }
+
+  async updateCustomerAddress(addressId, addressData, token = null) {
+    const authToken = token || this.token;
+    try {
+      const response = await fetch(`${this.baseUrl}/api/customer/addresses/${addressId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify(addressData)
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return { success: false, error: data?.error || "We couldn't update your address. Please try again." };
+    } catch (err) {
+      return { success: false, error: "We couldn't update your address. Please try again." };
+    }
+  }
+
+  async deleteCustomerAddress(addressId, token = null) {
+    const authToken = token || this.token;
+    try {
+      const response = await fetch(`${this.baseUrl}/api/customer/addresses/${addressId}`, {
+        method: 'DELETE',
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return { success: false, error: data?.error || "We couldn't delete this address. Please try again." };
+    } catch (err) {
+      return { success: false, error: "We couldn't delete this address. Please try again." };
+    }
+  }
+
+  async setDefaultCustomerAddress(addressId, token = null) {
+    const authToken = token || this.token;
+    try {
+      const response = await fetch(`${this.baseUrl}/api/customer/addresses/${addressId}/default`, {
+        method: 'PUT',
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return { success: false, error: data?.error || "We couldn't set default address. Please try again." };
+    } catch (err) {
+      return { success: false, error: "We couldn't set default address. Please try again." };
+    }
+  }
+
+  async saveCustomerGender(gender, token = null) {
+    const authToken = token || this.token;
+    try {
+      const response = await fetch(`${this.baseUrl}/api/customer/gender`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify({ gender })
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return { success: false, error: data?.error || 'Please select your gender.' };
+    } catch (err) {
+      return { success: false, error: 'Failed to save gender preference.' };
+    }
+  }
+
   // Geocoding / Reverse Geocoding for GPS detection
   async reverseGeocode(lat, lng) {
     try {
