@@ -22,7 +22,7 @@ export default function SelectAddressScreen({
       id: 'Home',
       label: 'Home',
       street: '123 Green Park, New Delhi',
-      icon: '📍',
+      icon: '🏠',
     },
     {
       id: 'Work',
@@ -33,7 +33,7 @@ export default function SelectAddressScreen({
     {
       id: 'Other',
       label: 'Other',
-      street: 'Add a new address',
+      street: '+ Add a new address',
       icon: '📍',
       isAddAction: true,
     },
@@ -48,7 +48,7 @@ export default function SelectAddressScreen({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
       <View style={styles.container}>
         {/* Header matching screen_14 */}
         <View style={styles.header}>
@@ -111,7 +111,7 @@ export default function SelectAddressScreen({
           })}
         </ScrollView>
 
-        {/* Continue Button matching screen_14 */}
+        {/* Continue Button */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.continueBtn}
@@ -129,7 +129,7 @@ export default function SelectAddressScreen({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
   container: {
     flex: 1,
@@ -142,66 +142,70 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    paddingVertical: 10,
+    marginBottom: 12,
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   backArrow: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#1d4ed8',
+    color: '#0f2c6e',
     marginTop: -3,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   scrollContent: {
-    gap: 14,
     paddingBottom: 20,
+    gap: 12,
   },
   addressCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    ...SHADOWS.small,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.sm,
   },
   addressCardSelected: {
     borderColor: '#2563eb',
     backgroundColor: '#eff6ff',
-    ...SHADOWS.medium,
+    borderWidth: 1.5,
   },
   cardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    paddingRight: 10,
   },
   iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#eff6ff',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
   },
   iconCircleSelected: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
   },
   iconEmoji: {
     fontSize: 20,
@@ -211,31 +215,27 @@ const styles = StyleSheet.create({
   },
   addressLabel: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#0f294a',
+    fontWeight: '800',
+    color: '#0f2c6e',
+    marginBottom: 3,
   },
   addressLabelSelected: {
-    color: '#1d4ed8',
-    fontWeight: '800',
+    color: '#2563eb',
   },
   streetText: {
     fontSize: 13,
-    color: '#64748b',
-    marginTop: 3,
-  },
-  chevron: {
-    fontSize: 24,
-    color: '#94a3b8',
-    fontWeight: '600',
+    color: '#5f7da6',
+    fontWeight: '500',
   },
   radioCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
-    borderColor: '#cbd5e1',
+    borderColor: '#94a3b8',
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 10,
   },
   radioCircleSelected: {
     borderColor: '#2563eb',
@@ -246,21 +246,27 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#2563eb',
   },
+  chevron: {
+    fontSize: 24,
+    color: '#94a3b8',
+    fontWeight: '600',
+    marginLeft: 10,
+  },
   footer: {
-    paddingTop: 10,
+    paddingTop: 8,
   },
   continueBtn: {
     backgroundColor: '#2563eb',
-    borderRadius: 16,
-    paddingVertical: 15,
+    borderRadius: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.buttonGlow,
+    ...SHADOWS.primaryBtn,
   },
   continueBtnText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
 });

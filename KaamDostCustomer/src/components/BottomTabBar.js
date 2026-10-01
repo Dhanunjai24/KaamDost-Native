@@ -12,42 +12,49 @@ export default function BottomTabBar({ activeTab = 'Home', onTabPress }) {
   ];
 
   return (
-    <View style={styles.container}>
-      {tabs.map((tab) => {
-        const isActive = activeTab?.toLowerCase() === tab.id.toLowerCase();
-        return (
-          <TouchableOpacity
-            key={tab.id}
-            style={styles.tabItem}
-            onPress={() => onTabPress && onTabPress(tab.id)}
-            activeOpacity={0.75}
-          >
-            <Text style={[styles.tabIcon, isActive && styles.tabIconActive]}>
-              {tab.icon}
-            </Text>
-            <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-              {tab.label}
-            </Text>
-            {isActive && <View style={styles.activeDot} />}
-          </TouchableOpacity>
-        );
-      })}
+    <View style={styles.wrapper}>
+      <View style={styles.container}>
+        {tabs.map((tab) => {
+          const isActive = activeTab?.toLowerCase() === tab.id.toLowerCase();
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              style={styles.tabItem}
+              onPress={() => onTabPress && onTabPress(tab.id)}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.tabIcon, isActive && styles.tabIconActive]}>
+                {tab.icon}
+              </Text>
+              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                {tab.label}
+              </Text>
+              {isActive && <View style={styles.activeDot} />}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: 'transparent',
+  },
   container: {
-    height: 70,
-    backgroundColor: '#ffffff',
+    height: 66,
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: '#e0edfd',
-    paddingHorizontal: 8,
-    paddingBottom: 6,
-    ...SHADOWS.medium,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 6,
+    ...SHADOWS.md,
   },
   tabItem: {
     alignItems: 'center',
@@ -62,12 +69,12 @@ const styles = StyleSheet.create({
   },
   tabIconActive: {
     opacity: 1,
-    transform: [{ scale: 1.08 }],
+    transform: [{ scale: 1.1 }],
   },
   tabLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: '#5f7da6',
   },
   tabLabelActive: {
     color: '#2563eb',
@@ -78,6 +85,6 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: '#2563eb',
-    marginTop: 3,
+    marginTop: 2,
   },
 });

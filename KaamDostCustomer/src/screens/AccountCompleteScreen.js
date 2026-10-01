@@ -20,18 +20,18 @@ export default function AccountCompleteScreen({ customer, onProceedHome }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
       <View style={styles.container}>
-        {/* Header */}
+        {/* Header with Blue lock icon badge */}
         <View style={styles.header}>
           <View style={styles.headerIconBox}>
-            <Text style={styles.headerEmoji}>🛡️</Text>
+            <Text style={styles.headerEmoji}>🔒</Text>
           </View>
           <Text style={styles.title}>Account Completion</Text>
           <Text style={styles.subtitle}>Structured Help, Better Living</Text>
         </View>
 
-        {/* Verification Checklist Card matching screen_08 */}
+        {/* Verification Stack: Frosted card listing completed steps with bold green checks */}
         <View style={styles.checklistCard}>
           {stepsCompleted.map((step, idx) => (
             <View
@@ -69,103 +69,108 @@ export default function AccountCompleteScreen({ customer, onProceedHome }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
   container: {
     flex: 1,
-    paddingHorizontal: 22,
-    paddingTop: 30,
+    paddingHorizontal: 20,
+    paddingTop: 36,
     paddingBottom: 24,
     justifyContent: 'space-between',
   },
   header: {
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   headerIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#dbeafe',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#eff6ff',
+    borderWidth: 1.5,
+    borderColor: '#bfdbfe',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
+    ...SHADOWS.sm,
   },
   headerEmoji: {
     fontSize: 22,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748b',
-    marginTop: 6,
+    color: '#5f7da6',
+    marginTop: 4,
     fontWeight: '500',
   },
   checklistCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
     borderRadius: 24,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    ...SHADOWS.medium,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.md,
+    marginVertical: 'auto',
   },
   stepRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
-    gap: 16,
+    paddingVertical: 14,
   },
   stepDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: 'rgba(226, 232, 240, 0.65)',
   },
   greenCheckBadge: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#10b981',
+    backgroundColor: '#ecfdf5',
+    borderWidth: 1.2,
+    borderColor: '#bbf7d0',
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 16,
   },
   checkMarkIcon: {
-    color: '#ffffff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
+    color: '#16a34a',
   },
   stepLabel: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   footer: {
-    alignItems: 'center',
-    gap: 16,
-    paddingTop: 10,
+    paddingTop: 16,
   },
   successHeadline: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1d4ed8',
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f2c6e',
+    textAlign: 'center',
+    marginBottom: 14,
   },
   continueBtn: {
     backgroundColor: '#2563eb',
-    borderRadius: 16,
-    paddingVertical: 15,
-    width: '100%',
+    borderRadius: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.buttonGlow,
+    ...SHADOWS.primaryBtn,
   },
   continueBtnText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
 });

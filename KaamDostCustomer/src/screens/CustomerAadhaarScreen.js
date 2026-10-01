@@ -53,7 +53,7 @@ export default function CustomerAadhaarScreen({ onContinue, onBack }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
       <View style={styles.container}>
         {/* Top Back Navigation Arrow */}
         <TouchableOpacity
@@ -71,7 +71,7 @@ export default function CustomerAadhaarScreen({ onContinue, onBack }) {
             <Text style={styles.subtitle}>Secure and safe verification</Text>
           </View>
 
-          {/* Graphic Aadhaar Card Preview matching screen_06 */}
+          {/* Overlapping Aadhaar Identity Card with official sun fingerprint logo pill */}
           <View style={styles.cardGraphic}>
             <View style={styles.cardHeaderRow}>
               <View style={styles.cardChip} />
@@ -100,35 +100,47 @@ export default function CustomerAadhaarScreen({ onContinue, onBack }) {
           {/* Aadhaar Input Field */}
           <View style={styles.inputCard}>
             <Text style={styles.inputLabel}>Enter 12-Digit Aadhaar Number</Text>
-            <TextInput
-              style={styles.aadhaarInput}
-              placeholder="0000 0000 0000"
-              placeholderTextColor="#94a3b8"
-              keyboardType="number-pad"
-              maxLength={14}
-              value={aadhaarNumber}
-              onChangeText={(val) => {
-                setAadhaarNumber(formatAadhaar(val));
-                setErrorMsg('');
-              }}
-            />
+            <View style={[styles.inputBox, errorMsg ? styles.inputBoxError : null]}>
+              <TextInput
+                style={styles.input}
+                placeholder="0000 0000 0000"
+                placeholderTextColor="#94a3b8"
+                keyboardType="numeric"
+                maxLength={14}
+                value={aadhaarNumber}
+                onChangeText={(text) => {
+                  setAadhaarNumber(formatAadhaar(text));
+                  if (errorMsg) setErrorMsg('');
+                }}
+              />
+              <View style={styles.shieldPill}>
+                <Text style={styles.shieldPillText}>UIDAI ✓</Text>
+              </View>
+            </View>
             {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
           </View>
 
-          {/* Verification Checklist matching screen_06 */}
+          {/* Verified Checklist Container with 3 green checkmarks */}
           <View style={styles.checklistCard}>
-            {checklistItems.map((item) => (
-              <View key={item.id} style={styles.checkItem}>
-                <View style={styles.checkCircle}>
+            <Text style={styles.checklistHeader}>Verification Steps</Text>
+            {checklistItems.map((item, index) => (
+              <View
+                key={item.id}
+                style={[
+                  styles.checkRow,
+                  index < checklistItems.length - 1 && styles.checkRowBorder,
+                ]}
+              >
+                <View style={styles.checkIconBox}>
                   <Text style={styles.checkMark}>✓</Text>
                 </View>
-                <Text style={styles.checkText}>{item.title}</Text>
+                <Text style={styles.checkTitle}>{item.title}</Text>
               </View>
             ))}
           </View>
         </ScrollView>
 
-        {/* Continue Button */}
+        {/* CTA: Full-width "Continue" gradient pill button */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.continueBtn}
@@ -137,7 +149,7 @@ export default function CustomerAadhaarScreen({ onContinue, onBack }) {
             activeOpacity={0.88}
           >
             {loading ? (
-              <ActivityIndicator color="#ffffff" />
+              <ActivityIndicator color="#ffffff" size="small" />
             ) : (
               <Text style={styles.continueBtnText}>Continue</Text>
             )}
@@ -151,56 +163,59 @@ export default function CustomerAadhaarScreen({ onContinue, onBack }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
   container: {
     flex: 1,
-    paddingHorizontal: 22,
+    paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   backArrow: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#1d4ed8',
+    color: '#0f2c6e',
     marginTop: -3,
   },
   scroll: {
     flexGrow: 1,
+    paddingBottom: 16,
   },
   header: {
-    marginBottom: 22,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748b',
-    marginTop: 6,
+    color: '#5f7da6',
+    marginTop: 4,
     fontWeight: '500',
   },
   cardGraphic: {
-    backgroundColor: '#ffffff',
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    ...SHADOWS.medium,
-    marginBottom: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    ...SHADOWS.md,
+    marginBottom: 16,
   },
   cardHeaderRow: {
     flexDirection: 'row',
@@ -209,8 +224,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   cardChip: {
-    width: 32,
-    height: 24,
+    width: 34,
+    height: 26,
     borderRadius: 6,
     backgroundColor: '#fef08a',
     borderWidth: 1,
@@ -221,11 +236,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff7ed',
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#ffedd5',
-    gap: 4,
+    gap: 5,
   },
   aadhaarSun: {
     fontSize: 14,
@@ -243,133 +258,166 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   cardAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    backgroundColor: '#e0f2fe',
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: '#eff6ff',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#dbeafe',
   },
   cardAvatarEmoji: {
-    fontSize: 26,
+    fontSize: 24,
   },
   cardLines: {
     flex: 1,
     gap: 6,
   },
   cardLineWide: {
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: '#cbd5e1',
-    width: '85%',
+    height: 7,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 4,
+    width: '75%',
   },
   cardLineMed: {
-    height: 8,
+    height: 7,
+    backgroundColor: '#f1f5f9',
     borderRadius: 4,
-    backgroundColor: '#e2e8f0',
-    width: '65%',
+    width: '55%',
   },
   cardLineSmall: {
     height: 7,
+    backgroundColor: '#f8fafc',
     borderRadius: 4,
-    backgroundColor: '#f1f5f9',
-    width: '45%',
+    width: '40%',
   },
   cardFooter: {
-    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
+    paddingTop: 12,
     alignItems: 'center',
   },
   cardDigits: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
     letterSpacing: 3,
   },
   inputCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.sm,
     marginBottom: 16,
-    ...SHADOWS.small,
   },
   inputLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#0f294a',
+    color: '#0f2c6e',
     marginBottom: 8,
   },
-  aadhaarInput: {
-    backgroundColor: '#f8faff',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#2563eb',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1d4ed8',
-    letterSpacing: 2,
-    textAlign: 'center',
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 8,
-  },
-  checklistCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    gap: 14,
-    ...SHADOWS.small,
-  },
-  checkItem: {
+  inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderRadius: 16,
+    borderWidth: 1.2,
+    borderColor: '#dbeafe',
+    paddingHorizontal: 14,
+    height: 52,
+  },
+  inputBoxError: {
+    borderColor: '#ef4444',
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f2c6e',
+    letterSpacing: 1.5,
+  },
+  shieldPill: {
+    backgroundColor: '#ecfdf5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  shieldPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#16a34a',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#ef4444',
+    marginTop: 6,
+    fontWeight: '600',
+  },
+  checklistCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.sm,
+    marginBottom: 16,
+  },
+  checklistHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#5f7da6',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
     gap: 12,
   },
-  checkCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  checkRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(226, 232, 240, 0.6)',
+  },
+  checkIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#ecfdf5',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#10b981',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
   },
   checkMark: {
-    color: '#10b981',
     fontSize: 14,
     fontWeight: '900',
+    color: '#16a34a',
   },
-  checkText: {
+  checkTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   footer: {
-    paddingTop: 12,
+    paddingTop: 8,
   },
   continueBtn: {
     backgroundColor: '#2563eb',
-    borderRadius: 16,
-    paddingVertical: 15,
+    borderRadius: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.buttonGlow,
+    ...SHADOWS.primaryBtn,
   },
   continueBtnText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
 });

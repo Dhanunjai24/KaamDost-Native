@@ -31,9 +31,9 @@ export default function ServiceCategoriesScreen({ onBack, onSelectService }) {
     {
       id: 'plumbing',
       title: 'Plumbing',
-      subtitle: 'Repair • Pipe Fitting',
+      subtitle: 'Repair • Pipe Fitting • Tap Fixing',
       icon: '🔧',
-      iconBg: '#fefce8',
+      iconBg: '#f0fdfa',
       price: '₹849',
       rating: '4.9 (1.8k)',
       duration: '1-2 hrs',
@@ -79,7 +79,7 @@ export default function ServiceCategoriesScreen({ onBack, onSelectService }) {
     {
       id: 'appliance',
       title: 'Appliance Repair',
-      subtitle: 'AC • Fridge • TV • Washing',
+      subtitle: 'AC • Fridge • TV • Washing Machine',
       icon: '📺',
       iconBg: '#eff6ff',
       price: '₹899',
@@ -95,46 +95,40 @@ export default function ServiceCategoriesScreen({ onBack, onSelectService }) {
     {
       id: 'pest_control',
       title: 'Pest Control',
-      subtitle: 'General • Termite • Rodent',
+      subtitle: 'General • Termite • Cockroach • Rodent',
       icon: '🛡️',
       iconBg: '#fef2f2',
       price: '₹1,099',
       rating: '4.8 (950)',
-      duration: '2-3 hrs',
+      duration: '1-2 hrs',
       included: [
-        'Herbal gel application',
-        'Termite & cockroach eradication',
-        'Rodent trap placement',
-        'Sanitization spray',
+        'Odorless chemical treatment',
+        'Kitchen drain disinfection',
+        'Wall crevice spray',
+        'Post-service guarantee certificate',
       ],
     },
     {
       id: 'painting',
       title: 'Painting',
-      subtitle: 'Interior • Exterior',
+      subtitle: 'Interior • Exterior • Wall Decor',
       icon: '🎨',
-      iconBg: '#fff7ed',
-      price: '₹950',
+      iconBg: '#f3e8ff',
+      price: '₹1,499',
       rating: '4.9 (1.5k)',
       duration: 'Full Day',
       included: [
         'Surface putty & sanding',
-        'Double coat premium emulsion',
-        'Ceiling & border finishing',
-        'Post-painting cleanup',
+        'Double coat premium primer',
+        'Royal emulsion paint finish',
+        'Furniture masking & floor cleanup',
       ],
     },
   ];
 
-  const handleChoose = (cat) => {
-    if (onSelectService) {
-      onSelectService(cat);
-    }
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
       <View style={styles.container}>
         {/* Header matching screen_10 */}
         <View style={styles.header}>
@@ -145,21 +139,18 @@ export default function ServiceCategoriesScreen({ onBack, onSelectService }) {
           <View style={{ width: 42 }} />
         </View>
 
-        {/* Categories List matching screen_10 */}
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        {/* Stack of distinct frosted glass row cards */}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {categories.map((cat) => (
             <TouchableOpacity
               key={cat.id}
-              style={styles.categoryCard}
-              onPress={() => handleChoose(cat)}
-              activeOpacity={0.8}
+              style={styles.card}
+              onPress={() => onSelectService && onSelectService(cat)}
+              activeOpacity={0.78}
             >
               <View style={styles.cardLeft}>
                 <View style={[styles.iconCircle, { backgroundColor: cat.iconBg }]}>
-                  <Text style={styles.iconEmoji}>{cat.icon}</Text>
+                  <Text style={styles.catEmoji}>{cat.icon}</Text>
                 </View>
                 <View style={styles.textCol}>
                   <Text style={styles.catTitle}>{cat.title}</Text>
@@ -179,7 +170,7 @@ export default function ServiceCategoriesScreen({ onBack, onSelectService }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
   container: {
     flex: 1,
@@ -190,60 +181,66 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 18,
+    paddingVertical: 10,
+    marginBottom: 8,
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   backArrow: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#1d4ed8',
+    color: '#0f2c6e',
     marginTop: -3,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   scrollContent: {
-    paddingBottom: 30,
-    gap: 12,
+    paddingVertical: 6,
+    paddingBottom: 40,
   },
-  categoryCard: {
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 22,
+    paddingVertical: 15,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#ffffff',
-    borderRadius: 22,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    ...SHADOWS.small,
+    marginBottom: 12,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.sm,
   },
   cardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    paddingRight: 10,
   },
   iconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.sm,
   },
-  iconEmoji: {
-    fontSize: 24,
+  catEmoji: {
+    fontSize: 22,
   },
   textCol: {
     flex: 1,
@@ -251,17 +248,18 @@ const styles = StyleSheet.create({
   catTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
+    marginBottom: 3,
   },
   catSubtitle: {
     fontSize: 12,
-    color: '#64748b',
-    marginTop: 3,
+    color: '#5f7da6',
     fontWeight: '500',
   },
   chevron: {
-    fontSize: 26,
+    fontSize: 24,
     color: '#94a3b8',
     fontWeight: '600',
+    marginLeft: 10,
   },
 });

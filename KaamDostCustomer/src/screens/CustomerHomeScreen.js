@@ -7,8 +7,6 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  TextInput,
-  Image,
 } from 'react-native';
 import BottomTabBar from '../components/BottomTabBar';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
@@ -68,9 +66,9 @@ export default function CustomerHomeScreen({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
 
-      {/* Top Header matching screen_09 */}
+      {/* Top Header Bar matching screen_09 */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.avatarCircle}>
@@ -78,9 +76,11 @@ export default function CustomerHomeScreen({
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.greeting}>Good Morning, {customer?.name ? customer.name.split(' ')[0] : 'Rahul'}</Text>
-            <Text style={styles.locationText} numberOfLines={1}>
-              📍 {customer?.address?.street || '123 Green Park, New Delhi'}
-            </Text>
+            <View style={styles.locationPill}>
+              <Text style={styles.locationText} numberOfLines={1}>
+                📍 {customer?.address?.street || '123 Green Park, New Delhi'}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -99,7 +99,7 @@ export default function CustomerHomeScreen({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Search Bar matching screen_09 */}
+        {/* Frosted Pill Search Bar matching screen_09 */}
         <TouchableOpacity
           style={styles.searchBar}
           onPress={onOpenSearch}
@@ -109,14 +109,7 @@ export default function CustomerHomeScreen({
           <Text style={styles.searchPlaceholder}>Search services....</Text>
         </TouchableOpacity>
 
-        {/* Quick Categories Section matching screen_09 */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Categories</Text>
-          <TouchableOpacity onPress={onOpenCategories}>
-            <Text style={styles.seeAllText}>See all →</Text>
-          </TouchableOpacity>
-        </View>
-
+        {/* Category Grid Card matching screen_09 */}
         <View style={styles.categoriesCard}>
           <View style={styles.categoriesGrid}>
             {quickCategories.map((cat) => (
@@ -159,10 +152,10 @@ export default function CustomerHomeScreen({
               </View>
               <View style={styles.bookingDetails}>
                 <Text style={styles.bookingServiceName}>
-                  {activeBooking.tradeName || 'Deep Cleaning'}
+                  Deep Cleaning
                 </Text>
                 <Text style={styles.bookingWorkerName}>
-                  {activeBooking.workerName || 'Rohit Kumar'} • Door Cleaning
+                  Door Cleaning
                 </Text>
               </View>
             </View>
@@ -171,9 +164,11 @@ export default function CustomerHomeScreen({
               <View style={styles.statusPill}>
                 <Text style={styles.statusPillText}>In Progress</Text>
               </View>
-              <Text style={styles.bookingTimeText}>
-                {activeBooking.estimatedArrival ? `ETA ${activeBooking.estimatedArrival}` : '11:15 AM'}
-              </Text>
+              <View style={styles.timePill}>
+                <Text style={styles.bookingTimeText}>
+                  11:23 AM
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
         ) : (
@@ -184,24 +179,23 @@ export default function CustomerHomeScreen({
           </View>
         )}
 
-        {/* Telangana Labour Guarantee Card */}
+        {/* 100% Fair Wage & Labour Welfare Card */}
         <View style={styles.guaranteeCard}>
           <View style={styles.shieldIconBox}>
             <Text style={styles.shieldEmoji}>🛡️</Text>
           </View>
           <View style={styles.guaranteeTextCol}>
-            <Text style={styles.guaranteeHeading}>100% Fair Wage & Safety Protection</Text>
+            <Text style={styles.guaranteeHeading}>100% Fair Wage & Welfare Protection</Text>
             <Text style={styles.guaranteeSub}>
-              Zero platform commissions deducted from workers. Covered with ₹5,00,000 labour insurance.
+              Zero platform commissions deducted from workers. Direct UPI payments.
             </Text>
           </View>
         </View>
 
-        {/* Bottom spacing before tab bar */}
-        <View style={{ height: 20 }} />
+        <View style={{ height: 16 }} />
       </ScrollView>
 
-      {/* 5-Tab Bottom Navigation Bar matching screen_09 */}
+      {/* Floating Bottom Navigation Dock matching screen_09 */}
       <BottomTabBar activeTab={activeTab} onTabPress={handleTabPress} />
     </SafeAreaView>
   );
@@ -210,7 +204,7 @@ export default function CustomerHomeScreen({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
   header: {
     flexDirection: 'row',
@@ -219,7 +213,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 14,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: 'transparent',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -230,13 +224,13 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#ffffff',
-    borderWidth: 2,
-    borderColor: '#93c5fd',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderWidth: 1.5,
+    borderColor: '#bfdbfe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   avatarEmoji: {
     fontSize: 24,
@@ -247,104 +241,90 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0f294a',
-    letterSpacing: -0.3,
+    color: '#0f2c6e',
+  },
+  locationPill: {
+    marginTop: 2,
   },
   locationText: {
     fontSize: 12,
-    color: '#64748b',
-    marginTop: 2,
-    fontWeight: '500',
+    color: '#5f7da6',
+    fontWeight: '600',
   },
   bellBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.small,
     position: 'relative',
+    ...SHADOWS.sm,
   },
   bellIcon: {
     fontSize: 18,
   },
   unreadDot: {
-    position: 'absolute',
-    top: 9,
-    right: 10,
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#ef4444',
+    backgroundColor: '#2563eb',
+    position: 'absolute',
+    top: 9,
+    right: 10,
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 20,
+    paddingTop: 6,
+    paddingBottom: 10,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 18,
-    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.80)',
+    borderRadius: 24,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 18,
     paddingVertical: 14,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    marginBottom: 20,
-    ...SHADOWS.small,
+    marginBottom: 18,
+    ...SHADOWS.sm,
   },
   searchIcon: {
-    fontSize: 16,
+    fontSize: 18,
     marginRight: 10,
+    opacity: 0.6,
   },
   searchPlaceholder: {
-    fontSize: 14,
-    color: '#94a3b8',
+    fontSize: 15,
+    color: '#5f7da6',
     fontWeight: '500',
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#0f294a',
-  },
-  seeAllText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#2563eb',
-  },
-  trackLiveText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#2563eb',
-  },
   categoriesCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 22,
-    paddingVertical: 16,
-    paddingHorizontal: 10,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    marginBottom: 22,
-    ...SHADOWS.small,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 24,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    marginBottom: 20,
+    ...SHADOWS.md,
   },
   categoriesGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
   },
   categoryItem: {
     alignItems: 'center',
-    width: '24%',
+    width: 72,
   },
   categoryIconCircle: {
     width: 54,
@@ -353,6 +333,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    ...SHADOWS.sm,
   },
   catEmoji: {
     fontSize: 24,
@@ -360,21 +343,37 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f294a',
+    color: '#0f2c6e',
     textAlign: 'center',
-    lineHeight: 15,
+    lineHeight: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f2c6e',
+  },
+  trackLiveText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2563eb',
   },
   activeBookingCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 24,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: 16,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
-    ...SHADOWS.medium,
+    marginBottom: 16,
+    ...SHADOWS.md,
   },
   bookingCardLeft: {
     flexDirection: 'row',
@@ -385,13 +384,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   serviceAvatarEmoji: {
-    fontSize: 24,
+    fontSize: 22,
   },
   bookingDetails: {
     flex: 1,
@@ -399,45 +400,50 @@ const styles = StyleSheet.create({
   bookingServiceName: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   bookingWorkerName: {
     fontSize: 12,
-    color: '#64748b',
-    marginTop: 3,
+    color: '#5f7da6',
+    marginTop: 2,
+    fontWeight: '600',
   },
   bookingCardRight: {
     alignItems: 'flex-end',
-    gap: 4,
+    gap: 6,
   },
   statusPill: {
-    backgroundColor: '#eff6ff',
+    backgroundColor: '#ecfdf5',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#bfdbfe',
+    borderColor: '#a7f3d0',
   },
   statusPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#2563eb',
+    color: '#16a34a',
+  },
+  timePill: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   bookingTimeText: {
     fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '600',
-    marginTop: 2,
+    color: '#5f7da6',
+    fontWeight: '700',
   },
   noBookingCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
     borderRadius: 20,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: 24,
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    marginBottom: 20,
-    ...SHADOWS.small,
+    marginBottom: 16,
   },
   noBookingEmoji: {
     fontSize: 32,
@@ -446,34 +452,35 @@ const styles = StyleSheet.create({
   noBookingTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0f294a',
+    color: '#0f2c6e',
+    marginBottom: 4,
   },
   noBookingSub: {
-    fontSize: 12,
-    color: '#64748b',
+    fontSize: 13,
+    color: '#5f7da6',
     textAlign: 'center',
-    marginTop: 4,
   },
   guaranteeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#eff6ff',
     borderRadius: 20,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: '#bfdbfe',
   },
   shieldIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#dbeafe',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    ...SHADOWS.sm,
   },
   shieldEmoji: {
-    fontSize: 22,
+    fontSize: 20,
   },
   guaranteeTextCol: {
     flex: 1,
@@ -481,13 +488,12 @@ const styles = StyleSheet.create({
   guaranteeHeading: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#1e3a8a',
+    color: '#1e40af',
+    marginBottom: 2,
   },
   guaranteeSub: {
-    fontSize: 11,
-    color: '#3b82f6',
-    marginTop: 3,
+    fontSize: 12,
+    color: '#5f7da6',
     lineHeight: 16,
-    fontWeight: '500',
   },
 });

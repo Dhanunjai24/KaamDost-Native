@@ -29,7 +29,7 @@ export default function LiveSelfieScreen({ onContinue, onBack }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
       <View style={styles.container}>
         {/* Top Back Navigation Arrow */}
         <TouchableOpacity
@@ -46,29 +46,26 @@ export default function LiveSelfieScreen({ onContinue, onBack }) {
           <Text style={styles.subtitle}>Take a clear selfie for verification</Text>
         </View>
 
-        {/* Circular Face Viewfinder matching screen_07 */}
+        {/* Center View: Circular selfie frame with dashed blue progress ring */}
         <View style={styles.viewfinderContainer}>
-          <View style={styles.outerRing}>
-            <View style={styles.progressTickTop} />
-            <View style={styles.progressTickRight} />
-            <View style={styles.progressTickBottom} />
-            <View style={styles.progressTickLeft} />
-
-            <View style={styles.faceCircle}>
-              <View style={styles.avatarMockup}>
-                <Text style={styles.avatarEmoji}>👨</Text>
-              </View>
-              {captured && (
-                <View style={styles.capturedBadge}>
-                  <Text style={styles.capturedCheck}>✓</Text>
+          <View style={styles.ringOffset}>
+            <View style={styles.dashedRing}>
+              <View style={styles.faceCircle}>
+                <View style={styles.avatarMockup}>
+                  <Text style={styles.avatarEmoji}>👨</Text>
                 </View>
-              )}
+                {captured && (
+                  <View style={styles.capturedBadge}>
+                    <Text style={styles.capturedCheck}>✓</Text>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
         </View>
 
-        {/* Shutter Camera Button matching screen_07 */}
-        <View style={styles.shutterContainer}>
+        {/* Shutter Camera Button & Microcopy */}
+        <View style={styles.shutterSection}>
           <TouchableOpacity
             style={styles.shutterBtn}
             onPress={handleCapture}
@@ -87,7 +84,7 @@ export default function LiveSelfieScreen({ onContinue, onBack }) {
           </Text>
         </View>
 
-        {/* Skip / Continue fallback */}
+        {/* Footer CTA */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.continueBtn}
@@ -95,7 +92,7 @@ export default function LiveSelfieScreen({ onContinue, onBack }) {
             activeOpacity={0.88}
           >
             <Text style={styles.continueBtnText}>
-              {captured ? 'Proceed →' : 'Use Existing Photo / Continue'}
+              {captured ? 'Continue →' : 'Continue'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -107,11 +104,11 @@ export default function LiveSelfieScreen({ onContinue, onBack }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
   container: {
     flex: 1,
-    paddingHorizontal: 22,
+    paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 24,
     justifyContent: 'space-between',
@@ -120,31 +117,33 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
-    ...SHADOWS.small,
+    marginBottom: 8,
+    ...SHADOWS.sm,
   },
   backArrow: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#1d4ed8',
+    color: '#0f2c6e',
     marginTop: -3,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748b',
-    marginTop: 6,
+    color: '#5f7da6',
+    marginTop: 4,
     fontWeight: '500',
   },
   viewfinderContainer: {
@@ -152,60 +151,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: 20,
   },
-  outerRing: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+  ringOffset: {
+    padding: 6,
+    borderRadius: 140,
+    borderWidth: 2,
+    borderColor: 'rgba(59, 130, 246, 0.35)',
+    borderStyle: 'dashed',
+  },
+  dashedRing: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
     borderWidth: 3,
-    borderColor: '#93c5fd',
+    borderColor: '#3b82f6',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    ...SHADOWS.large,
-  },
-  progressTickTop: {
-    position: 'absolute',
-    top: -5,
-    width: 20,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#2563eb',
-  },
-  progressTickRight: {
-    position: 'absolute',
-    right: -5,
-    width: 6,
-    height: 20,
-    borderRadius: 3,
-    backgroundColor: '#2563eb',
-  },
-  progressTickBottom: {
-    position: 'absolute',
-    bottom: -5,
-    width: 20,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#2563eb',
-  },
-  progressTickLeft: {
-    position: 'absolute',
-    left: -5,
-    width: 6,
-    height: 20,
-    borderRadius: 3,
-    backgroundColor: '#2563eb',
+    backgroundColor: 'rgba(255, 255, 255, 0.50)',
+    ...SHADOWS.md,
   },
   faceCircle: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: '#e2e8f0',
-    overflow: 'hidden',
+    width: 210,
+    height: 210,
+    borderRadius: 105,
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#dbeafe',
+    position: 'relative',
+    overflow: 'hidden',
   },
   avatarMockup: {
     alignItems: 'center',
@@ -216,61 +190,55 @@ const styles = StyleSheet.create({
   },
   capturedBadge: {
     position: 'absolute',
-    bottom: 12,
-    backgroundColor: '#10b981',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
+    bottom: 16,
+    backgroundColor: '#16a34a',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   capturedCheck: {
     color: '#ffffff',
-    fontSize: 20,
     fontWeight: '900',
+    fontSize: 16,
   },
-  shutterContainer: {
+  shutterSection: {
     alignItems: 'center',
-    marginVertical: 10,
+    marginBottom: 10,
   },
   shutterBtn: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#2563eb',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: '#dbeafe',
-    ...SHADOWS.buttonGlow,
     marginBottom: 14,
+    ...SHADOWS.buttonGlow,
   },
   cameraIcon: {
-    fontSize: 28,
+    fontSize: 26,
   },
   lightingHint: {
     fontSize: 14,
-    color: '#1d4ed8',
     fontWeight: '600',
+    color: '#5f7da6',
+    textAlign: 'center',
   },
   footer: {
-    paddingTop: 10,
+    paddingTop: 8,
   },
   continueBtn: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1.5,
-    borderColor: '#bfdbfe',
-    borderRadius: 16,
-    paddingVertical: 14,
+    backgroundColor: '#2563eb',
+    borderRadius: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.small,
+    ...SHADOWS.primaryBtn,
   },
   continueBtnText: {
-    color: '#2563eb',
-    fontSize: 15,
-    fontWeight: '700',
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });

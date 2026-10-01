@@ -24,7 +24,7 @@ export default function PriceDetailsScreen({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
       <View style={styles.container}>
         {/* Header matching screen_15 */}
         <View style={styles.header}>
@@ -35,7 +35,7 @@ export default function PriceDetailsScreen({
           <View style={{ width: 42 }} />
         </View>
 
-        {/* Bill Breakdown Card matching screen_15 */}
+        {/* Breakdown Card: Frosted card with clean pricing line items */}
         <View style={styles.card}>
           <View style={styles.row}>
             <Text style={styles.itemLabel}>Service Amount</Text>
@@ -49,7 +49,7 @@ export default function PriceDetailsScreen({
 
           <View style={styles.row}>
             <Text style={styles.itemLabel}>Discount</Text>
-            <Text style={styles.discountValue}>-₹{bill.discount}</Text>
+            <Text style={styles.discountValue}>- ₹{bill.discount}</Text>
           </View>
 
           <View style={styles.row}>
@@ -65,7 +65,7 @@ export default function PriceDetailsScreen({
           </View>
         </View>
 
-        {/* Proceed to Book CTA matching screen_15 */}
+        {/* Primary CTA: "Proceed to Book" button */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.proceedBtn}
@@ -83,7 +83,7 @@ export default function PriceDetailsScreen({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
   container: {
     flex: 1,
@@ -96,36 +96,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    paddingVertical: 10,
+    marginBottom: 20,
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   backArrow: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#1d4ed8',
+    color: '#0f2c6e',
     marginTop: -3,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
     borderRadius: 24,
     padding: 22,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    ...SHADOWS.medium,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.md,
     gap: 16,
+    marginVertical: 'auto',
   },
   row: {
     flexDirection: 'row',
@@ -135,21 +139,21 @@ const styles = StyleSheet.create({
   itemLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#475569',
+    color: '#5f7da6',
   },
   itemValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   discountValue: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#10b981',
+    color: '#16a34a',
   },
   divider: {
     height: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(226, 232, 240, 0.7)',
     marginVertical: 4,
   },
   totalRow: {
@@ -161,28 +165,28 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   totalValue: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#1d4ed8',
+    color: '#0f2c6e',
   },
   footer: {
     paddingTop: 10,
   },
   proceedBtn: {
     backgroundColor: '#2563eb',
-    borderRadius: 16,
-    paddingVertical: 15,
+    borderRadius: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.buttonGlow,
+    ...SHADOWS.primaryBtn,
   },
   proceedBtnText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
 });

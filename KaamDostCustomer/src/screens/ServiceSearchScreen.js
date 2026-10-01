@@ -15,15 +15,15 @@ export default function ServiceSearchScreen({ onBack, onSelectService }) {
   const [query, setQuery] = useState('');
 
   const popularSearches = [
-    { id: 'cleaning', title: 'Home Cleaning', icon: '🧹', price: '₹999' },
-    { id: 'plumbing', title: 'Plumbing', icon: '🔧', price: '₹849' },
-    { id: 'electrician', title: 'Electrician', icon: '⚡', price: '₹899' },
+    'Home Cleaning',
+    'Plumbing',
+    'Electrician',
   ];
 
   const recentSearches = [
-    { id: 'r1', title: 'Deep Cleaning' },
-    { id: 'r2', title: 'AC Repair' },
-    { id: 'r3', title: 'Bathroom Cleaning' },
+    { id: 'r1', title: 'Deep Cleaning', icon: '🎯' },
+    { id: 'r2', title: 'AC Repair', icon: '🕒' },
+    { id: 'r3', title: 'Bathroom Cleaning', icon: '🕒' },
   ];
 
   const handlePick = (term) => {
@@ -48,7 +48,7 @@ export default function ServiceSearchScreen({ onBack, onSelectService }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
       <View style={styles.container}>
         {/* Header matching screen_11 */}
         <View style={styles.header}>
@@ -59,12 +59,12 @@ export default function ServiceSearchScreen({ onBack, onSelectService }) {
           <View style={{ width: 42 }} />
         </View>
 
-        {/* Search Input Box */}
+        {/* Active Frosted Search Input Box */}
         <View style={styles.searchBox}>
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search service..."
+            placeholder="Search services...."
             placeholderTextColor="#94a3b8"
             value={query}
             onChangeText={setQuery}
@@ -82,14 +82,14 @@ export default function ServiceSearchScreen({ onBack, onSelectService }) {
           <View style={styles.section}>
             <Text style={styles.sectionHeading}>Popular Searches</Text>
             <View style={styles.pillsRow}>
-              {popularSearches.map((item) => (
+              {popularSearches.map((title, idx) => (
                 <TouchableOpacity
-                  key={item.id}
+                  key={idx}
                   style={styles.popularPill}
-                  onPress={() => handlePick(item.title)}
+                  onPress={() => handlePick(title)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.popularPillText}>{item.title}</Text>
+                  <Text style={styles.popularPillText}>{title}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -99,18 +99,18 @@ export default function ServiceSearchScreen({ onBack, onSelectService }) {
           <View style={styles.section}>
             <Text style={styles.sectionHeading}>Recent Searches</Text>
             <View style={styles.recentList}>
-              {recentSearches.map((rec) => (
+              {recentSearches.map((item) => (
                 <TouchableOpacity
-                  key={rec.id}
+                  key={item.id}
                   style={styles.recentItem}
-                  onPress={() => handlePick(rec.title)}
+                  onPress={() => handlePick(item.title)}
                   activeOpacity={0.75}
                 >
                   <View style={styles.recentLeft}>
-                    <Text style={styles.compassIcon}>🧭</Text>
-                    <Text style={styles.recentTitle}>{rec.title}</Text>
+                    <Text style={styles.clockIcon}>{item.icon}</Text>
+                    <Text style={styles.recentText}>{item.title}</Text>
                   </View>
-                  <Text style={styles.chevron}>›</Text>
+                  <Text style={styles.recentArrow}>›</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -124,7 +124,7 @@ export default function ServiceSearchScreen({ onBack, onSelectService }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
   container: {
     flex: 1,
@@ -135,118 +135,119 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 18,
+    paddingVertical: 10,
+    marginBottom: 10,
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   backArrow: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#1d4ed8',
+    color: '#0f2c6e',
     marginTop: -3,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    borderRadius: 22,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    marginBottom: 24,
-    ...SHADOWS.small,
+    paddingVertical: 14,
+    marginBottom: 20,
+    ...SHADOWS.sm,
   },
   searchIcon: {
-    fontSize: 16,
+    fontSize: 18,
     marginRight: 10,
+    opacity: 0.6,
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
+    color: '#0f2c6e',
     fontWeight: '600',
-    color: '#0f294a',
-    paddingVertical: 4,
   },
   clearText: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#94a3b8',
     paddingHorizontal: 6,
   },
   scrollContent: {
-    paddingBottom: 30,
+    paddingBottom: 40,
   },
   section: {
-    marginBottom: 28,
+    marginBottom: 26,
   },
   sectionHeading: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#0f294a',
-    marginBottom: 14,
+    color: '#0f2c6e',
+    marginBottom: 12,
   },
   pillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   popularPill: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderWidth: 1.5,
-    borderColor: '#93c5fd',
-    ...SHADOWS.small,
+    paddingVertical: 8,
+    ...SHADOWS.sm,
   },
   popularPillText: {
-    fontSize: 14,
-    fontWeight: '700',
     color: '#2563eb',
+    fontSize: 12,
+    fontWeight: '700',
   },
   recentList: {
-    backgroundColor: '#ffffff',
-    borderRadius: 22,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    ...SHADOWS.small,
+    gap: 10,
   },
   recentItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 18,
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    paddingHorizontal: 16,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.sm,
   },
   recentLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  compassIcon: {
-    fontSize: 18,
+  clockIcon: {
+    fontSize: 16,
   },
-  recentTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0f294a',
+  recentText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f2c6e',
   },
-  chevron: {
+  recentArrow: {
     fontSize: 20,
     color: '#94a3b8',
     fontWeight: '600',

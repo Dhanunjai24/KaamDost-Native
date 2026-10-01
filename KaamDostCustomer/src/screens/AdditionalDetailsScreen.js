@@ -20,7 +20,7 @@ export default function AdditionalDetailsScreen({
   onOpenAddressPicker,
   onContinue,
 }) {
-  const [serviceType, setServiceType] = useState('Deep Cleaning');
+  const [serviceType, setServiceType] = useState('Regular Cleaning');
   const [specialInstructions, setSpecialInstructions] = useState('');
 
   const currentAddress = customerAddress || {
@@ -40,7 +40,7 @@ export default function AdditionalDetailsScreen({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
@@ -95,11 +95,9 @@ export default function AdditionalDetailsScreen({
                       onPress={() => setServiceType(type)}
                       activeOpacity={0.8}
                     >
-                      {isSelected && (
-                        <View style={styles.selectedDot}>
-                          <View style={styles.selectedDotInner} />
-                        </View>
-                      )}
+                      <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                        {isSelected && <View style={styles.radioInner} />}
+                      </View>
                       <Text
                         style={[
                           styles.toggleText,
@@ -117,10 +115,10 @@ export default function AdditionalDetailsScreen({
             {/* Section 3: Special Instructions matching screen_13 */}
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>Special Instructions</Text>
-              <View style={styles.instructionsBox}>
+              <View style={styles.textareaContainer}>
                 <TextInput
-                  style={styles.instructionsInput}
-                  placeholder="Eg. Keep products, Documents."
+                  style={styles.textarea}
+                  placeholder="Enter any specific requests or instructions for the worker..."
                   placeholderTextColor="#94a3b8"
                   multiline
                   numberOfLines={4}
@@ -132,7 +130,7 @@ export default function AdditionalDetailsScreen({
             </View>
           </ScrollView>
 
-          {/* Bottom Continue Button matching screen_13 */}
+          {/* Sticky Bottom CTA: "Continue" */}
           <View style={styles.footer}>
             <TouchableOpacity
               style={styles.continueBtn}
@@ -151,7 +149,7 @@ export default function AdditionalDetailsScreen({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
   container: {
     flex: 1,
@@ -164,66 +162,69 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    paddingVertical: 10,
+    marginBottom: 8,
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   backArrow: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#1d4ed8',
+    color: '#0f2c6e',
     marginTop: -3,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0f294a',
+    color: '#0f2c6e',
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#0f294a',
-    marginBottom: 12,
+    color: '#0f2c6e',
+    marginBottom: 10,
   },
   addressCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    ...SHADOWS.small,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.sm,
   },
   addressLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    paddingRight: 10,
   },
   addressIconBox: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   addressEmoji: {
     fontSize: 20,
@@ -233,18 +234,20 @@ const styles = StyleSheet.create({
   },
   addressLabel: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#0f294a',
+    fontWeight: '800',
+    color: '#0f2c6e',
+    marginBottom: 2,
   },
   addressStreet: {
     fontSize: 13,
-    color: '#64748b',
-    marginTop: 2,
+    color: '#5f7da6',
+    fontWeight: '500',
   },
   chevron: {
     fontSize: 24,
     color: '#94a3b8',
     fontWeight: '600',
+    marginLeft: 10,
   },
   toggleRow: {
     flexDirection: 'row',
@@ -255,72 +258,77 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 20,
     paddingVertical: 14,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    gap: 6,
-    ...SHADOWS.small,
+    paddingHorizontal: 12,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    gap: 8,
+    ...SHADOWS.sm,
   },
   togglePillSelected: {
-    borderColor: '#2563eb',
     backgroundColor: '#eff6ff',
-  },
-  selectedDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1.5,
     borderColor: '#2563eb',
+    borderWidth: 1.5,
+  },
+  radioCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#94a3b8',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  selectedDotInner: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  radioCircleSelected: {
+    borderColor: '#2563eb',
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#2563eb',
   },
   toggleText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#64748b',
+    color: '#5f7da6',
   },
   toggleTextSelected: {
     color: '#2563eb',
     fontWeight: '800',
   },
-  instructionsBox: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#e0edfd',
-    padding: 14,
-    minHeight: 110,
-    ...SHADOWS.small,
+  textareaContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.sm,
   },
-  instructionsInput: {
+  textarea: {
+    height: 90,
     fontSize: 14,
-    color: '#0f294a',
+    color: '#0f2c6e',
     fontWeight: '500',
     lineHeight: 20,
   },
   footer: {
-    paddingTop: 10,
+    paddingTop: 8,
   },
   continueBtn: {
     backgroundColor: '#2563eb',
-    borderRadius: 16,
-    paddingVertical: 15,
+    borderRadius: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.buttonGlow,
+    ...SHADOWS.primaryBtn,
   },
   continueBtnText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
 });

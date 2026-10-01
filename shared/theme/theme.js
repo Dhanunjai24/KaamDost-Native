@@ -1,25 +1,29 @@
-// KaamDost - Modern Blue Design System Tokens (2026 Redesign)
+// KAAMDOST — Glassmorphic Design System Tokens
 export const COLORS = {
   // Brand Blue Primary Palette
-  primary: '#2563eb',        // Electric Royal Blue
-  primaryDark: '#1d4ed8',    // Deep Royal Blue
-  primaryLight: '#eff6ff',   // Soft Ice Blue
-  primarySoft: '#dbeafe',    // Light Sky Tint
+  primary: '#2563eb',             // Electric Royal Blue
+  primaryDark: '#1d4ed8',         // Deep Royal Blue
+  primaryGradientStart: '#3b82f6',
+  primaryGradientEnd: '#1d4ed8',
+  primaryLight: '#eff6ff',        // Soft Ice Blue
+  primarySoft: '#dbeafe',         // Light Sky Tint
   primaryGlow: 'rgba(37, 99, 235, 0.18)',
 
   // Brand Orange Accent (From KD Logo)
   brandOrange: '#ff6b00',
   brandOrangeLight: '#fff7ed',
 
-  // Deep Navy for Headings & Text
-  secondary: '#0f294a',      // Rich Midnight Navy
-  secondaryLight: '#1e3a8a', // Royal Slate
-  secondaryMuted: '#334155',
+  // Deep Royal Navy for Headings & Text (#0f2c6e / #133072)
+  secondary: '#0f2c6e',
+  heading: '#0f2c6e',
+  subtitle: '#5f7da6',           // Medium muted slate-blue
+  secondaryMuted: '#5f7da6',
 
   // Status & Verification Greens
-  accent: '#10b981',         // Verified Emerald Green
+  accent: '#16a34a',              // Vibrant Verified Green
   accentLight: '#ecfdf5',
-  accentDark: '#059669',
+  accentDark: '#15803d',
+  verifiedGreen: '#16a34a',
 
   // Warnings & Alerts
   warning: '#f59e0b',
@@ -29,61 +33,95 @@ export const COLORS = {
   info: '#3b82f6',
   infoLight: '#eff6ff',
 
-  // Background & Surfaces
-  background: '#f0f7ff',     // Ambient Soft Blue
-  backgroundGradientTop: '#e0efff',
-  backgroundGradientBottom: '#f8faff',
+  // Canvas & Background
+  background: '#f0f6ff',          // Ambient Sky Tint
+  backgroundCanvas: '#eaf2ff',
+  backgroundGradientTop: '#eaf2ff',
+  backgroundGradientBottom: '#f0f6ff',
+
+  // Glassmorphism Surface Tokens
   surface: '#ffffff',
   surfaceCard: '#ffffff',
-  surfaceGlass: 'rgba(255, 255, 255, 0.88)',
-  
-  // Borders
+  surfaceGlass: 'rgba(255, 255, 255, 0.72)',
+  surfaceGlassInner: 'rgba(255, 255, 255, 0.60)',
+  glassBorder: 'rgba(255, 255, 255, 0.85)',
+  glassBorderSubtle: 'rgba(255, 255, 255, 0.65)',
+
+  // Standard Borders
   border: '#dbeafe',
   borderLight: '#e2e8f0',
   cardBorder: '#e0edfd',
 
   // Typography Colors
-  textPrimary: '#0f294a',    // High contrast Navy
-  textSecondary: '#475569',  // Medium contrast Slate
-  textMuted: '#94a3b8',      // Low contrast Silver
+  textPrimary: '#0f2c6e',         // Deep Royal Navy
+  textSecondary: '#5f7da6',       // Slate-blue
+  textMuted: '#94a3b8',
   textWhite: '#ffffff',
   textBlue: '#2563eb',
 
   // Indicators
-  badgeGreen: '#10b981',
+  badgeGreen: '#16a34a',
   badgeGold: '#f59e0b',
   onlineGreen: '#22c55e',
   offlineGray: '#94a3b8'
 };
 
 export const SHADOWS = {
-  small: {
+  sm: {
     shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2
   },
-  medium: {
-    shadowColor: '#1d4ed8',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
+  small: {
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2
+  },
+  md: {
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
     elevation: 4
+  },
+  medium: {
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 4
+  },
+  lg: {
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.10,
+    shadowRadius: 30,
+    elevation: 8
   },
   large: {
     shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.14,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.10,
+    shadowRadius: 30,
     elevation: 8
   },
   buttonGlow: {
     shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6
+    shadowRadius: 25,
+    elevation: 8
+  },
+  primaryBtn: {
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 25,
+    elevation: 8
   }
 };
 
@@ -93,4 +131,3 @@ export const FONTS = {
   medium: 'System',
   regular: 'System'
 };
-
