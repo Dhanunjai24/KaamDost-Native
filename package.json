@@ -1,0 +1,27 @@
+{
+  "name": "kaamdost-native",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KaamDost React Native Android Apps (Customer & Partner)",
+  "workspaces": [
+    "KaamDostCustomer",
+    "KaamDostPartner"
+  ],
+  "scripts": {
+    "start:customer": "npm run start --prefix KaamDostCustomer",
+    "start:partner": "npm run start --prefix KaamDostPartner",
+    "android:customer": "npm run android --prefix KaamDostCustomer",
+    "android:partner": "npm run android --prefix KaamDostPartner",
+    "build:customer": "cd KaamDostCustomer/android && gradlew assembleDebug",
+    "build:partner": "cd KaamDostPartner/android && gradlew assembleDebug"
+  },
+  "keywords": [
+    "react-native",
+    "android",
+    "kaamdost",
+    "telangana",
+    "labour-marketplace"
+  ],
+  "author": "KaamDost Team",
+  "license": "MIT"
+}

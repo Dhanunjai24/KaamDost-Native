@@ -1,0 +1,65 @@
+// KaamDost - Telangana Districts & Indian States
+export const TELANGANA_CITIES = [
+  "Sangareddy",
+  "Hyderabad",
+  "Secunderabad",
+  "Medchal-Malkajgiri",
+  "Rangareddy",
+  "Siddipet",
+  "Medak",
+  "Vikarabad",
+  "Nizamabad",
+  "Kamareddy",
+  "Karimnagar",
+  "Jagtial",
+  "Peddapalli",
+  "Rajanna Sircilla",
+  "Warangal",
+  "Hanamkonda",
+  "Jangaon",
+  "Jayashankar Bhupalpally",
+  "Mahabubabad",
+  "Mulugu",
+  "Khammam",
+  "Bhadradri Kothagudem",
+  "Nalgonda",
+  "Suryapet",
+  "Yadadri Bhuvanagiri",
+  "Mahabubnagar",
+  "Nagarkurnool",
+  "Wanaparthy",
+  "Jogulamba Gadwal",
+  "Narayanpet",
+  "Adilabad",
+  "Nirmal",
+  "Mancherial",
+  "Kumuram Bheem Asifabad",
+  "Jadcherla",
+  "Kalwakurthy",
+  "Ramagundam",
+  "Miryalaguda",
+  "Zahirabad",
+  "Patancheru"
+];
+
+export const INDIAN_STATES = [
+  "Telangana",
+  "Andhra Pradesh",
+  "Karnataka",
+  "Tamil Nadu",
+  "Maharashtra",
+  "Bihar",
+  "Uttar Pradesh",
+  "Madhya Pradesh",
+  "Odisha",
+  "Rajasthan",
+  "West Bengal",
+  "Gujarat",
+  "Kerala"
+];
+
+export const GENDER_OPTIONS = [
+  { value: 'male', label: 'Male', icon: 'human-male' },
+  { value: 'female', label: 'Female', icon: 'human-female' },
+  { value: 'other', label: 'Others', icon: 'human' }
+];
