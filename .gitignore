@@ -10,6 +10,11 @@ android/app/build/
 android/build/
 android/.cxx/
 android/local.properties
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+**/android/.cxx/
+**/android/app/src/main/assets/index.android.bundle*
 *.apk
 *.aab
 
