@@ -249,6 +249,80 @@ class ApiService {
     }
   }
 
+  // Step 4: Save Customer Gender + Service Address
+  async saveCustomerStep4(step4Data, token = null) {
+    const url = `${this.baseUrl}/api/customer/step4`;
+    const authToken = token || this.token;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify(step4Data)
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return {
+        success: false,
+        status: response.status,
+        error: data?.error || "We couldn't save your address. Please try again."
+      };
+    } catch (err) {
+      return {
+        success: false,
+        networkError: true,
+        error: "We couldn't save your address. Please try again."
+      };
+    }
+  }
+
+  // Geocoding / Reverse Geocoding for GPS detection
+  async reverseGeocode(lat, lng) {
+    try {
+      const url = `${this.baseUrl}/api/location/reverse-geocode?lat=${lat}&lng=${lng}`;
+      const response = await fetch(url);
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+    } catch (e) {
+      // Fallback to OSM Nominatim
+    }
+
+    try {
+      const osmRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+        { headers: { Accept: 'application/json' } }
+      );
+      if (osmRes.ok) {
+        const osm = await osmRes.json().catch(() => null);
+        if (osm && osm.address) {
+          const a = osm.address;
+          const houseNumber = a.house_number || a.building || '';
+          const street = a.road || a.suburb || a.neighbourhood || a.residential || '';
+          const landmark = a.amenity || a.landmark || '';
+          const city = a.city || a.town || a.village || a.municipality || 'Sangareddy';
+          const district = a.state_district || a.county || 'Sangareddy';
+          const state = a.state || 'Telangana';
+          const pincode = a.postcode && /^\d{6}$/.test(a.postcode.trim()) ? a.postcode.trim() : '502001';
+          return {
+            success: true,
+            data: { houseNumber, street, landmark, city, district, state, pincode, latitude: lat, longitude: lng }
+          };
+        }
+      }
+    } catch (e) {}
+
+    return {
+      success: false,
+      error: "We found your location but couldn't determine the full address. Please review or enter your address manually."
+    };
+  }
+
   saveCustomerAddress(addressData) {
     return this.request('/api/customer/address', {
       method: 'POST',

@@ -17,6 +17,8 @@ import PhoneLoginScreen from './src/screens/PhoneLoginScreen';
 import OtpVerificationScreen from './src/screens/OtpVerificationScreen';
 // Step 3: Customer Registration Screen (New Customers)
 import CustomerRegisterScreen from './src/screens/CustomerRegisterScreen';
+// Step 4: Customer Gender + Service Address Screen
+import CustomerStep4Screen from './src/screens/CustomerStep4Screen';
 
 import {
   getStoredLanguage,
@@ -32,7 +34,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [preferredLanguage, setPreferredLanguage] = useState(null);
   const [session, setSession] = useState(null);
-  const [currentScreen, setCurrentScreen] = useState('loading'); // 'language' | 'mobileLogin' | 'otpVerify' | 'register' | 'authenticated'
+  const [currentScreen, setCurrentScreen] = useState('loading'); // 'language' | 'mobileLogin' | 'otpVerify' | 'register' | 'step4' | 'authenticated'
   const [mobileNumber, setMobileNumber] = useState('');
   const [registrationToken, setRegistrationToken] = useState(null);
   const [devOtp, setDevOtp] = useState(null);
@@ -54,9 +56,13 @@ export default function App() {
         // Flow: Check Authentication
         const storedSession = await getStoredSession();
         if (storedSession && storedSession.customer?.authenticated) {
-          // Flow: If authenticated -> Continue to existing/next Customer flow (Skip registration & login)
           setSession(storedSession);
-          setCurrentScreen('authenticated');
+          // Flow Rule: If Step 4 is already complete -> Skip Step 4; If missing -> Step 4
+          if (storedSession.customer?.step4Complete) {
+            setCurrentScreen('authenticated');
+          } else {
+            setCurrentScreen('step4');
+          }
         } else {
           // Flow: Language already selected -> Mobile Number Login
           setCurrentScreen('mobileLogin');
@@ -86,22 +92,38 @@ export default function App() {
     setCurrentScreen('otpVerify');
   };
 
-  // Step 3: OTP Verification Decision (New vs. Existing Customer)
+  // Step 3 & Step 4: OTP Verification Decision (New vs. Existing Customer)
   const handleVerifySuccess = (result) => {
     if (result.isNewCustomer) {
       // NEW CUSTOMER: Branch to Step 3 Registration Screen
       setRegistrationToken(result.registrationToken);
       setCurrentScreen('register');
     } else {
-      // EXISTING CUSTOMER: Skip Registration Form, directly proceed to Authenticated Session
+      // EXISTING CUSTOMER:
+      const cust = result.customer || result.data || {};
       setSession({ customer: result.customer, token: result.token });
-      setCurrentScreen('authenticated');
+
+      // Section 1 & 31: Check whether required Step 4 information exists
+      // If already complete -> Skip Step 4 -> Next Step
+      // If missing -> Step 4
+      const isComplete = Boolean(result.step4Complete || cust.step4Complete);
+      if (isComplete) {
+        setCurrentScreen('authenticated');
+      } else {
+        setCurrentScreen('step4');
+      }
     }
   };
 
-  // Step 3: Registration Success -> Authenticated Customer
+  // Step 3: Registration Success -> New Customer Account Created -> Step 4
   const handleRegisterSuccess = (sessionData) => {
     setSession(sessionData);
+    setCurrentScreen('step4');
+  };
+
+  // Step 4: Gender + Service Address Saved Successfully -> Authenticated Session
+  const handleStep4Complete = (updatedSession) => {
+    setSession(updatedSession);
     setCurrentScreen('authenticated');
   };
 
@@ -189,7 +211,38 @@ export default function App() {
     );
   }
 
-  // 5. Authenticated Customer Flow (Step 3 Completed - Ready for Step 4)
+  // 5. Step 4: Customer Gender + Service Address Screen
+  if (currentScreen === 'step4') {
+    const cust = session?.customer || {};
+    const defaultAddr = cust.savedAddresses?.[0] || {
+      houseNumber: cust.houseNumber || '',
+      street: cust.street || '',
+      landmark: cust.landmark || '',
+      city: cust.city || 'Sangareddy',
+      district: cust.district || 'Sangareddy',
+      state: cust.state || 'Telangana',
+      pincode: cust.pincode || '',
+      latitude: cust.latitude || null,
+      longitude: cust.longitude || null,
+    };
+
+    return (
+      <CustomerStep4Screen
+        initialGender={cust.gender || ''}
+        initialAddress={defaultAddr}
+        onComplete={handleStep4Complete}
+        onBack={() => {
+          if (registrationToken) {
+            setCurrentScreen('register');
+          } else {
+            handleLogout();
+          }
+        }}
+      />
+    );
+  }
+
+  // 6. Authenticated Customer Flow (Step 4 Completed - Ready for Step 5)
   const currentLangObj = getLanguageByCode(preferredLanguage);
   const customer = session?.customer || {};
 
@@ -255,11 +308,27 @@ export default function App() {
                 {currentLangObj ? `${currentLangObj.name} (${currentLangObj.code})` : preferredLanguage}
               </Text>
             </View>
+
+            {customer.gender ? (
+              <View style={styles.sessionRow}>
+                <Text style={styles.sessionKey}>gender:</Text>
+                <Text style={styles.sessionVal}>{customer.gender}</Text>
+              </View>
+            ) : null}
+
+            {customer.savedAddresses && customer.savedAddresses.length > 0 ? (
+              <View style={styles.sessionRow}>
+                <Text style={styles.sessionKey}>serviceAddress:</Text>
+                <Text style={styles.sessionVal} numberOfLines={1}>
+                  {`${customer.savedAddresses[0].houseNumber || ''}, ${customer.savedAddresses[0].street || ''}, ${customer.savedAddresses[0].city || ''} - ${customer.savedAddresses[0].pincode || ''}`}
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           <View style={styles.statusPill}>
             <Text style={styles.statusPillText}>
-              ✓ Step 3 Complete • Ready for Step 4
+              ✓ Step 4 Complete • Ready for Step 5
             </Text>
           </View>
         </View>
