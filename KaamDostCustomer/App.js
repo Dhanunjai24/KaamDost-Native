@@ -1,50 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+} from 'react-native';
 
-// Startup Language Selection (Step 1)
+// Step 1: Language Selection and Internationalization Foundation
 import LanguageSelectScreen from './src/screens/LanguageSelectScreen';
-import { getStoredLanguage, setStoredLanguage } from '../shared/storage/storage';
+import {
+  getStoredLanguage,
+  clearStoredLanguage,
+} from '../shared/storage/storage';
 import { setLanguage } from '../shared/i18n';
+import { getLanguageByCode } from '../shared/i18n/languages';
+import { COLORS, SHADOWS } from '../shared/theme/theme';
 
-// Onboarding & Auth screens (Screens 01 - 08)
-import SplashScreen from './src/screens/SplashScreen';
-import PhoneLoginScreen from './src/screens/PhoneLoginScreen';
-import CustomerRegisterScreen from './src/screens/CustomerRegisterScreen';
-import CustomerGenderScreen from './src/screens/CustomerGenderScreen';
-import CustomerAddressScreen from './src/screens/CustomerAddressScreen';
-import CustomerAadhaarScreen from './src/screens/CustomerAadhaarScreen';
-import LiveSelfieScreen from './src/screens/LiveSelfieScreen';
-import AccountCompleteScreen from './src/screens/AccountCompleteScreen';
-
-// Discovery & Booking Flow (Screens 09 - 16)
-import CustomerHomeScreen from './src/screens/CustomerHomeScreen';
-import ServiceCategoriesScreen from './src/screens/ServiceCategoriesScreen';
-import ServiceSearchScreen from './src/screens/ServiceSearchScreen';
-import ServiceDetailScreen from './src/screens/ServiceDetailScreen';
-import AdditionalDetailsScreen from './src/screens/AdditionalDetailsScreen';
-import SelectAddressScreen from './src/screens/SelectAddressScreen';
-import PriceDetailsScreen from './src/screens/PriceDetailsScreen';
-import BookingConfirmationScreen from './src/screens/BookingConfirmationScreen';
-
-// Tracking, Chat, Payment & Account Flow (Screens 17 - 27)
-import FindingWorkerScreen from './src/screens/FindingWorkerScreen';
-import BookingTimelineScreen from './src/screens/BookingTimelineScreen';
-import InAppChatScreen from './src/screens/InAppChatScreen';
-import TrackingScreen from './src/screens/TrackingScreen';
-import CustomerNotificationsScreen from './src/screens/CustomerNotificationsScreen';
-import CustomerPaymentScreen from './src/screens/CustomerPaymentScreen';
-import CustomerWalletScreen from './src/screens/CustomerWalletScreen';
-import ReviewsRatingScreen from './src/screens/ReviewsRatingScreen';
-import ReferralRewardsScreen from './src/screens/ReferralRewardsScreen';
-import CustomerProfileScreen from './src/screens/CustomerProfileScreen';
-import CustomerHelpSupportScreen from './src/screens/CustomerHelpSupportScreen';
-
-export default function App({ onSwitchToPartner }) {
-  const [currentScreen, setCurrentScreen] = useState('splash');
+export default function App() {
+  const [loading, setLoading] = useState(true);
   const [preferredLanguage, setPreferredLanguage] = useState(null);
-  const [isLanguageChecked, setIsLanguageChecked] = useState(false);
 
-  // Check persistent language preference on app startup
+  // 1. Startup Language Check
   useEffect(() => {
     async function initLanguage() {
       try {
@@ -54,406 +33,235 @@ export default function App({ onSwitchToPartner }) {
           setLanguage(stored);
         }
       } catch (err) {
-        console.warn('[App Startup] Error reading language preference:', err);
+        console.warn('[Startup] Failed to check language preference:', err);
       } finally {
-        setIsLanguageChecked(true);
+        setLoading(false);
       }
     }
     initLanguage();
   }, []);
 
-  const [selectedService, setSelectedService] = useState({
-    id: 'cleaning',
-    title: 'Home Cleaning',
-    price: '₹999',
-    rating: '4.8 (2.3k)',
-    duration: '2-3 hrs',
-    clients: '3.2k Clients',
-    description: 'Professional service for a cleaner home',
-    included: [
-      'Living room cleaning',
-      'Kitchen cleaning',
-      'Bathroom cleaning',
-      'Floor cleaning',
-    ],
-  });
-
-  const [customer, setCustomer] = useState({
-    id: 'cust_101',
-    name: 'Rahul Sharma',
-    phone: '9876543210',
-    gender: 'Male',
-    maskedAadhaar: 'XXXX-XXXX-3847',
-    address: {
-      label: 'Home',
-      street: '123 Green Park',
-      city: 'New Delhi',
-      pincode: '110016',
-    },
-  });
-
-  const [activeBooking, setActiveBooking] = useState({
-    id: 'KD123456',
-    trade: 'cleaning',
-    tradeName: 'Home Cleaning - Deep Cleaning',
-    status: 'ARRIVING',
-    workerName: 'Rohit Kumar',
-    workerPhone: '9848012345',
-    workerRating: 4.8,
-    startOtp: '4829',
-    estimatedArrival: '10 mins',
-    dailyRate: 999,
-    totalAmount: 1237,
-    address: '123 Green Park, New Delhi',
-    scheduledDate: '26 Apr 2025 • 10:00 AM',
-  });
-
-  // Startup decision after Splash finishes
-  const handleSplashFinish = () => {
-    if (preferredLanguage) {
-      // Returning user with language already saved -> go directly to Login
-      setCurrentScreen('login');
-    } else {
-      // First-time user without saved language -> show Select Preferred Language
-      setCurrentScreen('languageSelect');
-    }
-  };
-
   const handleLanguageSelected = (code) => {
     setPreferredLanguage(code);
     setLanguage(code);
-    setCurrentScreen('login');
   };
 
-  const handleTabNavigation = (tabId) => {
-    const tab = tabId ? tabId.toLowerCase() : '';
-    if (tab === 'home') setCurrentScreen('home');
-    else if (tab === 'services') setCurrentScreen('categories');
-    else if (tab === 'bookings') setCurrentScreen('bookingTimeline');
-    else if (tab === 'wallet') setCurrentScreen('wallet');
-    else if (tab === 'profile') setCurrentScreen('profile');
+  const handleResetForTesting = async () => {
+    await clearStoredLanguage();
+    setPreferredLanguage(null);
   };
 
-  const handleBookingCreated = (newBooking) => {
-    setActiveBooking(newBooking);
-    setCurrentScreen('bookingConfirmation');
-  };
+  // Smooth loading indicator during initial storage read to prevent screen flash
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
+        <View style={styles.loadingBox}>
+          <Text style={styles.loadingLogo}>KD</Text>
+          <ActivityIndicator size="small" color="#2563eb" style={{ marginTop: 16 }} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-  const handleCompleteBooking = () => {
-    setActiveBooking(null);
-    setCurrentScreen('home');
-  };
+  // FIRST-TIME USER: No language selected yet -> Render "Select Preferred Language"
+  if (!preferredLanguage) {
+    return (
+      <LanguageSelectScreen
+        onContinue={handleLanguageSelected}
+      />
+    );
+  }
 
-  const handleCancelBooking = () => {
-    setActiveBooking(null);
-    setCurrentScreen('home');
-  };
+  // RETURNING USER: Language already exists -> Skip Language Selection
+  // Render temporary placeholder for the next step as specified in Step 1 rules
+  const currentLangObj = getLanguageByCode(preferredLanguage);
 
   return (
-    <View style={styles.container}>
-      {/* Screen 01: Splash Screen */}
-      {currentScreen === 'splash' && (
-        <SplashScreen onFinish={handleSplashFinish} />
-      )}
+    <SafeAreaView style={styles.placeholderSafeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
+      <View style={styles.placeholderContainer}>
+        {/* Brand Card */}
+        <View style={styles.placeholderCard}>
+          <View style={styles.logoBadge}>
+            <Text style={styles.logoText}>KD</Text>
+          </View>
 
-      {/* STEP 1: Select Preferred Language (First-time user or changed from settings) */}
-      {currentScreen === 'languageSelect' && (
-        <LanguageSelectScreen
-          initialLanguage={preferredLanguage}
-          onContinue={handleLanguageSelected}
-        />
-      )}
+          <Text style={styles.placeholderTitle}>KaamDost Customer App</Text>
+          <Text style={styles.placeholderSubtitle}>Step 1 Foundation Initialized</Text>
 
-      {/* Screen 02: Phone Login */}
-      {currentScreen === 'login' && (
-        <PhoneLoginScreen
-          onLoginSuccess={(user) => {
-            if (user) setCustomer((prev) => ({ ...prev, ...user }));
-            setCurrentScreen('home');
-          }}
-          onGoToRegister={() => setCurrentScreen('register')}
-          onSwitchRole={onSwitchToPartner}
-        />
-      )}
+          <View style={styles.langInfoBox}>
+            <Text style={styles.langInfoLabel}>Current Language Preference:</Text>
+            <Text style={styles.langInfoValue}>
+              {currentLangObj ? `${currentLangObj.name} (${currentLangObj.nativeName})` : preferredLanguage}
+            </Text>
+            <Text style={styles.langInfoCode}>Code: {preferredLanguage}</Text>
+          </View>
 
-      {/* Screen 03: Register Name & Phone */}
-      {currentScreen === 'register' && (
-        <CustomerRegisterScreen
-          initialPhone={customer.phone}
-          onContinue={(data) => {
-            setCustomer((prev) => ({ ...prev, ...data }));
-            setCurrentScreen('gender');
-          }}
-          onBackToLogin={() => setCurrentScreen('login')}
-        />
-      )}
+          <View style={styles.statusPill}>
+            <Text style={styles.statusPillText}>✓ Step 1 Complete • Ready for Step 2</Text>
+          </View>
+        </View>
 
-      {/* Screen 04: Select Gender */}
-      {currentScreen === 'gender' && (
-        <CustomerGenderScreen
-          onContinue={(data) => {
-            setCustomer((prev) => ({ ...prev, ...data }));
-            setCurrentScreen('address');
-          }}
-          onBack={() => setCurrentScreen('register')}
-        />
-      )}
-
-      {/* Screen 05: Select / Add Address */}
-      {currentScreen === 'address' && (
-        <CustomerAddressScreen
-          onContinue={(data) => {
-            setCustomer((prev) => ({ ...prev, ...data }));
-            setCurrentScreen('aadhaar');
-          }}
-          onBack={() => setCurrentScreen('gender')}
-        />
-      )}
-
-      {/* Screen 06: Aadhaar Verification */}
-      {currentScreen === 'aadhaar' && (
-        <CustomerAadhaarScreen
-          onContinue={(data) => {
-            setCustomer((prev) => ({ ...prev, ...data }));
-            setCurrentScreen('selfie');
-          }}
-          onBack={() => setCurrentScreen('address')}
-        />
-      )}
-
-      {/* Screen 07: Live Selfie Camera */}
-      {currentScreen === 'selfie' && (
-        <LiveSelfieScreen
-          onContinue={(data) => {
-            setCustomer((prev) => ({ ...prev, ...data }));
-            setCurrentScreen('accountComplete');
-          }}
-          onBack={() => setCurrentScreen('aadhaar')}
-        />
-      )}
-
-      {/* Screen 08: Account Complete Checkmarks */}
-      {currentScreen === 'accountComplete' && (
-        <AccountCompleteScreen
-          customer={customer}
-          onProceedHome={() => setCurrentScreen('home')}
-        />
-      )}
-
-      {/* Screen 09: Customer Home */}
-      {currentScreen === 'home' && (
-        <CustomerHomeScreen
-          customer={customer}
-          activeBooking={activeBooking}
-          onOpenCategories={() => setCurrentScreen('categories')}
-          onOpenSearch={() => setCurrentScreen('search')}
-          onSelectService={(srv) => {
-            setSelectedService(srv);
-            setCurrentScreen('serviceDetail');
-          }}
-          onOpenTracking={() => setCurrentScreen('tracking')}
-          onOpenBookings={() => setCurrentScreen('bookingTimeline')}
-          onOpenWallet={() => setCurrentScreen('wallet')}
-          onOpenProfile={() => setCurrentScreen('profile')}
-          onOpenNotifications={() => setCurrentScreen('notifications')}
-        />
-      )}
-
-      {/* Screen 10: All Categories */}
-      {currentScreen === 'categories' && (
-        <ServiceCategoriesScreen
-          onBack={() => setCurrentScreen('home')}
-          onSelectService={(srv) => {
-            setSelectedService(srv);
-            setCurrentScreen('serviceDetail');
-          }}
-        />
-      )}
-
-      {/* Screen 11: Service Search */}
-      {currentScreen === 'search' && (
-        <ServiceSearchScreen
-          onBack={() => setCurrentScreen('home')}
-          onSelectService={(srv) => {
-            setSelectedService(srv);
-            setCurrentScreen('serviceDetail');
-          }}
-        />
-      )}
-
-      {/* Screen 12: Service Details */}
-      {currentScreen === 'serviceDetail' && (
-        <ServiceDetailScreen
-          service={selectedService}
-          onBack={() => setCurrentScreen('home')}
-          onContinue={(srv) => {
-            setSelectedService(srv);
-            setCurrentScreen('additionalDetails');
-          }}
-        />
-      )}
-
-      {/* Screen 13: Additional Details & Customizations */}
-      {currentScreen === 'additionalDetails' && (
-        <AdditionalDetailsScreen
-          service={selectedService}
-          customerAddress={customer.address}
-          onBack={() => setCurrentScreen('serviceDetail')}
-          onOpenAddressPicker={() => setCurrentScreen('selectAddress')}
-          onContinue={(details) => {
-            setCurrentScreen('priceDetails');
-          }}
-        />
-      )}
-
-      {/* Screen 14: Select Saved Address */}
-      {currentScreen === 'selectAddress' && (
-        <SelectAddressScreen
-          currentSelected={customer.address?.label || 'Home'}
-          onBack={() => setCurrentScreen('additionalDetails')}
-          onSelectAddress={(addr) => {
-            setCustomer((prev) => ({ ...prev, address: addr }));
-            setCurrentScreen('additionalDetails');
-          }}
-        />
-      )}
-
-      {/* Screen 15: Price Breakdown & GST */}
-      {currentScreen === 'priceDetails' && (
-        <PriceDetailsScreen
-          service={selectedService}
-          onBack={() => setCurrentScreen('additionalDetails')}
-          onProceedToBook={(bill) => {
-            const newBooking = {
-              id: 'KD123456',
-              trade: selectedService?.id || 'cleaning',
-              tradeName: `${selectedService?.title || 'Home Cleaning'} - Deep Cleaning`,
-              scheduledDate: '26 Apr 2025 • 10:00 AM',
-              address: customer?.address?.street || '123 Green Park, New Delhi',
-              totalAmount: bill.totalAmount || 1237,
-              workerName: 'Rohit Kumar',
-              workerPhone: '9848012345',
-              workerRating: 4.8,
-              startOtp: '4829',
-              estimatedArrival: '10 mins',
-              status: 'ARRIVING',
-            };
-            handleBookingCreated(newBooking);
-          }}
-        />
-      )}
-
-      {/* Screen 16: Booking Confirmation */}
-      {currentScreen === 'bookingConfirmation' && (
-        <BookingConfirmationScreen
-          booking={activeBooking}
-          onViewBookingDetails={() => setCurrentScreen('findingWorker')}
-          onGoToHome={() => setCurrentScreen('home')}
-        />
-      )}
-
-      {/* Screen 17: Radar Finding Worker */}
-      {currentScreen === 'findingWorker' && (
-        <FindingWorkerScreen
-          onBack={() => setCurrentScreen('home')}
-          onWorkerFound={() => setCurrentScreen('bookingTimeline')}
-        />
-      )}
-
-      {/* Screen 18: Booking Status Timeline */}
-      {currentScreen === 'bookingTimeline' && (
-        <BookingTimelineScreen
-          booking={activeBooking}
-          onBack={() => setCurrentScreen('home')}
-          onProceedWorker={() => setCurrentScreen('tracking')}
-          onCancelBooking={handleCancelBooking}
-        />
-      )}
-
-      {/* Screen 19: In-App Chat with Worker */}
-      {currentScreen === 'inAppChat' && (
-        <InAppChatScreen
-          workerName={activeBooking?.workerName || 'Rohit Kumar'}
-          onBack={() => setCurrentScreen('tracking')}
-        />
-      )}
-
-      {/* Screen 20: Live GPS Route Tracking */}
-      {currentScreen === 'tracking' && (
-        <TrackingScreen
-          booking={activeBooking}
-          onBack={() => setCurrentScreen('home')}
-          onOpenChat={() => setCurrentScreen('inAppChat')}
-          onOpenPayment={() => setCurrentScreen('payment')}
-          onCancelBooking={handleCancelBooking}
-        />
-      )}
-
-      {/* Screen 21: Notifications */}
-      {currentScreen === 'notifications' && (
-        <CustomerNotificationsScreen onBack={() => setCurrentScreen('home')} />
-      )}
-
-      {/* Screen 22: Payment Gateway (UPI / QR) */}
-      {currentScreen === 'payment' && (
-        <CustomerPaymentScreen
-          totalAmount={activeBooking?.totalAmount || 1237}
-          onBack={() => setCurrentScreen('tracking')}
-          onPaymentSuccess={() => setCurrentScreen('reviewsRating')}
-        />
-      )}
-
-      {/* Screen 23: KaamDost Wallet */}
-      {currentScreen === 'wallet' && (
-        <CustomerWalletScreen onBack={() => setCurrentScreen('home')} />
-      )}
-
-      {/* Screen 24: Ratings & Reviews */}
-      {currentScreen === 'reviewsRating' && (
-        <ReviewsRatingScreen
-          workerName={activeBooking?.workerName || 'Rohit Kumar'}
-          onClose={handleCompleteBooking}
-          onSubmitReview={handleCompleteBooking}
-        />
-      )}
-
-      {/* Screen 25: Referral Rewards */}
-      {currentScreen === 'referrals' && (
-        <ReferralRewardsScreen onBack={() => setCurrentScreen('profile')} />
-      )}
-
-      {/* Screen 26: Customer Profile */}
-      {currentScreen === 'profile' && (
-        <CustomerProfileScreen
-          customer={customer}
-          onBack={() => setCurrentScreen('home')}
-          onOpenBookings={() => setCurrentScreen('bookingTimeline')}
-          onOpenAddresses={() => setCurrentScreen('selectAddress')}
-          onOpenWallet={() => setCurrentScreen('wallet')}
-          onOpenNotifications={() => setCurrentScreen('notifications')}
-          onOpenReferrals={() => setCurrentScreen('referrals')}
-          onOpenLanguage={() => setCurrentScreen('languageSelect')}
-          onOpenSupport={() => setCurrentScreen('helpSupport')}
-          onLogout={() => setCurrentScreen('login')}
-          onTabPress={handleTabNavigation}
-        />
-      )}
-
-      {/* Screen 27: Help & Support */}
-      {currentScreen === 'helpSupport' && (
-        <CustomerHelpSupportScreen
-          onBack={() => setCurrentScreen('profile')}
-          onOpenLiveChat={() => setCurrentScreen('inAppChat')}
-          onTabPress={handleTabNavigation}
-        />
-      )}
-    </View>
+        {/* Test Controls */}
+        <View style={styles.testControlCard}>
+          <Text style={styles.testControlTitle}>Testing Controls</Text>
+          <Text style={styles.testControlDesc}>
+            Use this to verify Test 5 & Test 6 (clearing saved language to test fresh launch).
+          </Text>
+          <TouchableOpacity
+            style={styles.resetBtn}
+            onPress={handleResetForTesting}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.resetBtnText}>Clear Language Preference & Restart</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
     backgroundColor: '#f0f6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingBox: {
+    alignItems: 'center',
+  },
+  loadingLogo: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#2563eb',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 16,
+    ...SHADOWS.sm,
+  },
+  placeholderSafeArea: {
+    flex: 1,
+    backgroundColor: '#f0f6ff',
+  },
+  placeholderContainer: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'space-between',
+  },
+  placeholderCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    ...SHADOWS.md,
+    marginTop: 20,
+  },
+  logoBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#eff6ff',
+    borderWidth: 2,
+    borderColor: '#bfdbfe',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  logoText: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#2563eb',
+  },
+  placeholderTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0f2c6e',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  placeholderSubtitle: {
+    fontSize: 14,
+    color: '#5f7da6',
+    fontWeight: '500',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  langInfoBox: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 18,
+  },
+  langInfoLabel: {
+    fontSize: 12,
+    color: '#5f7da6',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  langInfoValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#2563eb',
+    marginBottom: 2,
+  },
+  langInfoCode: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  statusPill: {
+    backgroundColor: '#ecfdf5',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  statusPillText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#16a34a',
+  },
+  testControlCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    ...SHADOWS.sm,
+  },
+  testControlTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0f2c6e',
+    marginBottom: 4,
+  },
+  testControlDesc: {
+    fontSize: 12,
+    color: '#5f7da6',
+    lineHeight: 16,
+    marginBottom: 14,
+  },
+  resetBtn: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#ef4444',
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  resetBtnText: {
+    color: '#ef4444',
+    fontSize: 13,
+    fontWeight: '800',
   },
 });
