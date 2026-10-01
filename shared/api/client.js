@@ -6,7 +6,10 @@ const LOCAL_ANDROID_EMULATOR = 'http://10.0.2.2:3000';
 const LOCAL_HOST = 'http://127.0.0.1:3000';
 
 export const getBaseUrl = () => {
-  if (Platform.OS === 'android') {
+  if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) {
+    return window.location.origin;
+  }
+  if (Platform && Platform.OS === 'android') {
     // In Android emulator or physical device via reverse proxy
     return LOCAL_ANDROID_EMULATOR;
   }
@@ -59,22 +62,6 @@ class ApiService {
 
   // Resilient offline/mock fallbacks ensuring UI is 100% interactive anytime
   handleFallback(path, options) {
-    if (path.includes('/auth/send-otp') || path.includes('/customer/send-otp')) {
-      return { success: true, message: 'OTP sent to mobile (Development OTP: 123456)', otp: '123456' };
-    }
-    if (path.includes('/auth/verify-otp') || path.includes('/customer/verify-otp')) {
-      const mockUser = {
-        id: 'cust_' + Math.floor(Math.random() * 89999 + 10000),
-        name: 'Ravi Kumar',
-        phone: '9876543210',
-        city: 'Sangareddy',
-        isVerified: true,
-        gender: 'male',
-        role: 'customer'
-      };
-      this.cachedUser = mockUser;
-      return { success: true, token: 'mock_jwt_token', user: mockUser, customer: mockUser };
-    }
     if (path.includes('/workers')) {
       return {
         success: true,
@@ -164,20 +151,70 @@ class ApiService {
     return { success: true, message: 'Action executed successfully.' };
   }
 
-  // Customer endpoints
-  sendCustomerOtp(phone) {
-    return this.request('/api/customer/send-otp', {
-      method: 'POST',
-      body: JSON.stringify({ phone })
-    });
+  // Customer OTP authentication (Step 2)
+  async sendCustomerOtp(phone, checkRegistered = false) {
+    const cleanPhone = (phone || '').replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      return { success: false, error: 'Please enter a valid 10-digit mobile number.' };
+    }
+    const url = `${this.baseUrl}/api/auth/send-otp`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanPhone, checkRegistered })
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return {
+        success: false,
+        error: data?.error || "We couldn't send the OTP. Please check your connection and try again."
+      };
+    } catch (err) {
+      return {
+        success: false,
+        networkError: true,
+        error: "We couldn't send the OTP. Please check your connection and try again."
+      };
+    }
   }
 
-  verifyCustomerOtp(phone, otp) {
-    return this.request('/api/customer/verify-otp', {
-      method: 'POST',
-      body: JSON.stringify({ phone, otp })
-    });
+  async verifyCustomerOtp(phone, otp) {
+    const cleanPhone = (phone || '').replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      return { success: false, error: 'Please enter a valid 10-digit mobile number.' };
+    }
+    const cleanOtp = (otp || '').toString().trim();
+    if (!cleanOtp || cleanOtp.length !== 6 || !/^\d{6}$/.test(cleanOtp)) {
+      return { success: false, error: 'Please enter a valid 6-digit OTP.' };
+    }
+    const url = `${this.baseUrl}/api/auth/verify-otp`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanPhone, otp: cleanOtp })
+      });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && data.success) {
+        return data;
+      }
+      return {
+        success: false,
+        expired: data?.expired,
+        error: data?.error || 'Incorrect OTP. Please check the code and try again.'
+      };
+    } catch (err) {
+      return {
+        success: false,
+        networkError: true,
+        error: "We couldn't send the OTP. Please check your connection and try again."
+      };
+    }
   }
+
 
   registerCustomer(data) {
     return this.request('/api/customer/register', {

@@ -7,13 +7,20 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 
-// Step 1: Language Selection and Internationalization Foundation
+// Step 1: Language Selection
 import LanguageSelectScreen from './src/screens/LanguageSelectScreen';
+// Step 2: Mobile Number + OTP Login Screens
+import PhoneLoginScreen from './src/screens/PhoneLoginScreen';
+import OtpVerificationScreen from './src/screens/OtpVerificationScreen';
+
 import {
   getStoredLanguage,
   clearStoredLanguage,
+  getStoredSession,
+  clearStoredSession,
 } from '../shared/storage/storage';
 import { setLanguage } from '../shared/i18n';
 import { getLanguageByCode } from '../shared/i18n/languages';
@@ -22,37 +29,92 @@ import { COLORS, SHADOWS } from '../shared/theme/theme';
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [preferredLanguage, setPreferredLanguage] = useState(null);
+  const [session, setSession] = useState(null);
+  const [currentScreen, setCurrentScreen] = useState('loading'); // 'language' | 'mobileLogin' | 'otpVerify' | 'authenticated'
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [devOtp, setDevOtp] = useState(null);
 
-  // 1. Startup Language Check
+  // 1. Startup Flow Check: Language -> Session Authentication
   useEffect(() => {
-    async function initLanguage() {
+    async function initApp() {
       try {
-        const stored = await getStoredLanguage();
-        if (stored) {
-          setPreferredLanguage(stored);
-          setLanguage(stored);
+        const storedLang = await getStoredLanguage();
+        if (!storedLang) {
+          // Flow: If language not selected -> Preferred Language Screen
+          setCurrentScreen('language');
+          return;
+        }
+
+        setPreferredLanguage(storedLang);
+        setLanguage(storedLang);
+
+        // Flow: Check Authentication
+        const storedSession = await getStoredSession();
+        if (storedSession && storedSession.customer?.authenticated) {
+          // Flow: If authenticated -> Continue to existing/next Customer flow
+          setSession(storedSession);
+          setCurrentScreen('authenticated');
+        } else {
+          // Flow: Language already selected -> Mobile Number Login
+          setCurrentScreen('mobileLogin');
         }
       } catch (err) {
-        console.warn('[Startup] Failed to check language preference:', err);
+        console.warn('[Startup] Initialization error:', err);
+        setCurrentScreen('language');
       } finally {
         setLoading(false);
       }
     }
-    initLanguage();
+
+    initApp();
   }, []);
 
+  // Step 1 -> Step 2 transition
   const handleLanguageSelected = (code) => {
     setPreferredLanguage(code);
     setLanguage(code);
+    setCurrentScreen('mobileLogin');
   };
 
+  // Step 2: Mobile Login -> OTP Verification
+  const handleOtpSent = ({ phone, devOtp: receivedDevOtp }) => {
+    setMobileNumber(phone);
+    setDevOtp(receivedDevOtp);
+    setCurrentScreen('otpVerify');
+  };
+
+  // Step 2: OTP Verification -> Authenticated Session
+  const handleVerifySuccess = (sessionData) => {
+    setSession(sessionData);
+    setCurrentScreen('authenticated');
+  };
+
+  // Step 2: Change Mobile Number (preserves mobile number)
+  const handleChangeMobile = () => {
+    setCurrentScreen('mobileLogin');
+  };
+
+  // Logout / Invalidate Session (Section 19)
+  const handleLogout = async () => {
+    await clearStoredSession();
+    setSession(null);
+    setDevOtp(null);
+    setCurrentScreen('mobileLogin');
+  };
+
+  // Reset Everything for fresh onboarding testing (Test 6)
   const handleResetForTesting = async () => {
+    await clearStoredSession();
     await clearStoredLanguage();
+    setSession(null);
     setPreferredLanguage(null);
+    setMobileNumber('');
+    setDevOtp(null);
+    setCurrentScreen('language');
   };
 
-  // Smooth loading indicator during initial storage read to prevent screen flash
-  if (loading) {
+  // Loading Indicator during initial storage read
+  if (loading || currentScreen === 'loading') {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
@@ -64,8 +126,8 @@ export default function App() {
     );
   }
 
-  // FIRST-TIME USER: No language selected yet -> Render "Select Preferred Language"
-  if (!preferredLanguage) {
+  // 1. Language Selection Screen
+  if (currentScreen === 'language') {
     return (
       <LanguageSelectScreen
         onContinue={handleLanguageSelected}
@@ -73,51 +135,117 @@ export default function App() {
     );
   }
 
-  // RETURNING USER: Language already exists -> Skip Language Selection
-  // Render temporary placeholder for the next step as specified in Step 1 rules
+  // 2. Mobile Number Login Screen
+  if (currentScreen === 'mobileLogin') {
+    return (
+      <PhoneLoginScreen
+        initialPhone={mobileNumber}
+        onOtpSent={handleOtpSent}
+        onBack={() => setCurrentScreen('language')}
+      />
+    );
+  }
+
+  // 3. OTP Verification Screen
+  if (currentScreen === 'otpVerify') {
+    return (
+      <OtpVerificationScreen
+        phone={mobileNumber}
+        devOtp={devOtp}
+        onVerifySuccess={handleVerifySuccess}
+        onChangeMobile={handleChangeMobile}
+        onBack={handleChangeMobile}
+      />
+    );
+  }
+
+  // 4. Authenticated Customer Flow (Step 2 Completed - Stop before Step 3)
   const currentLangObj = getLanguageByCode(preferredLanguage);
+  const customer = session?.customer || {};
 
   return (
     <SafeAreaView style={styles.placeholderSafeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
-      <View style={styles.placeholderContainer}>
+      <ScrollView contentContainerStyle={styles.placeholderContainer}>
         {/* Brand Card */}
         <View style={styles.placeholderCard}>
           <View style={styles.logoBadge}>
             <Text style={styles.logoText}>KD</Text>
           </View>
 
-          <Text style={styles.placeholderTitle}>KaamDost Customer App</Text>
-          <Text style={styles.placeholderSubtitle}>Step 1 Foundation Initialized</Text>
+          <Text style={styles.placeholderTitle}>Welcome to KaamDost</Text>
+          <Text style={styles.placeholderSubtitle}>Customer Authenticated Successfully</Text>
 
-          <View style={styles.langInfoBox}>
-            <Text style={styles.langInfoLabel}>Current Language Preference:</Text>
-            <Text style={styles.langInfoValue}>
-              {currentLangObj ? `${currentLangObj.name} (${currentLangObj.nativeName})` : preferredLanguage}
-            </Text>
-            <Text style={styles.langInfoCode}>Code: {preferredLanguage}</Text>
+          {/* Customer Session Identity Card (Section 17) */}
+          <View style={styles.sessionBox}>
+            <Text style={styles.sessionTitle}>Authenticated Customer Identity</Text>
+
+            <View style={styles.sessionRow}>
+              <Text style={styles.sessionKey}>authenticated:</Text>
+              <Text style={styles.sessionValSuccess}>true</Text>
+            </View>
+
+            <View style={styles.sessionRow}>
+              <Text style={styles.sessionKey}>customerId:</Text>
+              <Text style={styles.sessionVal}>{customer.customerId || customer.id || 'N/A'}</Text>
+            </View>
+
+            <View style={styles.sessionRow}>
+              <Text style={styles.sessionKey}>mobileNumber:</Text>
+              <Text style={styles.sessionVal}>+91 {customer.mobileNumber || customer.phone || mobileNumber}</Text>
+            </View>
+
+            <View style={styles.sessionRow}>
+              <Text style={styles.sessionKey}>phoneVerified:</Text>
+              <Text style={styles.sessionValSuccess}>✓ Verified via OTP</Text>
+            </View>
+
+            {customer.name ? (
+              <View style={styles.sessionRow}>
+                <Text style={styles.sessionKey}>name:</Text>
+                <Text style={styles.sessionVal}>{customer.name}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.sessionRow}>
+              <Text style={styles.sessionKey}>language:</Text>
+              <Text style={styles.sessionVal}>
+                {currentLangObj ? `${currentLangObj.name} (${currentLangObj.code})` : preferredLanguage}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.statusPill}>
-            <Text style={styles.statusPillText}>✓ Step 1 Complete • Ready for Step 2</Text>
+            <Text style={styles.statusPillText}>
+              ✓ Step 2 Complete • Ready for Step 3 Onboarding
+            </Text>
           </View>
         </View>
 
-        {/* Test Controls */}
+        {/* Session Management & Test Controls (Section 19) */}
         <View style={styles.testControlCard}>
-          <Text style={styles.testControlTitle}>Testing Controls</Text>
+          <Text style={styles.testControlTitle}>Session & Testing Controls</Text>
           <Text style={styles.testControlDesc}>
-            Use this to verify Test 5 & Test 6 (clearing saved language to test fresh launch).
+            Test session persistence, invalidation, and logout flow.
           </Text>
+
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.logoutBtnText}>Logout Customer Session</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.resetBtn}
             onPress={handleResetForTesting}
             activeOpacity={0.8}
           >
-            <Text style={styles.resetBtnText}>Clear Language Preference & Restart</Text>
+            <Text style={styles.resetBtnText}>Clear All Data & Restart from Language</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -147,19 +275,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f6ff',
   },
   placeholderContainer: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
+    padding: 20,
+    paddingBottom: 40,
   },
   placeholderCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderRadius: 24,
     padding: 24,
     alignItems: 'center',
     borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     ...SHADOWS.md,
-    marginTop: 20,
+    marginTop: 10,
+    marginBottom: 20,
   },
   logoBadge: {
     width: 60,
@@ -191,77 +319,112 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  langInfoBox: {
+  sessionBox: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     padding: 16,
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    marginBottom: 18,
+    borderColor: '#e0edfd',
+    marginBottom: 16,
+    ...SHADOWS.xs,
   },
-  langInfoLabel: {
-    fontSize: 12,
-    color: '#5f7da6',
+  sessionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0f2c6e',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    paddingBottom: 8,
+  },
+  sessionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  sessionKey: {
+    fontSize: 13,
+    color: '#64748b',
     fontWeight: '600',
-    marginBottom: 4,
+    fontFamily: 'monospace',
   },
-  langInfoValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#2563eb',
-    marginBottom: 2,
+  sessionVal: {
+    fontSize: 13,
+    color: '#0f2c6e',
+    fontWeight: '700',
+    fontFamily: 'monospace',
   },
-  langInfoCode: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '600',
+  sessionValSuccess: {
+    fontSize: 13,
+    color: '#16a34a',
+    fontWeight: '700',
+    fontFamily: 'monospace',
   },
   statusPill: {
-    backgroundColor: '#ecfdf5',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#bbf7d0',
+    borderColor: '#86efac',
+    marginTop: 8,
   },
   statusPillText: {
     fontSize: 12,
-    fontWeight: '800',
-    color: '#16a34a',
+    fontWeight: '700',
+    color: '#166534',
   },
   testControlCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    padding: 20,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     ...SHADOWS.sm,
   },
   testControlTitle: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#0f2c6e',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   testControlDesc: {
     fontSize: 12,
     color: '#5f7da6',
-    lineHeight: 16,
-    marginBottom: 14,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  logoutBtn: {
+    backgroundColor: '#fee2e2',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  logoutBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#b91c1c',
   },
   resetBtn: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1.5,
-    borderColor: '#ef4444',
-    borderRadius: 14,
+    backgroundColor: '#f1f5f9',
     paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
   },
   resetBtnText: {
-    color: '#ef4444',
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '600',
+    color: '#475569',
   },
 });

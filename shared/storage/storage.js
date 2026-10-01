@@ -1,6 +1,7 @@
-// Centralized Storage & Preferences Management for KaamDost
 const STORAGE_KEYS = {
   PREFERRED_LANGUAGE: 'kaamdost_preferred_language',
+  JWT: 'kaamdost_jwt',
+  CURRENT_CUSTOMER: 'kaamdost_current_customer',
 };
 
 // In-memory fallback for environments without localStorage
@@ -78,4 +79,38 @@ export async function setStoredLanguage(languageCode) {
 
 export async function clearStoredLanguage() {
   return await storage.removeItem(STORAGE_KEYS.PREFERRED_LANGUAGE);
+}
+
+// Customer Session persistence helpers (Step 2)
+export async function getStoredSession() {
+  try {
+    const rawCustomer = await storage.getItem(STORAGE_KEYS.CURRENT_CUSTOMER);
+    const token = await storage.getItem(STORAGE_KEYS.JWT);
+    if (!rawCustomer) return null;
+    const customer = JSON.parse(rawCustomer);
+    if (customer && customer.authenticated) {
+      return { customer, token };
+    }
+    return null;
+  } catch (error) {
+    console.warn('[Storage] Error reading stored session:', error);
+    return null;
+  }
+}
+
+export async function setStoredSession(customerData, token = null) {
+  if (!customerData) {
+    throw new Error('Customer data is required to store session');
+  }
+  await storage.setItem(STORAGE_KEYS.CURRENT_CUSTOMER, JSON.stringify(customerData));
+  if (token) {
+    await storage.setItem(STORAGE_KEYS.JWT, token);
+  }
+  return true;
+}
+
+export async function clearStoredSession() {
+  await storage.removeItem(STORAGE_KEYS.CURRENT_CUSTOMER);
+  await storage.removeItem(STORAGE_KEYS.JWT);
+  return true;
 }
