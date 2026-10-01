@@ -19,6 +19,8 @@ import OtpVerificationScreen from './src/screens/OtpVerificationScreen';
 import CustomerRegisterScreen from './src/screens/CustomerRegisterScreen';
 // Step 4: Customer Gender + Service Address Screen
 import CustomerStep4Screen from './src/screens/CustomerStep4Screen';
+// Step 5: Customer Aadhaar + Live Selfie Verification Screen
+import CustomerStep5Screen from './src/screens/CustomerStep5Screen';
 
 import {
   getStoredLanguage,
@@ -57,11 +59,15 @@ export default function App() {
         const storedSession = await getStoredSession();
         if (storedSession && storedSession.customer?.authenticated) {
           setSession(storedSession);
-          // Flow Rule: If Step 4 is already complete -> Skip Step 4; If missing -> Step 4
-          if (storedSession.customer?.step4Complete) {
-            setCurrentScreen('authenticated');
-          } else {
+          // Flow Rule: Step 4 missing -> Step 4; Step 5 missing -> Step 5; Complete -> Authenticated
+          const isStep4Done = Boolean(storedSession.customer?.step4Complete);
+          const isStep5Done = Boolean(storedSession.customer?.step5Complete || storedSession.customer?.isVerified);
+          if (!isStep4Done) {
             setCurrentScreen('step4');
+          } else if (!isStep5Done) {
+            setCurrentScreen('step5');
+          } else {
+            setCurrentScreen('authenticated');
           }
         } else {
           // Flow: Language already selected -> Mobile Number Login
@@ -103,14 +109,16 @@ export default function App() {
       const cust = result.customer || result.data || {};
       setSession({ customer: result.customer, token: result.token });
 
-      // Section 1 & 31: Check whether required Step 4 information exists
-      // If already complete -> Skip Step 4 -> Next Step
-      // If missing -> Step 4
+      // Section 1 & 31: Check whether required Step 4 & Step 5 information exists
       const isComplete = Boolean(result.step4Complete || cust.step4Complete);
-      if (isComplete) {
-        setCurrentScreen('authenticated');
-      } else {
+      const isStep4Done = isComplete;
+      const isStep5Done = Boolean(result.step5Complete || cust.step5Complete || cust.isVerified);
+      if (!isStep4Done) {
         setCurrentScreen('step4');
+      } else if (!isStep5Done) {
+        setCurrentScreen('step5');
+      } else {
+        setCurrentScreen('authenticated');
       }
     }
   };
@@ -121,9 +129,15 @@ export default function App() {
     setCurrentScreen('step4');
   };
 
-  // Step 4: Gender + Service Address Saved Successfully -> Authenticated Session
+  // Step 4: Gender + Service Address Saved Successfully -> Step 5 (Identity Verification)
   const handleStep4Complete = (updatedSession) => {
     setSession(updatedSession);
+    setCurrentScreen('step5');
+  };
+
+  // Step 5: Aadhaar + Live Selfie Verified Successfully -> Authenticated Session
+  const handleStep5Complete = (verifiedSession) => {
+    setSession(verifiedSession);
     setCurrentScreen('authenticated');
   };
 
@@ -232,7 +246,17 @@ export default function App() {
     );
   }
 
-  // 6. Authenticated Customer Flow (Step 4 Completed - Ready for Step 5)
+  // 6. Step 5: Customer Aadhaar + Live Selfie Verification Screen
+  if (currentScreen === 'step5') {
+    return (
+      <CustomerStep5Screen
+        onComplete={handleStep5Complete}
+        onBack={() => setCurrentScreen('step4')}
+      />
+    );
+  }
+
+  // 7. Authenticated Customer Flow (Step 5 Completed)
   const currentLangObj = getLanguageByCode(preferredLanguage);
   const customer = session?.customer || {};
 

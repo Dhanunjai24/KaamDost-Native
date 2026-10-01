@@ -471,6 +471,24 @@ class ApiService {
     });
   }
 
+  // Step 5: Customer Identity & Live Selfie Verification
+  getCustomerVerification() {
+    return this.request('/api/customer/verification');
+  }
+
+  submitCustomerVerification(data) {
+    return this.request('/api/customer/verification/submit', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  retryCustomerVerification() {
+    return this.request('/api/customer/verification/retry', {
+      method: 'POST'
+    });
+  }
+
   verifyCustomerAadhaar(aadhaarData) {
     return this.request('/api/customer/verify-aadhaar', {
       method: 'POST',
@@ -532,4 +550,5 @@ class ApiService {
 }
 
 export const api = new ApiService();
+export const client = api;
 export default api;
