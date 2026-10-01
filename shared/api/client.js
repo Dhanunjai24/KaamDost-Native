@@ -396,38 +396,65 @@ class ApiService {
 
   // Geocoding / Reverse Geocoding for GPS detection
   async reverseGeocode(lat, lng) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return {
+        success: false,
+        error: 'Valid latitude (-90 to 90) and longitude (-180 to 180) are required.'
+      };
+    }
+
     try {
-      const url = `${this.baseUrl}/api/location/reverse-geocode?lat=${lat}&lng=${lng}`;
-      const response = await fetch(url);
-      const data = await response.json().catch(() => null);
-      if (response.ok && data && data.success) {
-        return data;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      try {
+        const url = `${this.baseUrl}/api/location/reverse-geocode?lat=${lat}&lng=${lng}`;
+        const response = await fetch(url, { signal: controller.signal });
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.success) {
+            return data;
+          }
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
     } catch (e) {
       // Fallback to OSM Nominatim
     }
 
     try {
-      const osmRes = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-        { headers: { Accept: 'application/json' } }
-      );
-      if (osmRes.ok) {
-        const osm = await osmRes.json().catch(() => null);
-        if (osm && osm.address) {
-          const a = osm.address;
-          const houseNumber = a.house_number || a.building || '';
-          const street = a.road || a.suburb || a.neighbourhood || a.residential || '';
-          const landmark = a.amenity || a.landmark || '';
-          const city = a.city || a.town || a.village || a.municipality || 'Sangareddy';
-          const district = a.state_district || a.county || 'Sangareddy';
-          const state = a.state || 'Telangana';
-          const pincode = a.postcode && /^\d{6}$/.test(a.postcode.trim()) ? a.postcode.trim() : '502001';
-          return {
-            success: true,
-            data: { houseNumber, street, landmark, city, district, state, pincode, latitude: lat, longitude: lng }
-          };
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      try {
+        const osmRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+          {
+            signal: controller.signal,
+            headers: { Accept: 'application/json' }
+          }
+        );
+        if (osmRes.ok) {
+          const osm = await osmRes.json();
+          if (osm && osm.address) {
+            const a = osm.address;
+            const houseNumber = a.house_number || a.building || '';
+            const street = a.road || a.suburb || a.neighbourhood || a.residential || '';
+            const landmark = a.amenity || a.landmark || '';
+            const city = a.city || a.town || a.village || a.municipality || '';
+            const district = a.state_district || a.county || '';
+            const state = a.state || '';
+            const pincode = (a.postcode && /^\d{6}$/.test(a.postcode.trim())) ? a.postcode.trim() : '';
+
+            if (houseNumber || street || city || district || state || pincode) {
+              return {
+                success: true,
+                data: { houseNumber, street, landmark, city, district, state, pincode, latitude: lat, longitude: lng }
+              };
+            }
+          }
         }
+      } finally {
+        clearTimeout(timeoutId);
       }
     } catch (e) {}
 
