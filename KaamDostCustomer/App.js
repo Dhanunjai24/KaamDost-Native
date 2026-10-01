@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
+
+// Startup Language Selection (Step 1)
+import LanguageSelectScreen from './src/screens/LanguageSelectScreen';
+import { getStoredLanguage, setStoredLanguage } from '../shared/storage/storage';
+import { setLanguage } from '../shared/i18n';
 
 // Onboarding & Auth screens (Screens 01 - 08)
 import SplashScreen from './src/screens/SplashScreen';
@@ -36,6 +41,26 @@ import CustomerHelpSupportScreen from './src/screens/CustomerHelpSupportScreen';
 
 export default function App({ onSwitchToPartner }) {
   const [currentScreen, setCurrentScreen] = useState('splash');
+  const [preferredLanguage, setPreferredLanguage] = useState(null);
+  const [isLanguageChecked, setIsLanguageChecked] = useState(false);
+
+  // Check persistent language preference on app startup
+  useEffect(() => {
+    async function initLanguage() {
+      try {
+        const stored = await getStoredLanguage();
+        if (stored) {
+          setPreferredLanguage(stored);
+          setLanguage(stored);
+        }
+      } catch (err) {
+        console.warn('[App Startup] Error reading language preference:', err);
+      } finally {
+        setIsLanguageChecked(true);
+      }
+    }
+    initLanguage();
+  }, []);
 
   const [selectedService, setSelectedService] = useState({
     id: 'cleaning',
@@ -83,6 +108,23 @@ export default function App({ onSwitchToPartner }) {
     scheduledDate: '26 Apr 2025 • 10:00 AM',
   });
 
+  // Startup decision after Splash finishes
+  const handleSplashFinish = () => {
+    if (preferredLanguage) {
+      // Returning user with language already saved -> go directly to Login
+      setCurrentScreen('login');
+    } else {
+      // First-time user without saved language -> show Select Preferred Language
+      setCurrentScreen('languageSelect');
+    }
+  };
+
+  const handleLanguageSelected = (code) => {
+    setPreferredLanguage(code);
+    setLanguage(code);
+    setCurrentScreen('login');
+  };
+
   const handleTabNavigation = (tabId) => {
     const tab = tabId ? tabId.toLowerCase() : '';
     if (tab === 'home') setCurrentScreen('home');
@@ -111,7 +153,15 @@ export default function App({ onSwitchToPartner }) {
     <View style={styles.container}>
       {/* Screen 01: Splash Screen */}
       {currentScreen === 'splash' && (
-        <SplashScreen onFinish={() => setCurrentScreen('login')} />
+        <SplashScreen onFinish={handleSplashFinish} />
+      )}
+
+      {/* STEP 1: Select Preferred Language (First-time user or changed from settings) */}
+      {currentScreen === 'languageSelect' && (
+        <LanguageSelectScreen
+          initialLanguage={preferredLanguage}
+          onContinue={handleLanguageSelected}
+        />
       )}
 
       {/* Screen 02: Phone Login */}
@@ -382,6 +432,7 @@ export default function App({ onSwitchToPartner }) {
           onOpenWallet={() => setCurrentScreen('wallet')}
           onOpenNotifications={() => setCurrentScreen('notifications')}
           onOpenReferrals={() => setCurrentScreen('referrals')}
+          onOpenLanguage={() => setCurrentScreen('languageSelect')}
           onOpenSupport={() => setCurrentScreen('helpSupport')}
           onLogout={() => setCurrentScreen('login')}
           onTabPress={handleTabNavigation}
@@ -403,6 +454,6 @@ export default function App({ onSwitchToPartner }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#f0f6ff',
   },
 });

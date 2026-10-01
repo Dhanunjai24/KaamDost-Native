@@ -6,6 +6,7 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "start": "react-native start",
+    "web": "vite",
     "test": "jest",
     "lint": "eslint ."
   },
@@ -22,6 +23,10 @@
     "@react-native/babel-preset": "0.76.5",
     "@react-native/eslint-config": "0.76.5",
     "@react-native/metro-config": "0.76.5",
-    "@react-native/typescript-config": "0.76.5"
+    "@react-native/typescript-config": "0.76.5",
+    "@vitejs/plugin-react": "^6.1.1",
+    "react-dom": "^18.3.1",
+    "react-native-web": "^0.19.13",
+    "vite": "^8.3.2"
   }
 }

@@ -1,4 +1,6 @@
 // KaamDost - Multilingual i18n Foundation for React Native
+export { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE_CODE, getLanguageByCode } from './languages';
+
 export const LANGUAGES = [
   { code: 'te', name: 'తెలుగు', label: 'Telugu', badge: 'తెలంగాణ ప్రాధాన్యత' },
   { code: 'hi', name: 'हिन्दी', label: 'Hindi', badge: 'राष्ट्रीय भाषा' },

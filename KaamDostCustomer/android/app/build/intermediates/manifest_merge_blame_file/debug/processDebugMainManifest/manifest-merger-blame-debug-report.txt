@@ -1,0 +1,125 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.kaamdost.customer"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="34" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:4:5-67
+11-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:4:22-64
+12    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+12-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:5:5-79
+12-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:5:22-76
+13    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+13-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:6:5-81
+13-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:6:22-78
+14    <uses-permission android:name="android.permission.CAMERA" />
+14-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:7:5-65
+14-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:7:22-62
+15    <uses-permission android:name="android.permission.CALL_PHONE" />
+15-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:8:5-69
+15-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:8:22-66
+16    <!--
+17    This manifest file is used only by Gradle to configure debug-only capabilities
+18    for React Native Apps.
+19    -->
+20    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+20-->[com.facebook.react:react-android:0.76.5] C:\Users\pathl\.gradle\caches\8.9\transforms\bc029b6c825e20e3d0b94f0eec3ecf17\transformed\jetified-react-android-0.76.5-debug\AndroidManifest.xml:16:5-78
+20-->[com.facebook.react:react-android:0.76.5] C:\Users\pathl\.gradle\caches\8.9\transforms\bc029b6c825e20e3d0b94f0eec3ecf17\transformed\jetified-react-android-0.76.5-debug\AndroidManifest.xml:16:22-75
+21
+22    <permission
+22-->[androidx.core:core:1.9.0] C:\Users\pathl\.gradle\caches\8.9\transforms\065f4cc96128dde7bb5bafa963b7beeb\transformed\core-1.9.0\AndroidManifest.xml:22:5-24:47
+23        android:name="com.kaamdost.customer.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+23-->[androidx.core:core:1.9.0] C:\Users\pathl\.gradle\caches\8.9\transforms\065f4cc96128dde7bb5bafa963b7beeb\transformed\core-1.9.0\AndroidManifest.xml:23:9-81
+24        android:protectionLevel="signature" />
+24-->[androidx.core:core:1.9.0] C:\Users\pathl\.gradle\caches\8.9\transforms\065f4cc96128dde7bb5bafa963b7beeb\transformed\core-1.9.0\AndroidManifest.xml:24:9-44
+25
+26    <uses-permission android:name="com.kaamdost.customer.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+26-->[androidx.core:core:1.9.0] C:\Users\pathl\.gradle\caches\8.9\transforms\065f4cc96128dde7bb5bafa963b7beeb\transformed\core-1.9.0\AndroidManifest.xml:26:5-97
+26-->[androidx.core:core:1.9.0] C:\Users\pathl\.gradle\caches\8.9\transforms\065f4cc96128dde7bb5bafa963b7beeb\transformed\core-1.9.0\AndroidManifest.xml:26:22-94
+27
+28    <application
+28-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:10:5-29:19
+29        android:name="com.kaamdost.customer.MainApplication"
+29-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:11:9-40
+30        android:allowBackup="false"
+30-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:14:9-36
+31        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+31-->[androidx.core:core:1.9.0] C:\Users\pathl\.gradle\caches\8.9\transforms\065f4cc96128dde7bb5bafa963b7beeb\transformed\core-1.9.0\AndroidManifest.xml:28:18-86
+32        android:debuggable="true"
+33        android:extractNativeLibs="false"
+34        android:icon="@android:drawable/sym_def_app_icon"
+34-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:13:9-58
+35        android:label="@string/app_name"
+35-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:12:9-41
+36        android:theme="@style/AppTheme"
+36-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:15:9-40
+37        android:usesCleartextTraffic="true" >
+37-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:16:9-44
+38        <activity
+38-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:17:9-28:20
+39            android:name="com.kaamdost.customer.MainActivity"
+39-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:18:13-41
+40            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+40-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:20:13-122
+41            android:exported="true"
+41-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:23:13-36
+42            android:label="@string/app_name"
+42-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:19:13-45
+43            android:launchMode="singleTask"
+43-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:21:13-44
+44            android:windowSoftInputMode="adjustResize" >
+44-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:22:13-55
+45            <intent-filter>
+45-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:24:13-27:29
+46                <action android:name="android.intent.action.MAIN" />
+46-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:25:17-69
+46-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:25:25-66
+47
+48                <category android:name="android.intent.category.LAUNCHER" />
+48-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:26:17-77
+48-->C:\Users\pathl\OneDrive\Desktop\KaamDost\KaamDost-Native\KaamDostCustomer\android\app\src\main\AndroidManifest.xml:26:27-74
+49            </intent-filter>
+50        </activity>
+51        <activity
+51-->[com.facebook.react:react-android:0.76.5] C:\Users\pathl\.gradle\caches\8.9\transforms\bc029b6c825e20e3d0b94f0eec3ecf17\transformed\jetified-react-android-0.76.5-debug\AndroidManifest.xml:19:9-21:40
+52            android:name="com.facebook.react.devsupport.DevSettingsActivity"
+52-->[com.facebook.react:react-android:0.76.5] C:\Users\pathl\.gradle\caches\8.9\transforms\bc029b6c825e20e3d0b94f0eec3ecf17\transformed\jetified-react-android-0.76.5-debug\AndroidManifest.xml:20:13-77
+53            android:exported="false" />
+53-->[com.facebook.react:react-android:0.76.5] C:\Users\pathl\.gradle\caches\8.9\transforms\bc029b6c825e20e3d0b94f0eec3ecf17\transformed\jetified-react-android-0.76.5-debug\AndroidManifest.xml:21:13-37
+54
+55        <provider
+55-->[androidx.emoji2:emoji2:1.2.0] C:\Users\pathl\.gradle\caches\8.9\transforms\293cdf3cb2d7a27571d459ba2e18b19c\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
+56            android:name="androidx.startup.InitializationProvider"
+56-->[androidx.emoji2:emoji2:1.2.0] C:\Users\pathl\.gradle\caches\8.9\transforms\293cdf3cb2d7a27571d459ba2e18b19c\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:25:13-67
+57            android:authorities="com.kaamdost.customer.androidx-startup"
+57-->[androidx.emoji2:emoji2:1.2.0] C:\Users\pathl\.gradle\caches\8.9\transforms\293cdf3cb2d7a27571d459ba2e18b19c\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:26:13-68
+58            android:exported="false" >
+58-->[androidx.emoji2:emoji2:1.2.0] C:\Users\pathl\.gradle\caches\8.9\transforms\293cdf3cb2d7a27571d459ba2e18b19c\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:27:13-37
+59            <meta-data
+59-->[androidx.emoji2:emoji2:1.2.0] C:\Users\pathl\.gradle\caches\8.9\transforms\293cdf3cb2d7a27571d459ba2e18b19c\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
+60                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+60-->[androidx.emoji2:emoji2:1.2.0] C:\Users\pathl\.gradle\caches\8.9\transforms\293cdf3cb2d7a27571d459ba2e18b19c\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:30:17-75
+61                android:value="androidx.startup" />
+61-->[androidx.emoji2:emoji2:1.2.0] C:\Users\pathl\.gradle\caches\8.9\transforms\293cdf3cb2d7a27571d459ba2e18b19c\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:31:17-49
+62            <meta-data
+62-->[androidx.lifecycle:lifecycle-process:2.4.1] C:\Users\pathl\.gradle\caches\8.9\transforms\23d905738b9af32c1c60a99e95c47a48\transformed\jetified-lifecycle-process-2.4.1\AndroidManifest.xml:31:13-33:52
+63                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+63-->[androidx.lifecycle:lifecycle-process:2.4.1] C:\Users\pathl\.gradle\caches\8.9\transforms\23d905738b9af32c1c60a99e95c47a48\transformed\jetified-lifecycle-process-2.4.1\AndroidManifest.xml:32:17-78
+64                android:value="androidx.startup" />
+64-->[androidx.lifecycle:lifecycle-process:2.4.1] C:\Users\pathl\.gradle\caches\8.9\transforms\23d905738b9af32c1c60a99e95c47a48\transformed\jetified-lifecycle-process-2.4.1\AndroidManifest.xml:33:17-49
+65        </provider>
+66
+67        <meta-data
+67-->[com.facebook.soloader:soloader:0.12.1] C:\Users\pathl\.gradle\caches\8.9\transforms\2db341dc5665e20bcaf9652d8d03eebd\transformed\jetified-soloader-0.12.1\AndroidManifest.xml:12:9-14:37
+68            android:name="com.facebook.soloader.enabled"
+68-->[com.facebook.soloader:soloader:0.12.1] C:\Users\pathl\.gradle\caches\8.9\transforms\2db341dc5665e20bcaf9652d8d03eebd\transformed\jetified-soloader-0.12.1\AndroidManifest.xml:13:13-57
+69            android:value="false" />
+69-->[com.facebook.soloader:soloader:0.12.1] C:\Users\pathl\.gradle\caches\8.9\transforms\2db341dc5665e20bcaf9652d8d03eebd\transformed\jetified-soloader-0.12.1\AndroidManifest.xml:14:13-34
+70    </application>
+71
+72</manifest>

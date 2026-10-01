@@ -20,6 +20,7 @@ export default function CustomerProfileScreen({
   onOpenWallet,
   onOpenNotifications,
   onOpenReferrals,
+  onOpenLanguage,
   onOpenSupport,
   onLogout,
   onTabPress,
@@ -54,6 +55,12 @@ export default function CustomerProfileScreen({
       label: 'Referral Rewards',
       icon: '🎁',
       action: onOpenReferrals,
+    },
+    {
+      id: 'language',
+      label: 'Language / భాష',
+      icon: '🌐',
+      action: onOpenLanguage,
     },
     {
       id: 'settings',

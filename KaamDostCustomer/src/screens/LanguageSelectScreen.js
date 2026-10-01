@@ -1,75 +1,166 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
-import { LANGUAGES, setLanguage, t } from '../../../shared/i18n';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { SUPPORTED_LANGUAGES } from '../../../shared/i18n/languages';
+import { setStoredLanguage } from '../../../shared/storage/storage';
+import { setLanguage } from '../../../shared/i18n';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 
-export default function LanguageSelectScreen({ onContinue }) {
-  const [selectedLang, setSelectedLang] = useState('te'); // Telangana primary default
+export default function LanguageSelectScreen({ onContinue, initialLanguage = null }) {
+  const [selectedCode, setSelectedCode] = useState(initialLanguage);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSelect = (code) => {
-    setSelectedLang(code);
-    setLanguage(code);
+  const handleSelectLanguage = (code) => {
+    setSelectedCode(code);
+    if (errorMessage) setErrorMessage('');
   };
 
-  const handleNext = () => {
-    setLanguage(selectedLang);
-    onContinue(selectedLang);
+  const handleContinue = async () => {
+    if (!selectedCode) return;
+
+    setSaving(true);
+    setErrorMessage('');
+
+    try {
+      // 1. Save language preference persistently
+      await setStoredLanguage(selectedCode);
+
+      // 2. Initialize application language state
+      setLanguage(selectedCode);
+
+      setSaving(false);
+
+      // 3. Navigate to existing Customer App next step
+      if (onContinue) {
+        onContinue(selectedCode);
+      }
+    } catch (error) {
+      console.error('[LanguageSelectScreen] Failed to save language:', error);
+      setSaving(false);
+      setErrorMessage("Couldn't save your language preference. Please try again.");
+    }
   };
+
+  const isContinueEnabled = Boolean(selectedCode) && !saving;
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f6ff" />
       <View style={styles.container}>
-        {/* Top Header */}
+        {/* Header Section */}
         <View style={styles.header}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoEmoji}>🇮🇳</Text>
+          <View style={styles.brandBadge}>
+            <Text style={styles.brandIcon}>🌐</Text>
           </View>
-          <Text style={styles.title}>Select Your Language</Text>
-          <Text style={styles.subtitle}>దయచేసి మీ ప్రాధాన్య భాషను ఎంచుకోండి</Text>
+          <Text style={styles.mainHeading}>Select Preferred Language</Text>
+          <Text style={styles.supportingText}>Choose your preferred language to continue</Text>
         </View>
 
-        {/* Language Grid / List */}
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.list}>
-          {LANGUAGES.map((lang) => {
-            const isSelected = selectedLang === lang.code;
+        {/* Error banner if saving failed */}
+        {errorMessage ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{errorMessage}</Text>
+          </View>
+        ) : null}
+
+        {/* Language List */}
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {SUPPORTED_LANGUAGES.map((lang) => {
+            const isSelected = selectedCode === lang.languageCode;
+            const showNative = lang.nativeName && lang.nativeName !== lang.languageName;
+
             return (
               <TouchableOpacity
-                key={lang.code}
-                style={[styles.card, isSelected && styles.cardSelected]}
-                onPress={() => handleSelect(lang.code)}
+                key={lang.languageCode}
+                style={[
+                  styles.languageCard,
+                  isSelected && styles.languageCardSelected,
+                ]}
+                onPress={() => handleSelectLanguage(lang.languageCode)}
                 activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel={`${lang.languageName} ${showNative ? lang.nativeName : ''}`}
+                accessibilityState={{ selected: isSelected }}
               >
-                <View style={styles.leftCol}>
-                  <Text style={[styles.langName, isSelected && styles.langNameSelected]}>
-                    {lang.name}
+                <View style={styles.cardTextCol}>
+                  <Text
+                    style={[
+                      styles.languagePrimaryText,
+                      isSelected && styles.languagePrimaryTextSelected,
+                    ]}
+                  >
+                    {lang.languageName}
                   </Text>
-                  <Text style={styles.langLabel}>{lang.label}</Text>
+                  {showNative && (
+                    <Text
+                      style={[
+                        styles.languageNativeText,
+                        isSelected && styles.languageNativeTextSelected,
+                      ]}
+                    >
+                      {lang.nativeName}
+                    </Text>
+                  )}
                 </View>
 
-                <View style={styles.rightCol}>
-                  <View style={[styles.badge, isSelected && styles.badgeSelected]}>
-                    <Text style={[styles.badgeText, isSelected && styles.badgeTextSelected]}>
-                      {lang.badge}
-                    </Text>
-                  </View>
-                  <View style={[styles.radio, isSelected && styles.radioSelected]}>
-                    {isSelected && <View style={styles.radioInner} />}
-                  </View>
+                {/* Selection Indicator (○ or ✓) */}
+                <View
+                  style={[
+                    styles.indicatorCircle,
+                    isSelected && styles.indicatorCircleSelected,
+                  ]}
+                >
+                  {isSelected ? (
+                    <Text style={styles.checkMark}>✓</Text>
+                  ) : (
+                    <View style={styles.emptyCircle} />
+                  )}
                 </View>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {/* Bottom CTA */}
+        {/* Bottom Continue CTA */}
         <View style={styles.footer}>
           <TouchableOpacity
-            style={styles.continueBtn}
-            onPress={handleNext}
-            activeOpacity={0.85}
+            style={[
+              styles.continueButton,
+              !isContinueEnabled && styles.continueButtonDisabled,
+            ]}
+            onPress={handleContinue}
+            disabled={!isContinueEnabled}
+            activeOpacity={0.88}
+            accessibilityRole="button"
+            accessibilityLabel="Continue"
+            accessibilityState={{ disabled: !isContinueEnabled }}
           >
-            <Text style={styles.continueBtnText}>{t('continue')} →</Text>
+            {saving ? (
+              <ActivityIndicator color="#ffffff" size="small" />
+            ) : (
+              <Text
+                style={[
+                  styles.continueButtonText,
+                  !isContinueEnabled && styles.continueButtonTextDisabled,
+                ]}
+              >
+                Continue
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -80,132 +171,165 @@ export default function LanguageSelectScreen({ onContinue }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background
+    backgroundColor: '#f0f6ff',
   },
   container: {
     flex: 1,
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: 'transparent',
   },
   header: {
     alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 20
+    paddingVertical: 14,
   },
-  logoBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primaryLight,
+  brandBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1.5,
+    borderColor: '#bfdbfe',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12
+    marginBottom: 12,
+    ...SHADOWS.sm,
   },
-  logoEmoji: {
-    fontSize: 28
+  brandIcon: {
+    fontSize: 26,
   },
-  title: {
-    fontSize: 22,
+  mainHeading: {
+    fontSize: 23,
     fontWeight: '800',
-    color: COLORS.secondary,
-    textAlign: 'center'
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    color: '#0f2c6e',
+    letterSpacing: -0.4,
     textAlign: 'center',
-    marginTop: 4
+    marginBottom: 6,
   },
-  scroll: {
-    flex: 1
+  supportingText: {
+    fontSize: 14,
+    color: '#5f7da6',
+    fontWeight: '500',
+    textAlign: 'center',
   },
-  list: {
+  errorBanner: {
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  errorBannerText: {
+    color: '#dc2626',
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  scrollArea: {
+    flex: 1,
+  },
+  listContent: {
+    paddingVertical: 8,
+    paddingBottom: 20,
     gap: 10,
-    paddingBottom: 20
   },
-  card: {
+  languageCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.small
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderRadius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 18,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    minHeight: 62,
+    ...SHADOWS.sm,
   },
-  cardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight
+  languageCardSelected: {
+    backgroundColor: '#eff6ff',
+    borderColor: '#2563eb',
+    borderWidth: 1.6,
   },
-  leftCol: {},
-  langName: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.textPrimary
-  },
-  langNameSelected: {
-    color: COLORS.primaryDark
-  },
-  langLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 2
-  },
-  rightCol: {
+  cardTextCol: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10
+    alignItems: 'baseline',
+    gap: 8,
   },
-  badge: {
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8
+  languagePrimaryText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f2c6e',
   },
-  badgeSelected: {
-    backgroundColor: '#ffedd5'
+  languagePrimaryTextSelected: {
+    color: '#2563eb',
+    fontWeight: '800',
   },
-  badgeText: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    fontWeight: '600'
+  languageNativeText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#5f7da6',
   },
-  badgeTextSelected: {
-    color: COLORS.primaryDark,
-    fontWeight: '700'
+  languageNativeTextSelected: {
+    color: '#1d4ed8',
+    fontWeight: '700',
   },
-  radio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  radioSelected: {
-    borderColor: COLORS.primary
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: COLORS.primary
-  },
-  footer: {
-    paddingVertical: 16
-  },
-  continueBtn: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 14,
+  indicatorCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.medium
+    marginLeft: 12,
   },
-  continueBtnText: {
-    color: COLORS.textWhite,
+  indicatorCircleSelected: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+  emptyCircle: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: 'transparent',
+  },
+  checkMark: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '900',
+    marginTop: -1,
+  },
+  footer: {
+    paddingVertical: 14,
+    paddingBottom: 18,
+    backgroundColor: 'transparent',
+  },
+  continueButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 18,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+    ...SHADOWS.primaryBtn,
+  },
+  continueButtonDisabled: {
+    backgroundColor: '#cbd5e1',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  continueButtonText: {
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: '800'
-  }
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  continueButtonTextDisabled: {
+    color: '#94a3b8',
+  },
 });
