@@ -1,75 +1,67 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
-import { t } from '../../../shared/i18n';
 
 export default function AccountCompleteScreen({ customer, onProceedHome }) {
-  const checklist = [
-    { title: 'Mobile Number Verified', desc: '+91 ' + (customer?.phone || '9876543210'), status: 'Completed', icon: '📱' },
-    { title: 'Full Name Registered', desc: customer?.name || 'Ravi Kumar', status: 'Completed', icon: '👤' },
-    { title: 'Aadhaar Identity Verified', desc: customer?.maskedAadhaar || 'XXXX-XXXX-2345', status: 'Completed', icon: '🛡️' },
-    { title: 'Service Address Saved', desc: 'Sangareddy, Telangana', status: 'Completed', icon: '📍' },
-    { title: 'Live Selfie Matched', desc: '18+ Adult Status Confirmed', status: 'Completed', icon: '📸' }
+  const stepsCompleted = [
+    { id: 1, label: 'Mobile Verified' },
+    { id: 2, label: 'Name Added' },
+    { id: 3, label: 'Aadhaar Verified' },
+    { id: 4, label: 'Address' },
+    { id: 5, label: 'Photo' },
   ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Success Trophy / Check Icon */}
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
-          <View style={styles.iconCircle}>
-            <Text style={styles.trophy}>🎉</Text>
+          <View style={styles.headerIconBox}>
+            <Text style={styles.headerEmoji}>🛡️</Text>
           </View>
-          <Text style={styles.title}>Account Setup 100% Complete!</Text>
-          <Text style={styles.subtitle}>
-            Welcome to KaamDost. You are now verified to instantly book skilled labour across Telangana.
-          </Text>
+          <Text style={styles.title}>Account Completion</Text>
+          <Text style={styles.subtitle}>Structured Help, Better Living</Text>
         </View>
 
-        {/* Progress Bar (100%) */}
-        <View style={styles.progressCard}>
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressLabel}>5 of 5 Verified</Text>
-            <Text style={styles.progressPercent}>100%</Text>
-          </View>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '100%' }]} />
-          </View>
-        </View>
-
-        {/* Checklist */}
-        <View style={styles.checklist}>
-          {checklist.map((item, idx) => (
-            <View key={idx} style={styles.checkItem}>
-              <View style={styles.checkIcon}>
-                <Text style={styles.iconText}>{item.icon}</Text>
+        {/* Verification Checklist Card matching screen_08 */}
+        <View style={styles.checklistCard}>
+          {stepsCompleted.map((step, idx) => (
+            <View
+              key={step.id}
+              style={[
+                styles.stepRow,
+                idx < stepsCompleted.length - 1 && styles.stepDivider,
+              ]}
+            >
+              <View style={styles.greenCheckBadge}>
+                <Text style={styles.checkMarkIcon}>✓</Text>
               </View>
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemTitle}>{item.title}</Text>
-                <Text style={styles.itemDesc}>{item.desc}</Text>
-              </View>
-              <View style={styles.verifiedBadge}>
-                <Text style={styles.verifiedText}>Verified ✓</Text>
-              </View>
+              <Text style={styles.stepLabel}>{step.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* Welcome Bonus Note */}
-        <View style={styles.bonusBox}>
-          <Text style={styles.bonusIcon}>🎁</Text>
-          <View style={styles.bonusInfo}>
-            <Text style={styles.bonusTitle}>₹100 Welcome Credit Active</Text>
-            <Text style={styles.bonusSub}>Will be auto-applied on your first booking</Text>
-          </View>
-        </View>
+        {/* Bottom Callout & Continue Button */}
+        <View style={styles.footer}>
+          <Text style={styles.successHeadline}>Your account is complete!</Text>
 
-        {/* Proceed to Home */}
-        <TouchableOpacity style={styles.submitBtn} onPress={onProceedHome} activeOpacity={0.85}>
-          <Text style={styles.submitBtnText}>Explore Services & Book Dost →</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <TouchableOpacity
+            style={styles.continueBtn}
+            onPress={onProceedHome}
+            activeOpacity={0.88}
+          >
+            <Text style={styles.continueBtnText}>Continue</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -77,162 +69,103 @@ export default function AccountCompleteScreen({ customer, onProceedHome }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background
+    backgroundColor: '#f0f7ff',
   },
   container: {
-    padding: 20
+    flex: 1,
+    paddingHorizontal: 22,
+    paddingTop: 30,
+    paddingBottom: 24,
+    justifyContent: 'space-between',
   },
   header: {
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.accentLight,
+  headerIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12
+    marginBottom: 14,
   },
-  trophy: {
-    fontSize: 32
+  headerEmoji: {
+    fontSize: 22,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: COLORS.secondary,
-    textAlign: 'center'
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0f294a',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
+    fontSize: 14,
+    color: '#64748b',
     marginTop: 6,
-    lineHeight: 18,
-    paddingHorizontal: 10
+    fontWeight: '500',
   },
-  progressCard: {
-    backgroundColor: COLORS.surface,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 16
+  checklistCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    ...SHADOWS.medium,
   },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8
-  },
-  progressLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.secondary
-  },
-  progressPercent: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: COLORS.accent
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: COLORS.borderLight,
-    borderRadius: 4,
-    overflow: 'hidden'
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: COLORS.accent
-  },
-  checklist: {
-    gap: 10,
-    marginBottom: 16
-  },
-  checkItem: {
+  stepRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.small
+    paddingVertical: 18,
+    gap: 16,
   },
-  checkIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
+  stepDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  greenCheckBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#10b981',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10
   },
-  iconText: {
-    fontSize: 18
+  checkMarkIcon: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '900',
   },
-  itemInfo: {
-    flex: 1
-  },
-  itemTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.textPrimary
-  },
-  itemDesc: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginTop: 2
-  },
-  verifiedBadge: {
-    backgroundColor: COLORS.accentLight,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6
-  },
-  verifiedText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.accent
-  },
-  bonusBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primaryLight,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.primarySoft,
-    marginBottom: 20
-  },
-  bonusIcon: {
-    fontSize: 24,
-    marginRight: 10
-  },
-  bonusInfo: {
-    flex: 1
-  },
-  bonusTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: COLORS.primaryDark
-  },
-  bonusSub: {
-    fontSize: 11,
-    color: COLORS.primaryDark,
-    opacity: 0.8
-  },
-  submitBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    ...SHADOWS.medium
-  },
-  submitBtnText: {
-    color: COLORS.textWhite,
+  stepLabel: {
     fontSize: 16,
-    fontWeight: '800'
-  }
+    fontWeight: '700',
+    color: '#0f294a',
+  },
+  footer: {
+    alignItems: 'center',
+    gap: 16,
+    paddingTop: 10,
+  },
+  successHeadline: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1d4ed8',
+  },
+  continueBtn: {
+    backgroundColor: '#2563eb',
+    borderRadius: 16,
+    paddingVertical: 15,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.buttonGlow,
+  },
+  continueBtnText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
 });

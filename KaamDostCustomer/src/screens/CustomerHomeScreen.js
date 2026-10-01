@@ -1,195 +1,208 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, RefreshControl } from 'react-native';
-import Header from '../components/Header';
-import HeroBanner from '../components/HeroBanner';
-import ServiceGrid from '../components/ServiceGrid';
-import ActiveBookingCard from '../components/ActiveBookingCard';
-import BookingModal from '../components/BookingModal';
-import LanguageSelectModal from '../components/LanguageSelectModal';
-import NotificationsModal from '../components/NotificationsModal';
-import HelpModal from '../components/HelpModal';
-import LegalPolicyModal from '../components/LegalPolicyModal';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  TextInput,
+  Image,
+} from 'react-native';
+import BottomTabBar from '../components/BottomTabBar';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
-import { t } from '../../../shared/i18n';
 
 export default function CustomerHomeScreen({
   customer,
   activeBooking,
-  onOpenFindWorkers,
+  onOpenCategories,
+  onOpenSearch,
+  onSelectService,
   onOpenTracking,
-  onOpenDashboard,
-  onOpenSupport,
-  onBookingCreated
+  onOpenBookings,
+  onOpenWallet,
+  onOpenProfile,
+  onOpenNotifications,
 }) {
-  const [city, setCity] = useState(customer?.address?.city || 'Sangareddy');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTrade, setSelectedTrade] = useState(null);
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
-  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
-  const [showHelpModal, setShowHelpModal] = useState(false);
-  const [showLegalModal, setShowLegalModal] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState('Home');
 
-  const handleSelectTrade = (trade) => {
-    setSelectedTrade(trade);
-    setShowBookingModal(true);
-  };
+  const quickCategories = [
+    {
+      id: 'cleaning',
+      title: 'Home Cleaning',
+      icon: '🧹',
+      bg: '#eff6ff',
+      iconColor: '#2563eb',
+    },
+    {
+      id: 'plumbing',
+      title: 'Plumbing',
+      icon: '🔧',
+      bg: '#f0fdfa',
+      iconColor: '#0d9488',
+    },
+    {
+      id: 'electrician',
+      title: 'Electrician',
+      icon: '⚡',
+      bg: '#fefce8',
+      iconColor: '#ca8a04',
+    },
+    {
+      id: 'beauty',
+      title: 'Beauty & Wellness',
+      icon: '💆‍♀️',
+      bg: '#fdf2f8',
+      iconColor: '#db2777',
+    },
+  ];
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+  const handleTabPress = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'Services' && onOpenCategories) onOpenCategories();
+    if (tabId === 'Bookings' && onOpenBookings) onOpenBookings();
+    if (tabId === 'Wallet' && onOpenWallet) onOpenWallet();
+    if (tabId === 'Profile' && onOpenProfile) onOpenProfile();
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
 
-      {/* Top Header */}
-      <Header
-        city={city}
-        onSelectCity={() => setShowBookingModal(true)}
-        onOpenLanguage={() => setShowLanguageModal(true)}
-        onOpenNotifications={() => setShowNotificationsModal(true)}
-        onOpenProfile={onOpenDashboard}
-        unreadCount={2}
-      />
-
-      <ScrollView
-        style={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero Section with Quick Search */}
-        <HeroBanner
-          searchQuery={searchQuery}
-          onChangeSearch={setSearchQuery}
-          onPressBookNow={() => {
-            setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
-            setShowBookingModal(true);
-          }}
-          onPressVoiceSearch={onOpenFindWorkers}
-        />
-
-        {/* Active Booking Card */}
-        <ActiveBookingCard
-          booking={activeBooking}
-          onTrackBooking={onOpenTracking}
-        />
-
-        {/* 13 Telangana Service Categories */}
-        <ServiceGrid onSelectTrade={handleSelectTrade} />
-
-        {/* Banner: Telangana Labour Welfare Guarantee */}
-        <View style={styles.bannerContainer}>
-          <View style={styles.govBanner}>
-            <View style={styles.govIcon}>
-              <Text style={styles.govEmoji}>🏛️</Text>
-            </View>
-            <View style={styles.govInfo}>
-              <Text style={styles.govTitle}>Telangana Labour Welfare Guarantee</Text>
-              <Text style={styles.govSub}>
-                100% fair daily wages, zero commission deduction from workers, standard government safety norms.
-              </Text>
-            </View>
+      {/* Top Header matching screen_09 */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarEmoji}>👨</Text>
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.greeting}>Good Morning, {customer?.name ? customer.name.split(' ')[0] : 'Rahul'}</Text>
+            <Text style={styles.locationText} numberOfLines={1}>
+              📍 {customer?.address?.street || '123 Green Park, New Delhi'}
+            </Text>
           </View>
         </View>
 
-        {/* Quick Utility Links (Help, Legal, Support) */}
-        <View style={styles.utilityLinksRow}>
-          <TouchableOpacity style={styles.utilBtn} onPress={() => setShowHelpModal(true)}>
-            <Text style={styles.utilIcon}>❓</Text>
-            <Text style={styles.utilText}>FAQs & Helpline</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.utilBtn} onPress={onOpenSupport}>
-            <Text style={styles.utilIcon}>🤖</Text>
-            <Text style={styles.utilText}>AI Support Chat</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.utilBtn} onPress={() => setShowLegalModal(true)}>
-            <Text style={styles.utilIcon}>📜</Text>
-            <Text style={styles.utilText}>Legal & Terms</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ height: 80 }} />
-      </ScrollView>
-
-      {/* Floating Action Bar (Find Workers / Instant Booking) */}
-      <View style={styles.bottomBar}>
         <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {}}
+          style={styles.bellBtn}
+          onPress={onOpenNotifications}
+          activeOpacity={0.75}
         >
-          <Text style={[styles.navIcon, styles.navIconActive]}>🏠</Text>
-          <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={onOpenFindWorkers}
-        >
-          <Text style={styles.navIcon}>🔍</Text>
-          <Text style={styles.navText}>Workers</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.fabBtn}
-          onPress={() => {
-            setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
-            setShowBookingModal(true);
-          }}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.fabIcon}>⚡</Text>
-          <Text style={styles.fabText}>Book</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={onOpenTracking}
-        >
-          <Text style={styles.navIcon}>📍</Text>
-          <Text style={styles.navText}>Track</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={onOpenDashboard}
-        >
-          <Text style={styles.navIcon}>👤</Text>
-          <Text style={styles.navText}>Profile</Text>
+          <Text style={styles.bellIcon}>🔔</Text>
+          <View style={styles.unreadDot} />
         </TouchableOpacity>
       </View>
 
-      {/* Modals */}
-      <BookingModal
-        visible={showBookingModal}
-        trade={selectedTrade}
-        onClose={() => setShowBookingModal(false)}
-        onConfirmBooking={(booking) => {
-          if (onBookingCreated) onBookingCreated(booking);
-        }}
-      />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Search Bar matching screen_09 */}
+        <TouchableOpacity
+          style={styles.searchBar}
+          onPress={onOpenSearch}
+          activeOpacity={0.9}
+        >
+          <Text style={styles.searchIcon}>🔍</Text>
+          <Text style={styles.searchPlaceholder}>Search services....</Text>
+        </TouchableOpacity>
 
-      <LanguageSelectModal
-        visible={showLanguageModal}
-        onClose={() => setShowLanguageModal(false)}
-      />
+        {/* Quick Categories Section matching screen_09 */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <TouchableOpacity onPress={onOpenCategories}>
+            <Text style={styles.seeAllText}>See all →</Text>
+          </TouchableOpacity>
+        </View>
 
-      <NotificationsModal
-        visible={showNotificationsModal}
-        onClose={() => setShowNotificationsModal(false)}
-      />
+        <View style={styles.categoriesCard}>
+          <View style={styles.categoriesGrid}>
+            {quickCategories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={styles.categoryItem}
+                onPress={() => onSelectService && onSelectService(cat)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.categoryIconCircle, { backgroundColor: cat.bg }]}>
+                  <Text style={styles.catEmoji}>{cat.icon}</Text>
+                </View>
+                <Text style={styles.categoryName} numberOfLines={2}>
+                  {cat.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
-      <HelpModal
-        visible={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
-      />
+        {/* Active Bookings Card matching screen_09 */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Active Bookings</Text>
+          {activeBooking && (
+            <TouchableOpacity onPress={onOpenTracking}>
+              <Text style={styles.trackLiveText}>Track Live 📍</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-      <LegalPolicyModal
-        visible={showLegalModal}
-        onClose={() => setShowLegalModal(false)}
-      />
+        {activeBooking ? (
+          <TouchableOpacity
+            style={styles.activeBookingCard}
+            onPress={onOpenTracking}
+            activeOpacity={0.9}
+          >
+            <View style={styles.bookingCardLeft}>
+              <View style={styles.serviceAvatar}>
+                <Text style={styles.serviceAvatarEmoji}>🧹</Text>
+              </View>
+              <View style={styles.bookingDetails}>
+                <Text style={styles.bookingServiceName}>
+                  {activeBooking.tradeName || 'Deep Cleaning'}
+                </Text>
+                <Text style={styles.bookingWorkerName}>
+                  {activeBooking.workerName || 'Rohit Kumar'} • Door Cleaning
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.bookingCardRight}>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusPillText}>In Progress</Text>
+              </View>
+              <Text style={styles.bookingTimeText}>
+                {activeBooking.estimatedArrival ? `ETA ${activeBooking.estimatedArrival}` : '11:15 AM'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.noBookingCard}>
+            <Text style={styles.noBookingEmoji}>✨</Text>
+            <Text style={styles.noBookingTitle}>No active orders right now</Text>
+            <Text style={styles.noBookingSub}>Choose any service above to book verified local workers.</Text>
+          </View>
+        )}
+
+        {/* Telangana Labour Guarantee Card */}
+        <View style={styles.guaranteeCard}>
+          <View style={styles.shieldIconBox}>
+            <Text style={styles.shieldEmoji}>🛡️</Text>
+          </View>
+          <View style={styles.guaranteeTextCol}>
+            <Text style={styles.guaranteeHeading}>100% Fair Wage & Safety Protection</Text>
+            <Text style={styles.guaranteeSub}>
+              Zero platform commissions deducted from workers. Covered with ₹5,00,000 labour insurance.
+            </Text>
+          </View>
+        </View>
+
+        {/* Bottom spacing before tab bar */}
+        <View style={{ height: 20 }} />
+      </ScrollView>
+
+      {/* 5-Tab Bottom Navigation Bar matching screen_09 */}
+      <BottomTabBar activeTab={activeTab} onTabPress={handleTabPress} />
     </SafeAreaView>
   );
 }
@@ -197,131 +210,284 @@ export default function CustomerHomeScreen({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background
+    backgroundColor: '#f0f7ff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 14,
+    backgroundColor: '#f0f7ff',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#93c5fd',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    ...SHADOWS.small,
+  },
+  avatarEmoji: {
+    fontSize: 24,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  greeting: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f294a',
+    letterSpacing: -0.3,
+  },
+  locationText: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  bellBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.small,
+    position: 'relative',
+  },
+  bellIcon: {
+    fontSize: 18,
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: 9,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
   },
   scroll: {
-    flex: 1
+    flex: 1,
   },
-  bannerContainer: {
-    paddingHorizontal: 16,
-    marginVertical: 10
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 20,
   },
-  govBanner: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ecfdf5',
-    borderWidth: 1,
-    borderColor: '#a7f3d0',
-    borderRadius: 14,
-    padding: 14
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    marginBottom: 20,
+    ...SHADOWS.small,
   },
-  govIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#d1fae5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 10,
   },
-  govEmoji: {
-    fontSize: 20
+  searchPlaceholder: {
+    fontSize: 14,
+    color: '#94a3b8',
+    fontWeight: '500',
   },
-  govInfo: {
-    flex: 1
-  },
-  govTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#065f46'
-  },
-  govSub: {
-    fontSize: 11,
-    color: '#047857',
-    marginTop: 2,
-    lineHeight: 16
-  },
-  utilityLinksRow: {
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginVertical: 12,
-    gap: 8
-  },
-  utilBtn: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    gap: 4
+    marginBottom: 12,
   },
-  utilIcon: {
-    fontSize: 14
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0f294a',
   },
-  utilText: {
-    fontSize: 11,
+  seeAllText: {
+    fontSize: 13,
     fontWeight: '700',
-    color: COLORS.secondary
+    color: '#2563eb',
   },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 64,
-    backgroundColor: COLORS.surface,
+  trackLiveText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#2563eb',
+  },
+  categoriesCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 22,
+    paddingVertical: 16,
+    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    marginBottom: 22,
+    ...SHADOWS.small,
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  categoryItem: {
+    alignItems: 'center',
+    width: '24%',
+  },
+  categoryIconCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  catEmoji: {
+    fontSize: 24,
+  },
+  categoryName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0f294a',
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+  activeBookingCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    ...SHADOWS.medium,
+  },
+  bookingCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  serviceAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#dbeafe',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  serviceAvatarEmoji: {
+    fontSize: 24,
+  },
+  bookingDetails: {
+    flex: 1,
+  },
+  bookingServiceName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0f294a',
+  },
+  bookingWorkerName: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 3,
+  },
+  bookingCardRight: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  statusPill: {
+    backgroundColor: '#eff6ff',
     paddingHorizontal: 10,
-    ...SHADOWS.medium
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
   },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 50
+  statusPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#2563eb',
   },
-  navIcon: {
-    fontSize: 18,
-    color: COLORS.textMuted
-  },
-  navIconActive: {
-    color: COLORS.primary
-  },
-  navText: {
-    fontSize: 10,
-    color: COLORS.textMuted,
+  bookingTimeText: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
     marginTop: 2,
-    fontWeight: '600'
   },
-  navTextActive: {
-    color: COLORS.primary,
-    fontWeight: '800'
+  noBookingCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    marginBottom: 20,
+    ...SHADOWS.small,
   },
-  fabBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.primary,
+  noBookingEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  noBookingTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0f294a',
+  },
+  noBookingSub: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  guaranteeCard: {
+    backgroundColor: '#eff6ff',
+    borderRadius: 20,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#bfdbfe',
+  },
+  shieldIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
-    top: -14,
-    ...SHADOWS.large
+    marginRight: 12,
   },
-  fabIcon: {
-    fontSize: 18,
-    color: COLORS.textWhite
+  shieldEmoji: {
+    fontSize: 22,
   },
-  fabText: {
-    fontSize: 9,
-    color: COLORS.textWhite,
-    fontWeight: '800'
-  }
+  guaranteeTextCol: {
+    flex: 1,
+  },
+  guaranteeHeading: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#1e3a8a',
+  },
+  guaranteeSub: {
+    fontSize: 11,
+    color: '#3b82f6',
+    marginTop: 3,
+    lineHeight: 16,
+    fontWeight: '500',
+  },
 });

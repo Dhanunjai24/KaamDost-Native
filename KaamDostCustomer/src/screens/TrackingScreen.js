@@ -1,237 +1,161 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, ScrollView, Alert } from 'react-native';
-import ChatModal from '../components/ChatModal';
-import PaymentModal from '../components/PaymentModal';
-import RatingTipModal from '../components/RatingTipModal';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
-import { STATUS_LABELS } from '../../../shared/constants/states';
-import { t } from '../../../shared/i18n';
 
-export default function TrackingScreen({ booking, onBack, onCompleteBooking, onCancelBooking }) {
-  const [showChat, setShowChat] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
-  const [showRating, setShowRating] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(booking?.status || 'ARRIVING');
+export default function TrackingScreen({
+  booking,
+  onBack,
+  onOpenChat,
+  onOpenPayment,
+  onCancelBooking,
+}) {
+  const [status, setStatus] = useState(booking?.status || 'ARRIVING');
 
-  if (!booking) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📍</Text>
-          <Text style={styles.emptyTitle}>No Active Booking</Text>
-          <Text style={styles.emptyDesc}>You have no orders currently in transit or in progress.</Text>
-          <TouchableOpacity style={styles.backHomeBtn} onPress={onBack}>
-            <Text style={styles.backHomeText}>← Back to Home</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const steps = [
-    { key: 'ACCEPTED', label: 'Partner Assigned', icon: '👤' },
-    { key: 'ARRIVING', label: 'Partner En Route', icon: '🚚' },
-    { key: 'STARTED', label: 'Work in Progress', icon: '⚡' },
-    { key: 'COMPLETED', label: 'Job Completed', icon: '✅' }
-  ];
-
-  const getStepIndex = (status) => {
-    switch (status) {
-      case 'REQUESTED':
-      case 'OFFERED':
-      case 'ACCEPTED':
-        return 0;
-      case 'ARRIVING':
-        return 1;
-      case 'STARTED':
-        return 2;
-      case 'COMPLETED':
-      case 'PAYMENT_CONFIRMED':
-      case 'RATED':
-        return 3;
-      default:
-        return 1;
-    }
+  const currentBooking = booking || {
+    id: 'KD123456',
+    workerName: 'Rohit Kumar',
+    workerPhone: '9848012345',
+    workerRating: 4.7,
+    tradeName: 'Home Cleaning - Deep Cleaning',
+    startOtp: '4829',
+    estimatedArrival: '10 minutes',
+    totalAmount: 1237,
   };
 
-  const activeIndex = getStepIndex(currentStatus);
+  const handleCall = () => {
+    Alert.alert('Calling Partner', `Dialing +91 ${currentBooking.workerPhone}...`);
+  };
 
-  // Simulation controls for testing the complete lifecycle
-  const advanceStatus = () => {
-    if (currentStatus === 'ARRIVING') {
-      setCurrentStatus('STARTED');
-    } else if (currentStatus === 'STARTED') {
-      setCurrentStatus('COMPLETED');
-      setShowPayment(true);
+  const advanceDevSimulation = () => {
+    if (status === 'ARRIVING') {
+      setStatus('STARTED');
+      Alert.alert('Worker Arrived', 'Worker entered OTP 4829. Service in progress!');
+    } else if (status === 'STARTED') {
+      setStatus('COMPLETED');
+      if (onOpenPayment) onOpenPayment();
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Live Booking Tracking</Text>
-        <TouchableOpacity
-          onPress={() => {
-            Alert.alert(
-              'Cancel Booking',
-              'Are you sure you want to cancel this booking? Free cancellation applies.',
-              [
-                { text: 'No', style: 'cancel' },
-                { text: 'Yes, Cancel', style: 'destructive', onPress: () => onCancelBooking && onCancelBooking(booking.id) }
-              ]
-            );
-          }}
-        >
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Live GPS Map Simulation Card */}
-        <View style={styles.mapCard}>
-          <View style={styles.mapOverlay}>
-            <View style={styles.mapPulse}>
-              <Text style={styles.workerPin}>👷</Text>
-            </View>
-            <View style={styles.destPin}>
-              <Text style={styles.housePin}>🏠</Text>
-            </View>
-          </View>
-          <View style={styles.etaBar}>
-            <Text style={styles.etaText}>
-              ETA: <Text style={styles.etaBold}>{booking.estimatedArrival || '12 mins'}</Text> (1.4 km away)
-            </Text>
-          </View>
-        </View>
-
-        {/* Stepper Progress */}
-        <View style={styles.stepperCard}>
-          <Text style={styles.cardHeading}>Service Status</Text>
-          <View style={styles.stepsRow}>
-            {steps.map((st, i) => {
-              const isPastOrCurrent = i <= activeIndex;
-              return (
-                <View key={st.key} style={styles.stepCol}>
-                  <View style={[styles.stepCircle, isPastOrCurrent && styles.stepCircleActive]}>
-                    <Text style={styles.stepEmoji}>{st.icon}</Text>
-                  </View>
-                  <Text style={[styles.stepLabel, isPastOrCurrent && styles.stepLabelActive]}>
-                    {st.label}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Start OTP Display */}
-        <View style={styles.otpCard}>
-          <View style={styles.otpLeft}>
-            <Text style={styles.otpTitle}>Job Security Start OTP</Text>
-            <Text style={styles.otpSub}>Share this 4-digit code with worker to begin work</Text>
-          </View>
-          <View style={styles.otpBadge}>
-            <Text style={styles.otpDigits}>{booking.startOtp || '4829'}</Text>
-          </View>
-        </View>
-
-        {/* Worker Card */}
-        <View style={styles.workerCard}>
-          <View style={styles.workerAvatar}>
-            <Text style={styles.workerEmoji}>👷</Text>
-          </View>
-          <View style={styles.workerInfo}>
-            <Text style={styles.workerName}>{booking.workerName || 'Ramesh Reddy'}</Text>
-            <Text style={styles.workerTrade}>{booking.tradeName || 'Mason'}</Text>
-            <Text style={styles.workerRating}>⭐ {booking.workerRating || '4.9'} • 140+ Jobs Completed</Text>
-          </View>
-          <View style={styles.workerActions}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => setShowChat(true)}>
-              <Text style={styles.actionIcon}>💬</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => Alert.alert('Call Partner', `Dialing +91 ${booking.workerPhone || '9848012345'}`)}
-            >
-              <Text style={styles.actionIcon}>📞</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Booking Details */}
-        <View style={styles.detailsCard}>
-          <Text style={styles.cardHeading}>Booking Summary</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Booking ID</Text>
-            <Text style={styles.detailVal}>{booking.id || 'BK-8492'}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Location</Text>
-            <Text style={styles.detailVal}>{booking.address || 'Sangareddy, Telangana'}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Daily Rate</Text>
-            <Text style={styles.detailVal}>₹{booking.dailyRate || 950} / day</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.detailRow}>
-            <Text style={styles.totalLabel}>Total Payable</Text>
-            <Text style={styles.totalVal}>₹{booking.totalAmount || 1045}</Text>
-          </View>
-        </View>
-
-        {/* Simulation Action Bar */}
-        <View style={styles.simBox}>
-          <Text style={styles.simTitle}>⚡ Developer / Demo Action</Text>
-          <TouchableOpacity style={styles.simBtn} onPress={advanceStatus}>
-            <Text style={styles.simBtnText}>
-              {currentStatus === 'ARRIVING'
-                ? 'Simulate Worker Arrived & Started'
-                : currentStatus === 'STARTED'
-                ? 'Simulate Job Completed → Open Payment'
-                : 'Job Complete'}
-            </Text>
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <View style={styles.container}>
+        {/* Header matching screen_20 */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+            <Text style={styles.backArrow}>‹</Text>
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>Live Tracking</Text>
+          <View style={{ width: 42 }} />
         </View>
-      </ScrollView>
 
-      {/* Modals */}
-      <ChatModal
-        visible={showChat}
-        partnerName={booking.workerName || 'Ramesh Reddy'}
-        onClose={() => setShowChat(false)}
-      />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {/* Map Simulation Card matching screen_20 */}
+          <View style={styles.mapCard}>
+            <View style={styles.mapCanvas}>
+              {/* Simulated Map Grid / Roads */}
+              <View style={styles.roadHorizontal1} />
+              <View style={styles.roadHorizontal2} />
+              <View style={styles.roadVertical1} />
+              <View style={styles.roadDiagonal} />
 
-      <PaymentModal
-        visible={showPayment}
-        amount={booking.totalAmount || 1045}
-        onClose={() => setShowPayment(false)}
-        onSuccess={(payInfo) => {
-          setShowPayment(false);
-          setShowRating(true);
-        }}
-      />
+              {/* Blue Connecting Route Polyline */}
+              <View style={styles.routePolyline} />
 
-      <RatingTipModal
-        visible={showRating}
-        workerName={booking.workerName || 'Ramesh Reddy'}
-        onClose={() => {
-          setShowRating(false);
-          if (onCompleteBooking) onCompleteBooking(booking);
-          onBack();
-        }}
-        onSubmit={(review) => {
-          setShowRating(false);
-          if (onCompleteBooking) onCompleteBooking(booking);
-          onBack();
-        }}
-      />
+              {/* Worker Pin */}
+              <View style={styles.workerPin}>
+                <View style={styles.workerPinInner}>
+                  <Text style={styles.workerPinEmoji}>👨‍🔧</Text>
+                </View>
+              </View>
+
+              {/* Destination Pin (Green House) */}
+              <View style={styles.destinationPin}>
+                <Text style={styles.destPinEmoji}>📍</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Status Banner Card matching screen_20 */}
+          <View style={styles.statusBannerCard}>
+            <View style={styles.statusIconBox}>
+              <Text style={styles.statusEmoji}>🚚</Text>
+            </View>
+            <View style={styles.statusTextCol}>
+              <Text style={styles.statusTitle}>
+                {status === 'ARRIVING'
+                  ? 'Worker is on the way'
+                  : status === 'STARTED'
+                  ? 'Work In Progress'
+                  : 'Job Completed'}
+              </Text>
+              <Text style={styles.statusSub}>
+                {status === 'ARRIVING'
+                  ? `Arriving in ${currentBooking.estimatedArrival || '10 minutes'}`
+                  : status === 'STARTED'
+                  ? 'Service underway at your location'
+                  : 'Ready for payment'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Start OTP Security Card */}
+          <View style={styles.otpCard}>
+            <View style={styles.otpTextCol}>
+              <Text style={styles.otpTitle}>Job Security Start OTP</Text>
+              <Text style={styles.otpSub}>Share this 4-digit code with worker to start</Text>
+            </View>
+            <View style={styles.otpPill}>
+              <Text style={styles.otpDigits}>{currentBooking.startOtp || '4829'}</Text>
+            </View>
+          </View>
+
+          {/* Worker Profile Card with Action Buttons matching screen_20 */}
+          <View style={styles.workerCard}>
+            <View style={styles.workerLeft}>
+              <View style={styles.workerAvatarCircle}>
+                <Text style={styles.workerAvatarEmoji}>👨‍🔧</Text>
+              </View>
+              <View>
+                <Text style={styles.workerName}>{currentBooking.workerName}</Text>
+                <Text style={styles.workerRating}>⭐ {currentBooking.workerRating} (786)</Text>
+              </View>
+            </View>
+
+            <View style={styles.actionButtonsRow}>
+              <TouchableOpacity style={styles.circleActionBtn} onPress={handleCall} activeOpacity={0.8}>
+                <Text style={styles.actionEmoji}>📞</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.circleActionBtn} onPress={onOpenChat} activeOpacity={0.8}>
+                <Text style={styles.actionEmoji}>💬</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Developer / Simulation Trigger */}
+          <View style={styles.simCard}>
+            <Text style={styles.simHeading}>⚡ Demo Simulation</Text>
+            <TouchableOpacity style={styles.simBtn} onPress={advanceDevSimulation}>
+              <Text style={styles.simBtnText}>
+                {status === 'ARRIVING'
+                  ? 'Simulate Worker Arrived (Start Job)'
+                  : status === 'STARTED'
+                  ? 'Simulate Work Complete → Open Payment'
+                  : 'Open Payment Screen'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -239,339 +163,291 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background
+    backgroundColor: '#f0f7ff',
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    paddingTop: 16,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight
+    marginBottom: 16,
   },
   backBtn: {
-    paddingRight: 8
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.small,
   },
-  backText: {
-    fontSize: 22,
+  backArrow: {
+    fontSize: 26,
     fontWeight: '700',
-    color: COLORS.secondary
+    color: '#1d4ed8',
+    marginTop: -3,
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '800',
-    color: COLORS.textPrimary
+    color: '#0f294a',
   },
-  cancelText: {
-    color: COLORS.danger,
-    fontSize: 13,
-    fontWeight: '700'
-  },
-  content: {
-    padding: 16
+  scrollContent: {
+    paddingBottom: 20,
+    gap: 14,
   },
   mapCard: {
-    height: 140,
-    backgroundColor: '#cbd5e1',
-    borderRadius: 16,
+    height: 240,
+    borderRadius: 26,
+    backgroundColor: '#e2e8f0',
     overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    ...SHADOWS.medium,
   },
-  mapOverlay: {
+  mapCanvas: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20
+    backgroundColor: '#e5e7eb',
+    position: 'relative',
   },
-  mapPulse: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.medium
-  },
-  workerPin: {
-    fontSize: 26
-  },
-  destPin: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.medium
-  },
-  housePin: {
-    fontSize: 26
-  },
-  etaBar: {
+  roadHorizontal1: {
     position: 'absolute',
-    bottom: 0,
+    top: 60,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
-    paddingVertical: 8,
-    alignItems: 'center'
+    height: 18,
+    backgroundColor: '#ffffff',
   },
-  etaText: {
-    color: COLORS.textWhite,
-    fontSize: 12
+  roadHorizontal2: {
+    position: 'absolute',
+    bottom: 50,
+    left: 0,
+    right: 0,
+    height: 22,
+    backgroundColor: '#ffffff',
   },
-  etaBold: {
-    fontWeight: '800',
-    color: COLORS.primarySoft
+  roadVertical1: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: '45%',
+    width: 22,
+    backgroundColor: '#ffffff',
   },
-  stepperCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 12,
-    ...SHADOWS.small
+  roadDiagonal: {
+    position: 'absolute',
+    top: 30,
+    right: 40,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#bbf7d0',
   },
-  cardHeading: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: COLORS.secondary,
-    marginBottom: 10
+  routePolyline: {
+    position: 'absolute',
+    top: 70,
+    left: '35%',
+    width: 90,
+    height: 90,
+    borderLeftWidth: 5,
+    borderBottomWidth: 5,
+    borderColor: '#2563eb',
   },
-  stepsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between'
-  },
-  stepCol: {
-    flex: 1,
-    alignItems: 'center'
-  },
-  stepCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.background,
-    borderWidth: 2,
-    borderColor: COLORS.border,
+  workerPin: {
+    position: 'absolute',
+    bottom: 45,
+    left: '28%',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4
+    ...SHADOWS.medium,
+    borderWidth: 2,
+    borderColor: '#2563eb',
   },
-  stepCircleActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight
+  workerPinInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  stepEmoji: {
-    fontSize: 16
+  workerPinEmoji: {
+    fontSize: 24,
   },
-  stepLabel: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    fontWeight: '600'
+  destinationPin: {
+    position: 'absolute',
+    top: 55,
+    right: '25%',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#10b981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.medium,
   },
-  stepLabelActive: {
-    color: COLORS.primaryDark,
-    fontWeight: '800'
+  destPinEmoji: {
+    fontSize: 24,
+  },
+  statusBannerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    ...SHADOWS.small,
+  },
+  statusIconBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  statusEmoji: {
+    fontSize: 22,
+  },
+  statusTextCol: {
+    flex: 1,
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f294a',
+  },
+  statusSub: {
+    fontSize: 13,
+    color: '#2563eb',
+    fontWeight: '600',
+    marginTop: 2,
   },
   otpCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.primaryLight,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.primarySoft,
-    marginBottom: 12
+    backgroundColor: '#eff6ff',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#bfdbfe',
   },
-  otpLeft: {
+  otpTextCol: {
     flex: 1,
-    paddingRight: 8
+    paddingRight: 10,
   },
   otpTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
-    color: COLORS.primaryDark
+    color: '#1e3a8a',
   },
   otpSub: {
     fontSize: 11,
-    color: COLORS.primaryDark,
+    color: '#3b82f6',
     marginTop: 2,
-    opacity: 0.85
+    fontWeight: '500',
   },
-  otpBadge: {
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.primary
+  otpPill: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1.5,
+    borderColor: '#2563eb',
   },
   otpDigits: {
     fontSize: 20,
     fontWeight: '900',
-    color: COLORS.primary,
-    letterSpacing: 2
+    color: '#2563eb',
+    letterSpacing: 2,
   },
   workerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 12,
-    ...SHADOWS.small
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    ...SHADOWS.small,
   },
-  workerAvatar: {
+  workerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  workerAvatarCircle: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12
+    marginRight: 14,
   },
-  workerEmoji: {
-    fontSize: 24
-  },
-  workerInfo: {
-    flex: 1
+  workerAvatarEmoji: {
+    fontSize: 26,
   },
   workerName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
-    color: COLORS.textPrimary
-  },
-  workerTrade: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.primary
+    color: '#0f294a',
   },
   workerRating: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginTop: 2
-  },
-  workerActions: {
-    flexDirection: 'row',
-    gap: 8
-  },
-  actionBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  actionIcon: {
-    fontSize: 16
-  },
-  detailsCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 14
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6
-  },
-  detailLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary
-  },
-  detailVal: {
-    fontSize: 12,
+    color: '#64748b',
+    marginTop: 3,
     fontWeight: '600',
-    color: COLORS.textPrimary
   },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.borderLight,
-    marginVertical: 8
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  totalLabel: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: COLORS.secondary
-  },
-  totalVal: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: COLORS.primary
-  },
-  simBox: {
-    backgroundColor: '#fffbeb',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#fef3c7'
-  },
-  simTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#92400e',
-    marginBottom: 6
-  },
-  simBtn: {
-    backgroundColor: COLORS.secondary,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center'
-  },
-  simBtnText: {
-    color: COLORS.textWhite,
-    fontSize: 12,
-    fontWeight: '700'
-  },
-  emptyContainer: {
-    flex: 1,
+  circleActionBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#eff6ff',
+    borderWidth: 1.5,
+    borderColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 30
   },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12
-  },
-  emptyTitle: {
+  actionEmoji: {
     fontSize: 18,
+  },
+  simCard: {
+    backgroundColor: '#fffbeb',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+  },
+  simHeading: {
+    fontSize: 12,
     fontWeight: '800',
-    color: COLORS.secondary
+    color: '#92400e',
+    marginBottom: 8,
   },
-  emptyDesc: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 20
-  },
-  backHomeBtn: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 20,
+  simBtn: {
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
     paddingVertical: 12,
-    borderRadius: 12
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  backHomeText: {
-    color: COLORS.textWhite,
-    fontWeight: '700',
-    fontSize: 14
-  }
+  simBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
 });

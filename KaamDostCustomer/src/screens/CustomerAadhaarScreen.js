@@ -1,145 +1,149 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
-import { t } from '../../../shared/i18n';
 
-export default function CustomerAadhaarScreen({ onContinue }) {
-  const [aadhaarNumber, setAadhaarNumber] = useState('542189012345');
-  const [hasAadhaarDoc, setHasAadhaarDoc] = useState(true);
-  const [hasLiveSelfie, setHasLiveSelfie] = useState(true);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationProgress, setVerificationProgress] = useState('');
+export default function CustomerAadhaarScreen({ onContinue, onBack }) {
+  const [aadhaarNumber, setAadhaarNumber] = useState('5482 9102 3847');
+  const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const formatAadhaar = (val) => {
-    const raw = val.replace(/\D/g, '').slice(0, 12);
-    const parts = raw.match(/.{1,4}/g);
-    return parts ? parts.join(' ') : raw;
+  const checklistItems = [
+    { id: 1, title: 'Aadhaar Number' },
+    { id: 2, title: 'Document Verification' },
+    { id: 3, title: 'Face Match' },
+  ];
+
+  const handleNext = () => {
+    const raw = aadhaarNumber.replace(/\s/g, '');
+    if (raw.length < 12) {
+      setErrorMsg('Please enter valid 12-digit Aadhaar Number');
+      return;
+    }
+    setErrorMsg('');
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      if (onContinue) {
+        onContinue({
+          maskedAadhaar: `XXXX-XXXX-${raw.slice(-4)}`,
+          isAadhaarVerified: true,
+        });
+      }
+    }, 700);
   };
 
-  const handleVerify = () => {
-    const clean = aadhaarNumber.replace(/\s/g, '');
-    if (clean.length !== 12) {
-      setErrorMsg('Aadhaar number must be exactly 12 numeric digits');
-      return;
+  const formatAadhaar = (val) => {
+    const digits = val.replace(/\D/g, '').slice(0, 12);
+    const parts = [];
+    for (let i = 0; i < digits.length; i += 4) {
+      parts.push(digits.slice(i, i + 4));
     }
-    if (!hasAadhaarDoc) {
-      setErrorMsg('Please upload or capture Aadhaar card document');
-      return;
-    }
-    if (!hasLiveSelfie) {
-      setErrorMsg('Please capture a live selfie for identity matching');
-      return;
-    }
-
-    setErrorMsg('');
-    setIsVerifying(true);
-    setVerificationProgress('Encrypting identity data (AES-256)...');
-
-    setTimeout(() => {
-      setVerificationProgress('Validating UIDAI database records...');
-      setTimeout(() => {
-        setVerificationProgress('Matching live selfie with Aadhaar photo (18+ adult check)...');
-        setTimeout(() => {
-          setIsVerifying(false);
-          onContinue({
-            aadhaarNumber: clean,
-            maskedAadhaar: 'XXXX-XXXX-' + clean.slice(-4),
-            aadhaarVerified: true,
-            isAdult: true
-          });
-        }, 800);
-      }, 800);
-    }, 800);
+    return parts.join(' ');
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Stepper Header */}
-        <View style={styles.stepperRow}>
-          <Text style={styles.stepText}>Step 5 of 6</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '83%' }]} />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f7ff" />
+      <View style={styles.container}>
+        {/* Top Back Navigation Arrow */}
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={onBack}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backArrow}>‹</Text>
+        </TouchableOpacity>
+
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Aadhaar Verification</Text>
+            <Text style={styles.subtitle}>Secure and safe verification</Text>
           </View>
-        </View>
 
-        <View style={styles.header}>
-          <Text style={styles.title}>Identity & Age Verification</Text>
-          <Text style={styles.subtitle}>
-            UIDAI verified safety protocol protecting customers and labour partners across Telangana
-          </Text>
-        </View>
+          {/* Graphic Aadhaar Card Preview matching screen_06 */}
+          <View style={styles.cardGraphic}>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardChip} />
+              <View style={styles.aadhaarBadge}>
+                <Text style={styles.aadhaarSun}>☀️</Text>
+                <Text style={styles.aadhaarBadgeText}>AADHAAR</Text>
+              </View>
+            </View>
 
-        {/* 1. Aadhaar Card Input */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>1. Aadhaar Card Details</Text>
-          <Text style={styles.label}>12-Digit Aadhaar Number</Text>
-          <TextInput
-            style={styles.aadhaarInput}
-            value={formatAadhaar(aadhaarNumber)}
-            onChangeText={(val) => {
-              setAadhaarNumber(val);
-              setErrorMsg('');
-            }}
-            keyboardType="number-pad"
-            maxLength={14}
-            placeholder="XXXX XXXX XXXX"
-          />
+            <View style={styles.cardBodyRow}>
+              <View style={styles.cardAvatar}>
+                <Text style={styles.cardAvatarEmoji}>👤</Text>
+              </View>
+              <View style={styles.cardLines}>
+                <View style={styles.cardLineWide} />
+                <View style={styles.cardLineMed} />
+                <View style={styles.cardLineSmall} />
+              </View>
+            </View>
 
-          <View style={styles.docUploadRow}>
-            <TouchableOpacity
-              style={[styles.uploadBox, hasAadhaarDoc && styles.uploadBoxDone]}
-              onPress={() => setHasAadhaarDoc(true)}
-            >
-              <Text style={styles.uploadIcon}>{hasAadhaarDoc ? '✅' : '📷'}</Text>
-              <Text style={styles.uploadLabel}>
-                {hasAadhaarDoc ? 'Aadhaar Photo Attached' : 'Capture / Upload Aadhaar'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* 2. Live Selfie Camera */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>2. Live Selfie Camera Check</Text>
-          <Text style={styles.sectionDesc}>
-            Position your face directly in front of the camera with good lighting. Prevents identity theft.
-          </Text>
-
-          <View style={styles.selfieOval}>
-            <Text style={styles.selfieEmoji}>{hasLiveSelfie ? '👤' : '📸'}</Text>
-            <View style={styles.selfieBadge}>
-              <Text style={styles.selfieBadgeText}>
-                {hasLiveSelfie ? 'Live Face Matched ✓' : 'Camera Ready'}
-              </Text>
+            <View style={styles.cardFooter}>
+              <Text style={styles.cardDigits}>{aadhaarNumber || 'XXXX XXXX XXXX'}</Text>
             </View>
           </View>
 
+          {/* Aadhaar Input Field */}
+          <View style={styles.inputCard}>
+            <Text style={styles.inputLabel}>Enter 12-Digit Aadhaar Number</Text>
+            <TextInput
+              style={styles.aadhaarInput}
+              placeholder="0000 0000 0000"
+              placeholderTextColor="#94a3b8"
+              keyboardType="number-pad"
+              maxLength={14}
+              value={aadhaarNumber}
+              onChangeText={(val) => {
+                setAadhaarNumber(formatAadhaar(val));
+                setErrorMsg('');
+              }}
+            />
+            {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+          </View>
+
+          {/* Verification Checklist matching screen_06 */}
+          <View style={styles.checklistCard}>
+            {checklistItems.map((item) => (
+              <View key={item.id} style={styles.checkItem}>
+                <View style={styles.checkCircle}>
+                  <Text style={styles.checkMark}>✓</Text>
+                </View>
+                <Text style={styles.checkText}>{item.title}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Continue Button */}
+        <View style={styles.footer}>
           <TouchableOpacity
-            style={styles.retakeBtn}
-            onPress={() => setHasLiveSelfie(true)}
+            style={styles.continueBtn}
+            onPress={handleNext}
+            disabled={loading}
+            activeOpacity={0.88}
           >
-            <Text style={styles.retakeText}>
-              {hasLiveSelfie ? 'Retake Selfie' : 'Open Front Camera'}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.continueBtnText}>Continue</Text>
+            )}
           </TouchableOpacity>
         </View>
-
-        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-
-        {isVerifying ? (
-          <View style={styles.verifyingBox}>
-            <ActivityIndicator size="small" color={COLORS.primary} style={{ marginBottom: 6 }} />
-            <Text style={styles.progressText}>{verificationProgress}</Text>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.submitBtn} onPress={handleVerify}>
-            <Text style={styles.submitBtnText}>Verify Identity with UIDAI ✓</Text>
-          </TouchableOpacity>
-        )}
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -147,179 +151,225 @@ export default function CustomerAadhaarScreen({ onContinue }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background
+    backgroundColor: '#f0f7ff',
   },
   container: {
-    padding: 20
+    flex: 1,
+    paddingHorizontal: 22,
+    paddingTop: 10,
+    paddingBottom: 24,
   },
-  stepperRow: {
-    marginBottom: 16
-  },
-  stepText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.primary,
-    marginBottom: 6
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: COLORS.borderLight,
-    borderRadius: 3,
-    overflow: 'hidden'
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary
-  },
-  header: {
-    marginBottom: 16
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.secondary
-  },
-  subtitle: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-    lineHeight: 18
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 14,
-    ...SHADOWS.small
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: COLORS.secondary,
-    marginBottom: 8
-  },
-  sectionDesc: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    lineHeight: 16,
-    marginBottom: 12
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 6
-  },
-  aadhaarInput: {
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.secondary,
-    letterSpacing: 2,
-    backgroundColor: COLORS.background,
-    marginBottom: 12
-  },
-  docUploadRow: {},
-  uploadBox: {
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    backgroundColor: COLORS.background
-  },
-  uploadBoxDone: {
-    borderColor: COLORS.accent,
-    backgroundColor: COLORS.accentLight,
-    borderStyle: 'solid'
-  },
-  uploadIcon: {
-    fontSize: 22,
-    marginBottom: 4
-  },
-  uploadLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textPrimary
-  },
-  selfieOval: {
-    width: 120,
-    height: 150,
-    borderRadius: 60,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    alignSelf: 'center',
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.primaryLight,
-    marginVertical: 10,
-    position: 'relative'
+    marginBottom: 16,
+    ...SHADOWS.small,
   },
-  selfieEmoji: {
-    fontSize: 48
+  backArrow: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#1d4ed8',
+    marginTop: -3,
   },
-  selfieBadge: {
-    position: 'absolute',
-    bottom: -10,
-    backgroundColor: COLORS.accent,
+  scroll: {
+    flexGrow: 1,
+  },
+  header: {
+    marginBottom: 22,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0f294a',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 6,
+    fontWeight: '500',
+  },
+  cardGraphic: {
+    backgroundColor: '#ffffff',
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    ...SHADOWS.medium,
+    marginBottom: 18,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  cardChip: {
+    width: 32,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: '#fef08a',
+    borderWidth: 1,
+    borderColor: '#fde047',
+  },
+  aadhaarBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff7ed',
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ffedd5',
+    gap: 4,
   },
-  selfieBadgeText: {
-    color: COLORS.textWhite,
-    fontSize: 10,
-    fontWeight: '800'
+  aadhaarSun: {
+    fontSize: 14,
   },
-  retakeBtn: {
-    alignSelf: 'center',
-    marginTop: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: COLORS.borderLight
+  aadhaarBadgeText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#ea580c',
+    letterSpacing: 0.8,
   },
-  retakeText: {
+  cardBodyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 14,
+  },
+  cardAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: '#e0f2fe',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardAvatarEmoji: {
+    fontSize: 26,
+  },
+  cardLines: {
+    flex: 1,
+    gap: 6,
+  },
+  cardLineWide: {
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#cbd5e1',
+    width: '85%',
+  },
+  cardLineMed: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#e2e8f0',
+    width: '65%',
+  },
+  cardLineSmall: {
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#f1f5f9',
+    width: '45%',
+  },
+  cardFooter: {
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    alignItems: 'center',
+  },
+  cardDigits: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0f294a',
+    letterSpacing: 3,
+  },
+  inputCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    marginBottom: 16,
+    ...SHADOWS.small,
+  },
+  inputLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '600'
+    fontWeight: '700',
+    color: '#0f294a',
+    marginBottom: 8,
+  },
+  aadhaarInput: {
+    backgroundColor: '#f8faff',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#2563eb',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1d4ed8',
+    letterSpacing: 2,
+    textAlign: 'center',
   },
   errorText: {
-    color: COLORS.danger,
+    color: '#ef4444',
     fontSize: 12,
-    marginBottom: 10,
-    fontWeight: '600'
+    fontWeight: '600',
+    marginTop: 8,
   },
-  verifyingBox: {
-    backgroundColor: COLORS.primaryLight,
-    padding: 16,
-    borderRadius: 12,
+  checklistCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#e0edfd',
+    gap: 14,
+    ...SHADOWS.small,
+  },
+  checkItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 8
+    gap: 12,
   },
-  progressText: {
-    color: COLORS.primaryDark,
-    fontSize: 12,
-    fontWeight: '700'
-  },
-  submitBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
+  checkCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#ecfdf5',
     alignItems: 'center',
-    marginTop: 6,
-    ...SHADOWS.small
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#10b981',
   },
-  submitBtnText: {
-    color: COLORS.textWhite,
+  checkMark: {
+    color: '#10b981',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  checkText: {
     fontSize: 15,
-    fontWeight: '800'
-  }
+    fontWeight: '700',
+    color: '#0f294a',
+  },
+  footer: {
+    paddingTop: 12,
+  },
+  continueBtn: {
+    backgroundColor: '#2563eb',
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.buttonGlow,
+  },
+  continueBtnText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
 });
