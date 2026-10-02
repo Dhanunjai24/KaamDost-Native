@@ -13,8 +13,19 @@ import {
 } from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 
-export default function InAppChatScreen({ workerName = 'Rohit Kumar', onBack }) {
-  const [messages, setMessages] = useState([
+export default function InAppChatScreen({
+  bookingId = null,
+  worker = null,
+  workerName = null,
+  onBack,
+  initialMessages = null,
+  onSendMessage = null,
+  isChatClosed = false,
+}) {
+  const resolvedWorkerName = worker?.name || workerName || 'Rohit Kumar';
+  const resolvedTrade = worker?.trade || 'Partner';
+
+  const defaultSeedMessages = [
     {
       id: 1,
       sender: 'worker',
@@ -27,19 +38,31 @@ export default function InAppChatScreen({ workerName = 'Rohit Kumar', onBack }) 
       text: 'Great! Please let me know when you arrive.',
       time: '10:31 AM',
     },
-  ]);
+  ];
+
+  const [messages, setMessages] = useState(
+    Array.isArray(initialMessages) && initialMessages.length > 0
+      ? initialMessages
+      : defaultSeedMessages
+  );
   const [inputText, setInputText] = useState('');
 
   const handleSend = () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isChatClosed) return;
+    const trimmed = inputText.trim();
     const newMsg = {
       id: Date.now(),
       sender: 'customer',
-      text: inputText.trim(),
+      text: trimmed,
       time: 'Just now',
     };
     setMessages((prev) => [...prev, newMsg]);
     setInputText('');
+
+    if (typeof onSendMessage === 'function') {
+      onSendMessage(trimmed);
+      return;
+    }
 
     // Simulated reply
     setTimeout(() => {
@@ -74,8 +97,8 @@ export default function InAppChatScreen({ workerName = 'Rohit Kumar', onBack }) 
                 <Text style={styles.avatarEmoji}>👨‍🔧</Text>
               </View>
               <View>
-                <Text style={styles.workerName}>{workerName}</Text>
-                <Text style={styles.onlineStatus}>Online</Text>
+                <Text style={styles.workerName}>{resolvedWorkerName}</Text>
+                <Text style={styles.onlineStatus}>{isChatClosed ? 'Chat Closed' : 'Online'}</Text>
               </View>
             </View>
 

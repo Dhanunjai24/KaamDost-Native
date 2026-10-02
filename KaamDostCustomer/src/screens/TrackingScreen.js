@@ -13,21 +13,22 @@ import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 
 export default function TrackingScreen({
   booking,
+  tracking,
   onBack,
   onOpenChat,
   onOpenPayment,
   onCancelBooking,
 }) {
-  const [status, setStatus] = useState(booking?.status || 'ARRIVING');
+  const [status, setStatus] = useState(booking?.status || tracking?.status || 'ARRIVING');
 
   const currentBooking = booking || {
-    id: 'KD123456',
-    workerName: 'Rohit Kumar',
-    workerPhone: '9848012345',
-    workerRating: 4.7,
-    tradeName: 'Home Cleaning - Deep Cleaning',
+    id: tracking?.bookingId || 'KD123456',
+    workerName: tracking?.worker?.name || 'Rohit Kumar',
+    workerPhone: tracking?.worker?.phone || '9848012345',
+    workerRating: tracking?.worker?.rating || 4.7,
+    tradeName: tracking?.worker?.trade || 'Home Cleaning - Deep Cleaning',
     startOtp: '4829',
-    estimatedArrival: '10 minutes',
+    estimatedArrival: tracking?.etaMinutes ? `${tracking.etaMinutes} minutes` : '10 minutes',
     totalAmount: 1237,
   };
 

@@ -11,15 +11,40 @@ import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 
 export default function PriceDetailsScreen({
   service,
+  quote,
+  pricingQuote,
+  priceBreakdown,
+  bill: customBill,
   onBack,
   onProceedToBook,
 }) {
-  const bill = {
-    serviceAmount: 999,
-    additionalCharges: 100,
-    discount: 50,
-    gst: 188,
-    totalAmount: 1237,
+  // Authoritative Customer Breakdown: Customer Price = Backend Pricing + Applicable Charges
+  // Strictly excludes worker payout, internal margins, or platform commission
+  const activeQuote = quote || pricingQuote || (service && service.pricing) || null;
+  const breakdown = activeQuote?.breakdown || priceBreakdown || activeQuote || {};
+
+  const serviceAmount = Number(breakdown.serviceAmount ?? breakdown.adjustedLabour ?? breakdown.baseLabour ?? 999);
+  const travelFee = Number(breakdown.travelFee ?? activeQuote?.travel?.travelFee ?? 0);
+  const materialsTotal = Number(breakdown.materialsTotal ?? activeQuote?.materials?.materialsTotal ?? 0);
+  const additionalCharges = Number(breakdown.additionalCharges ?? (travelFee + materialsTotal) ?? 100);
+  const discount = Number(breakdown.promoDiscount ?? breakdown.discount ?? 0);
+  const gst = Number(breakdown.gst?.totalGST ?? breakdown.gst ?? Math.round((serviceAmount + additionalCharges) * 0.18));
+  const totalAmount = Number(
+    breakdown.finalPayable ??
+    breakdown.totalAmount ??
+    customBill?.totalAmount ??
+    Math.max(0, serviceAmount + additionalCharges + gst - discount)
+  );
+
+  const bill = customBill || {
+    serviceAmount,
+    additionalCharges,
+    travelFee,
+    materialsTotal,
+    discount,
+    gst,
+    totalAmount,
+    quoteId: activeQuote?.quoteId || null,
   };
 
   return (
