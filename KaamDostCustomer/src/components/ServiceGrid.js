@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { TRADES_CATALOG } from '../../../shared/constants/trades';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { useTheme } from '../../../shared/theme/ThemeContext';
+import GlassCategoryCard from '../../../shared/components/glass/GlassCategoryCard';
 import { t } from '../../../shared/i18n';
 
-// Mapping trade icons to native emoji / visual glyphs
+// Mapping trade icons to native emoji glyphs
 const TRADE_EMOJIS = {
   masonry: '🧱',
   electrical: '⚡',
@@ -22,40 +23,74 @@ const TRADE_EMOJIS = {
 };
 
 export default function ServiceGrid({ onSelectTrade }) {
+  const { theme } = useTheme();
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+
   return (
     <View style={styles.container}>
+      {/* Header Row */}
       <View style={styles.headerRow}>
-        <View>
-          <Text style={styles.title}>{t('categories')}</Text>
-          <Text style={styles.subtitle}>Verified Telangana labour across 13 core trades</Text>
+        <View style={styles.headerTextCol}>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>
+            {t('categories')}
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            Verified Telangana labour across 13 core trades
+          </Text>
         </View>
-        <TouchableOpacity activeOpacity={0.7}>
-          <Text style={styles.viewAllText}>{t('viewAllTrades')}</Text>
+
+        {/* View mode toggle (Grid / List) */}
+        <TouchableOpacity
+          style={[
+            styles.toggleBtn,
+            {
+              backgroundColor: theme.primaryLight,
+              borderColor: theme.border,
+              borderWidth: 1
+            }
+          ]}
+          onPress={() => setViewMode(prev => (prev === 'grid' ? 'list' : 'grid'))}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.toggleText, { color: theme.textPrimary }]}>
+            {viewMode === 'grid' ? '☰ List' : '☵ Grid'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.grid}>
-        {TRADES_CATALOG.map((trade) => {
-          const emoji = TRADE_EMOJIS[trade.id] || '👷';
-          return (
-            <TouchableOpacity
-              key={trade.id}
-              style={styles.card}
-              onPress={() => onSelectTrade(trade)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.iconWrapper, { backgroundColor: trade.bg }]}>
-                <Text style={styles.emoji}>{emoji}</Text>
+      {/* Grid or List Display */}
+      {viewMode === 'grid' ? (
+        <View style={styles.grid}>
+          {TRADES_CATALOG.map((trade) => {
+            const emoji = TRADE_EMOJIS[trade.id] || '👷';
+            return (
+              <View key={trade.id} style={styles.gridCol}>
+                <GlassCategoryCard
+                  trade={trade}
+                  emoji={emoji}
+                  onPress={() => onSelectTrade(trade)}
+                  variant="card"
+                />
               </View>
-              <Text style={styles.tradeName} numberOfLines={1}>{trade.name}</Text>
-              <Text style={styles.teluguName} numberOfLines={1}>{trade.telugu}</Text>
-              <View style={styles.rateRow}>
-                <Text style={styles.rateText}>₹{trade.dailyRate}/day</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={styles.listView}>
+          {TRADES_CATALOG.map((trade) => {
+            const emoji = TRADE_EMOJIS[trade.id] || '👷';
+            return (
+              <GlassCategoryCard
+                key={trade.id}
+                trade={trade}
+                emoji={emoji}
+                onPress={() => onSelectTrade(trade)}
+                variant="banner"
+              />
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
@@ -69,23 +104,29 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 12
+    alignItems: 'center',
+    marginBottom: 14
+  },
+  headerTextCol: {
+    flex: 1
   },
   title: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.secondary
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3
   },
   subtitle: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginTop: 2
   },
-  viewAllText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.primary
+  toggleBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10
+  },
+  toggleText: {
+    fontSize: 11,
+    fontWeight: '700'
   },
   grid: {
     flexDirection: 'row',
@@ -93,49 +134,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8
   },
-  card: {
+  gridCol: {
     width: '31%',
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.small
+    marginBottom: 8
   },
-  iconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6
-  },
-  emoji: {
-    fontSize: 20
-  },
-  tradeName: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    marginBottom: 2
-  },
-  teluguName: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    marginBottom: 6
-  },
-  rateRow: {
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6
-  },
-  rateText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.primaryDark
+  listView: {
+    paddingTop: 2
   }
 });

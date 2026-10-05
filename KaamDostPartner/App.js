@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { ThemeProvider } from '../shared/theme/ThemeContext';
 import PartnerLoginScreen from './src/screens/PartnerLoginScreen';
 import PartnerRegisterScreen from './src/screens/PartnerRegisterScreen';
 import PartnerKycScreen from './src/screens/PartnerKycScreen';
@@ -23,7 +24,8 @@ export default function App({ onSwitchToCustomer }) {
   });
 
   return (
-    <View style={styles.container}>
+    <ThemeProvider>
+      <View style={styles.container}>
       {currentScreen === 'login' && (
         <PartnerLoginScreen
           onLoginSuccess={(p) => {
@@ -80,7 +82,8 @@ export default function App({ onSwitchToCustomer }) {
       {currentScreen === 'support' && (
         <PartnerSupportScreen onBack={() => setCurrentScreen('dashboard')} />
       )}
-    </View>
+      </View>
+    </ThemeProvider>
   );
 }
 

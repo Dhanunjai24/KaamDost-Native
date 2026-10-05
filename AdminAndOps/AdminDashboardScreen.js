@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
-import { COLORS, SHADOWS } from '../shared/theme/theme';
+import { useTheme } from '../shared/theme/ThemeContext';
+import GlassBackground from '../shared/components/glass/GlassBackground';
+import GlassCard from '../shared/components/glass/GlassCard';
+import GlassButton from '../shared/components/glass/GlassButton';
+import GlassTab from '../shared/components/glass/GlassTab';
 
 export default function AdminDashboardScreen({ onBack }) {
-  const [activeTab, setActiveTab] = useState('kpis'); // 'kpis', 'kyc', 'dispatches', 'ai'
+  const { theme, shadows } = useTheme();
+  const [activeTab, setActiveTab] = useState('kpis'); // 'kpis', 'kyc', 'ai'
   const [kycQueue, setKycQueue] = useState([
     { id: 'KYC-01', name: 'Naveen Chary', trade: 'Carpenter', phone: '9848011223', aadhaar: 'XXXX-XXXX-4912', city: 'Sangareddy', status: 'Pending Review' },
     { id: 'KYC-02', name: 'Md. Ismail', trade: 'Electrician', phone: '9848055667', aadhaar: 'XXXX-XXXX-9102', city: 'Patancheru', status: 'Pending Review' },
@@ -20,326 +25,376 @@ export default function AdminDashboardScreen({ onBack }) {
     setKycQueue(prev => prev.filter(k => k.id !== id));
   };
 
+  const tabs = [
+    { id: 'kpis', label: 'KPIs & Stats' },
+    { id: 'kyc', label: 'KYC Queue', count: kycQueue.length },
+    { id: 'ai', label: 'AI Engine' }
+  ];
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.secondary} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundPrimary }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.backgroundPrimary} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        {onBack && (
-          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <Text style={styles.backText}>←</Text>
-          </TouchableOpacity>
-        )}
-        <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>KaamDost Ops & Admin</Text>
-          <Text style={styles.headerSub}>Telangana Regional Mission Console</Text>
-        </View>
-        <View style={styles.liveBadge}>
-          <Text style={styles.liveDot}>●</Text>
-          <Text style={styles.liveText}>LIVE</Text>
-        </View>
-      </View>
-
-      {/* Tab Switcher */}
-      <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'kpis' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('kpis')}
+      <GlassBackground>
+        {/* Light Glassmorphic Header */}
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: theme.glassSurfaceStrong,
+              borderBottomColor: theme.border
+            },
+            shadows.small
+          ]}
         >
-          <Text style={[styles.tabText, activeTab === 'kpis' && styles.tabTextActive]}>KPIs & Stats</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'kyc' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('kyc')}
-        >
-          <Text style={[styles.tabText, activeTab === 'kyc' && styles.tabTextActive]}>
-            KYC Queue ({kycQueue.length})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'ai' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('ai')}
-        >
-          <Text style={[styles.tabText, activeTab === 'ai' && styles.tabTextActive]}>AI Engine</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {activeTab === 'kpis' && (
-          <View>
-            {/* KPI Cards Grid */}
-            <View style={styles.kpiGrid}>
-              <View style={styles.kpiCard}>
-                <Text style={styles.kpiLabel}>Total Registered Users</Text>
-                <Text style={styles.kpiVal}>14,820</Text>
-                <Text style={styles.kpiGrowth}>↑ +12.4% this week</Text>
-              </View>
-              <View style={styles.kpiCard}>
-                <Text style={styles.kpiLabel}>Active Labour Partners</Text>
-                <Text style={styles.kpiVal}>2,410</Text>
-                <Text style={styles.kpiGrowth}>Across 40 Telangana cities</Text>
-              </View>
-              <View style={styles.kpiCard}>
-                <Text style={styles.kpiLabel}>Completed Dispatches</Text>
-                <Text style={styles.kpiVal}>8,940</Text>
-                <Text style={styles.kpiGrowth}>Avg dispatch time: 48s</Text>
-              </View>
-              <View style={styles.kpiCard}>
-                <Text style={styles.kpiLabel}>Total Platform GMV</Text>
-                <Text style={styles.kpiVal}>₹84.9 Lakhs</Text>
-                <Text style={styles.kpiGrowth}>Zero worker commission cut</Text>
-              </View>
-            </View>
-
-            {/* Telangana Regional Breakdown */}
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Top Active Districts</Text>
-              <View style={styles.districtRow}>
-                <Text style={styles.districtName}>1. Sangareddy</Text>
-                <Text style={styles.districtCount}>840 Workers • 98% Online</Text>
-              </View>
-              <View style={styles.districtRow}>
-                <Text style={styles.districtName}>2. Hyderabad & Secunderabad</Text>
-                <Text style={styles.districtCount}>720 Workers • 96% Online</Text>
-              </View>
-              <View style={styles.districtRow}>
-                <Text style={styles.districtName}>3. Medak & Vikarabad</Text>
-                <Text style={styles.districtCount}>460 Workers • 94% Online</Text>
-              </View>
-              <View style={styles.districtRow}>
-                <Text style={styles.districtName}>4. Warangal & Hanamkonda</Text>
-                <Text style={styles.districtCount}>390 Workers • 92% Online</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {activeTab === 'kyc' && (
-          <View>
-            <Text style={styles.sectionTitle}>Aadhaar & Trade Verification Queue</Text>
-            {kycQueue.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyEmoji}>✅</Text>
-                <Text style={styles.emptyTitle}>All KYC Applications Cleared</Text>
-                <Text style={styles.emptySub}>No pending partner registrations in review queue.</Text>
-              </View>
-            ) : (
-              kycQueue.map((item) => (
-                <View key={item.id} style={styles.kycCard}>
-                  <View style={styles.kycHeader}>
-                    <View>
-                      <Text style={styles.kycName}>{item.name}</Text>
-                      <Text style={styles.kycTrade}>{item.trade} • {item.city}</Text>
-                    </View>
-                    <View style={styles.kycBadge}>
-                      <Text style={styles.kycBadgeText}>{item.status}</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.kycMeta}>
-                    <Text style={styles.kycPhone}>📞 +91 {item.phone}</Text>
-                    <Text style={styles.kycAadhaar}>🛡️ Aadhaar: {item.aadhaar}</Text>
-                  </View>
-
-                  <View style={styles.kycActions}>
-                    <TouchableOpacity style={styles.rejectBtn} onPress={() => rejectKyc(item.id)}>
-                      <Text style={styles.rejectText}>Reject</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.approveBtn} onPress={() => approveKyc(item.id)}>
-                      <Text style={styles.approveText}>Approve & Activate ✓</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))
-            )}
-          </View>
-        )}
-
-        {activeTab === 'ai' && (
-          <View style={styles.aiCard}>
-            <View style={styles.aiHeader}>
-              <Text style={styles.aiIcon}>🤖</Text>
-              <View style={styles.aiTitleCol}>
-                <Text style={styles.aiTitle}>KaamDost AI Demand & Match Engine</Text>
-                <Text style={styles.aiSub}>Real-time geospatial labour allocation</Text>
-              </View>
-            </View>
-
-            <View style={styles.aiMetricsRow}>
-              <View style={styles.aiBox}>
-                <Text style={styles.aiVal}>99.4%</Text>
-                <Text style={styles.aiLbl}>Match Accuracy</Text>
-              </View>
-              <View style={styles.aiBox}>
-                <Text style={styles.aiVal}>42s</Text>
-                <Text style={styles.aiLbl}>Median Dispatch</Text>
-              </View>
-              <View style={styles.aiBox}>
-                <Text style={styles.aiVal}>0.2%</Text>
-                <Text style={styles.aiLbl}>Dispute Rate</Text>
-              </View>
-            </View>
-
-            <Text style={styles.algoDesc}>
-              Algorithm uses Euclidean nearest-neighbour routing, verified skill taxonomy weighting, and language affinity (Telugu, Hindi, English) to minimize dispatch delays and maximize customer satisfaction.
+          {onBack && (
+            <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
+              <Text style={[styles.backText, { color: theme.textPrimary }]}>←</Text>
+            </TouchableOpacity>
+          )}
+          <View style={styles.headerInfo}>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+              KaamDost Ops & Admin
+            </Text>
+            <Text style={[styles.headerSub, { color: theme.textSecondary }]}>
+              Telangana Regional Mission Console
             </Text>
           </View>
-        )}
-      </ScrollView>
+          <View
+            style={[
+              styles.liveBadge,
+              { backgroundColor: theme.successLight, borderColor: theme.success, borderWidth: 1 }
+            ]}
+          >
+            <Text style={[styles.liveDot, { color: theme.success }]}>●</Text>
+            <Text style={[styles.liveText, { color: theme.success }]}>LIVE</Text>
+          </View>
+        </View>
+
+        {/* Tab Switcher */}
+        <View style={styles.tabContainer}>
+          <GlassTab
+            tabs={tabs}
+            activeTab={activeTab}
+            onSelectTab={setActiveTab}
+          />
+        </View>
+
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {activeTab === 'kpis' && (
+            <View>
+              {/* KPI Cards Grid */}
+              <View style={styles.kpiGrid}>
+                <GlassCard style={styles.kpiCard} variant="strong">
+                  <Text style={[styles.kpiLabel, { color: theme.textSecondary }]}>
+                    Total Registered Users
+                  </Text>
+                  <Text style={[styles.kpiVal, { color: theme.textPrimary }]}>
+                    14,820
+                  </Text>
+                  <Text style={[styles.kpiGrowth, { color: theme.success }]}>
+                    ↑ +12.4% this week
+                  </Text>
+                </GlassCard>
+
+                <GlassCard style={styles.kpiCard} variant="strong">
+                  <Text style={[styles.kpiLabel, { color: theme.textSecondary }]}>
+                    Active Labour Partners
+                  </Text>
+                  <Text style={[styles.kpiVal, { color: theme.textPrimary }]}>
+                    2,410
+                  </Text>
+                  <Text style={[styles.kpiGrowth, { color: theme.accentPrimary }]}>
+                    Across 40 Telangana cities
+                  </Text>
+                </GlassCard>
+
+                <GlassCard style={styles.kpiCard} variant="strong">
+                  <Text style={[styles.kpiLabel, { color: theme.textSecondary }]}>
+                    Completed Dispatches
+                  </Text>
+                  <Text style={[styles.kpiVal, { color: theme.textPrimary }]}>
+                    8,940
+                  </Text>
+                  <Text style={[styles.kpiGrowth, { color: theme.success }]}>
+                    Avg dispatch time: 48s
+                  </Text>
+                </GlassCard>
+
+                <GlassCard style={styles.kpiCard} variant="strong">
+                  <Text style={[styles.kpiLabel, { color: theme.textSecondary }]}>
+                    Total Platform GMV
+                  </Text>
+                  <Text style={[styles.kpiVal, { color: theme.textPrimary }]}>
+                    ₹84.9 Lakhs
+                  </Text>
+                  <Text style={[styles.kpiGrowth, { color: theme.accentPrimary }]}>
+                    Zero worker commission cut
+                  </Text>
+                </GlassCard>
+              </View>
+
+              {/* Telangana Regional Breakdown */}
+              <GlassCard style={styles.sectionCard} variant="default">
+                <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                  Top Active Districts
+                </Text>
+                <View style={[styles.districtRow, { borderBottomColor: theme.borderLight }]}>
+                  <Text style={[styles.districtName, { color: theme.textPrimary }]}>
+                    1. Sangareddy
+                  </Text>
+                  <Text style={[styles.districtCount, { color: theme.textSecondary }]}>
+                    840 Workers • 98% Online
+                  </Text>
+                </View>
+                <View style={[styles.districtRow, { borderBottomColor: theme.borderLight }]}>
+                  <Text style={[styles.districtName, { color: theme.textPrimary }]}>
+                    2. Medak
+                  </Text>
+                  <Text style={[styles.districtCount, { color: theme.textSecondary }]}>
+                    510 Workers • 95% Online
+                  </Text>
+                </View>
+                <View style={[styles.districtRow, { borderBottomColor: theme.borderLight }]}>
+                  <Text style={[styles.districtName, { color: theme.textPrimary }]}>
+                    3. Hyderabad Urban
+                  </Text>
+                  <Text style={[styles.districtCount, { color: theme.textSecondary }]}>
+                    620 Workers • 99% Online
+                  </Text>
+                </View>
+                <View style={styles.districtRow}>
+                  <Text style={[styles.districtName, { color: theme.textPrimary }]}>
+                    4. Nizamabad
+                  </Text>
+                  <Text style={[styles.districtCount, { color: theme.textSecondary }]}>
+                    440 Workers • 92% Online
+                  </Text>
+                </View>
+              </GlassCard>
+            </View>
+          )}
+
+          {activeTab === 'kyc' && (
+            <View>
+              {kycQueue.length === 0 ? (
+                <GlassCard style={styles.emptyCard} variant="default">
+                  <Text style={styles.emptyEmoji}>🎉</Text>
+                  <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
+                    KYC Verification Queue Clear
+                  </Text>
+                  <Text style={[styles.emptySub, { color: theme.textSecondary }]}>
+                    All pending labour documents have been reviewed and verified.
+                  </Text>
+                </GlassCard>
+              ) : (
+                kycQueue.map((item) => (
+                  <GlassCard key={item.id} style={styles.kycCard} variant="default">
+                    <View style={styles.kycHeader}>
+                      <View>
+                        <Text style={[styles.kycName, { color: theme.textPrimary }]}>
+                          {item.name}
+                        </Text>
+                        <Text style={[styles.kycTrade, { color: theme.accentPrimary }]}>
+                          {item.trade} • {item.city}
+                        </Text>
+                      </View>
+                      <View style={[styles.kycBadge, { backgroundColor: theme.warningLight }]}>
+                        <Text style={[styles.kycBadgeText, { color: theme.warning }]}>
+                          ● {item.status}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.kycMeta,
+                        { backgroundColor: theme.primaryLight, borderColor: theme.border, borderWidth: 1 }
+                      ]}
+                    >
+                      <Text style={[styles.kycPhone, { color: theme.textPrimary }]}>
+                        📞 {item.phone}
+                      </Text>
+                      <Text style={[styles.kycAadhaar, { color: theme.textPrimary }]}>
+                        🪪 Aadhaar: {item.aadhaar}
+                      </Text>
+                    </View>
+
+                    <View style={styles.kycActions}>
+                      <TouchableOpacity
+                        style={[styles.rejectBtn, { backgroundColor: theme.dangerLight }]}
+                        onPress={() => rejectKyc(item.id)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.rejectText, { color: theme.danger }]}>Reject</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.approveBtn, { backgroundColor: theme.buttonPrimary }]}
+                        onPress={() => approveKyc(item.id)}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={styles.approveText}>Approve & Verify ✓</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </GlassCard>
+                ))
+              )}
+            </View>
+          )}
+
+          {activeTab === 'ai' && (
+            <GlassCard style={styles.aiCard} variant="strong">
+              <View style={styles.aiHeader}>
+                <Text style={styles.aiIcon}>🧠</Text>
+                <View style={styles.aiTitleCol}>
+                  <Text style={[styles.aiTitle, { color: theme.textPrimary }]}>
+                    KaamDost AI Dispatch Core
+                  </Text>
+                  <Text style={[styles.aiSub, { color: theme.textSecondary }]}>
+                    Autonomous worker matching & fare assurance
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[styles.aiMetricsRow, { backgroundColor: theme.primaryLight }]}>
+                <View style={styles.aiBox}>
+                  <Text style={[styles.aiVal, { color: theme.textPrimary }]}>0.8s</Text>
+                  <Text style={[styles.aiLbl, { color: theme.textSecondary }]}>Match Latency</Text>
+                </View>
+                <View style={styles.aiBox}>
+                  <Text style={[styles.aiVal, { color: theme.textPrimary }]}>99.4%</Text>
+                  <Text style={[styles.aiLbl, { color: theme.textSecondary }]}>Acceptance Rate</Text>
+                </View>
+                <View style={styles.aiBox}>
+                  <Text style={[styles.aiVal, { color: theme.textPrimary }]}>1.2 km</Text>
+                  <Text style={[styles.aiLbl, { color: theme.textSecondary }]}>Avg Radius</Text>
+                </View>
+              </View>
+
+              <Text style={[styles.algoDesc, { color: theme.textSecondary }]}>
+                The AI engine matches incoming customer requests to nearest available workers within 60 seconds, verifying daily rates against Telangana district wage benchmarks.
+              </Text>
+            </GlassCard>
+          )}
+        </ScrollView>
+      </GlassBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background
+    flex: 1
   },
   header: {
-    backgroundColor: COLORS.secondary,
-    paddingTop: 16,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+    borderBottomWidth: 1.2
   },
   backBtn: {
-    paddingRight: 10
+    paddingRight: 10,
+    paddingVertical: 4
   },
   backText: {
     fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.textWhite
+    fontWeight: '800'
   },
   headerInfo: {
     flex: 1
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '900',
-    color: COLORS.textWhite
+    letterSpacing: -0.3
   },
   headerSub: {
     fontSize: 11,
-    color: COLORS.primarySoft
+    marginTop: 2
   },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.25)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8
   },
   liveDot: {
-    color: COLORS.danger,
     fontSize: 8,
     marginRight: 4
   },
   liveText: {
-    color: COLORS.danger,
     fontSize: 10,
-    fontWeight: '800'
+    fontWeight: '900',
+    letterSpacing: 0.5
   },
-  tabRow: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight
-  },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent'
-  },
-  tabBtnActive: {
-    borderBottomColor: COLORS.primary
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textSecondary
-  },
-  tabTextActive: {
-    color: COLORS.primary,
-    fontWeight: '800'
+  tabContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 10
   },
   content: {
-    padding: 16
+    padding: 16,
+    paddingBottom: 40
   },
   kpiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 14
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 10
   },
   kpiCard: {
     width: '48%',
-    backgroundColor: COLORS.surface,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.small
+    borderRadius: 18,
+    padding: 14
   },
   kpiLabel: {
     fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: '600'
+    fontWeight: '600',
+    lineHeight: 15
   },
   kpiVal: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '900',
-    color: COLORS.secondary,
-    marginVertical: 4
+    marginVertical: 4,
+    letterSpacing: -0.5
   },
   kpiGrowth: {
     fontSize: 10,
-    color: COLORS.accent,
     fontWeight: '700'
   },
   sectionCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
     marginBottom: 14
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '800',
-    color: COLORS.secondary,
-    marginBottom: 10
+    fontWeight: '900',
+    marginBottom: 10,
+    letterSpacing: -0.2
   },
   districtRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight
+    paddingVertical: 10,
+    borderBottomWidth: 1
   },
   districtName: {
     fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.textPrimary
+    fontWeight: '700'
   },
   districtCount: {
-    fontSize: 11,
-    color: COLORS.textSecondary
+    fontSize: 11
   },
   kycCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 10,
-    ...SHADOWS.small
+    marginBottom: 10
   },
   kycHeader: {
     flexDirection: 'row',
@@ -349,40 +404,36 @@ const styles = StyleSheet.create({
   },
   kycName: {
     fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.textPrimary
+    fontWeight: '800'
   },
   kycTrade: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.primary
+    fontWeight: '700',
+    marginTop: 2
   },
   kycBadge: {
-    backgroundColor: COLORS.warningLight,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6
   },
   kycBadgeText: {
-    color: '#b45309',
     fontSize: 10,
-    fontWeight: '700'
+    fontWeight: '800'
   },
   kycMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.background,
-    padding: 8,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 10,
     marginBottom: 10
   },
   kycPhone: {
     fontSize: 11,
-    color: COLORS.textSecondary
+    fontWeight: '600'
   },
   kycAadhaar: {
     fontSize: 11,
-    color: COLORS.textSecondary
+    fontWeight: '600'
   },
   kycActions: {
     flexDirection: 'row',
@@ -390,34 +441,28 @@ const styles = StyleSheet.create({
   },
   rejectBtn: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#fee2e2'
+    paddingVertical: 9,
+    borderRadius: 10
   },
   rejectText: {
-    color: COLORS.danger,
     fontSize: 12,
     fontWeight: '700'
   },
   approveBtn: {
     flex: 1,
-    backgroundColor: COLORS.onlineGreen,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 9,
+    borderRadius: 10,
     alignItems: 'center'
   },
   approveText: {
-    color: COLORS.textWhite,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '800'
   },
   emptyCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 30,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.borderLight
+    alignItems: 'center'
   },
   emptyEmoji: {
     fontSize: 36,
@@ -425,20 +470,16 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.secondary
+    fontWeight: '800'
   },
   emptySub: {
     fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 4
+    marginTop: 4,
+    textAlign: 'center'
   },
   aiCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight
+    borderRadius: 20,
+    padding: 18
   },
   aiHeader: {
     flexDirection: 'row',
@@ -453,20 +494,18 @@ const styles = StyleSheet.create({
     flex: 1
   },
   aiTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.secondary
+    fontSize: 16,
+    fontWeight: '800'
   },
   aiSub: {
     fontSize: 11,
-    color: COLORS.textSecondary
+    marginTop: 2
   },
   aiMetricsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.primaryLight,
-    padding: 12,
-    borderRadius: 12,
+    padding: 14,
+    borderRadius: 14,
     marginBottom: 12
   },
   aiBox: {
@@ -475,17 +514,15 @@ const styles = StyleSheet.create({
   },
   aiVal: {
     fontSize: 18,
-    fontWeight: '900',
-    color: COLORS.primaryDark
+    fontWeight: '900'
   },
   aiLbl: {
     fontSize: 10,
-    color: COLORS.primaryDark,
-    marginTop: 2
+    marginTop: 2,
+    fontWeight: '600'
   },
   algoDesc: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     lineHeight: 18
   }
 });

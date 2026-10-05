@@ -1,58 +1,119 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTheme } from '../../../shared/theme/ThemeContext';
 import { t } from '../../../shared/i18n';
 
 export default function WorkerCard({ worker, onSelectWorker, onBookDirect }) {
+  const { theme, shadows } = useTheme();
+
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.glassSurfaceStrong,
+          borderColor: theme.border
+        },
+        shadows.glass
+      ]}
       onPress={() => onSelectWorker(worker)}
-      activeOpacity={0.8}
+      activeOpacity={0.82}
     >
       <View style={styles.topSection}>
-        <View style={styles.avatarContainer}>
+        {/* Circular Avatar Container */}
+        <View
+          style={[
+            styles.avatarContainer,
+            {
+              backgroundColor: theme.primaryLight,
+              borderColor: theme.border,
+              borderWidth: 1
+            }
+          ]}
+        >
           <Text style={styles.avatarEmoji}>👷</Text>
-          {worker.isAvailable && <View style={styles.onlineDot} />}
+          {worker.isAvailable && (
+            <View
+              style={[
+                styles.onlineDot,
+                { backgroundColor: theme.success, borderColor: theme.surface }
+              ]}
+            />
+          )}
         </View>
 
         <View style={styles.infoCol}>
           <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1}>{worker.name}</Text>
-            <View style={styles.verifiedTag}>
-              <Text style={styles.verifiedText}>Verified ✓</Text>
+            <Text
+              style={[styles.name, { color: theme.textPrimary }]}
+              numberOfLines={1}
+            >
+              {worker.name}
+            </Text>
+            <View style={[styles.verifiedTag, { backgroundColor: theme.successLight }]}>
+              <Text style={[styles.verifiedText, { color: theme.success }]}>
+                Verified ✓
+              </Text>
             </View>
           </View>
 
-          <Text style={styles.trade}>{worker.tradeName || worker.trade}</Text>
+          <Text style={[styles.trade, { color: theme.accentPrimary }]}>
+            {worker.tradeName || worker.trade}
+          </Text>
 
           <View style={styles.metaRow}>
-            <Text style={styles.rating}>⭐ {worker.rating || '4.8'} ({worker.reviewsCount || '90+'})</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.exp}>{worker.experienceYears || '5'}+ yrs exp</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.distance}>📍 {worker.distance || '2.0 km'}</Text>
+            <Text style={[styles.rating, { color: theme.textPrimary }]}>
+              ⭐ {worker.rating || '4.8'} ({worker.reviewsCount || '90+'})
+            </Text>
+            <Text style={[styles.dot, { color: theme.textMuted }]}>•</Text>
+            <Text style={[styles.exp, { color: theme.textSecondary }]}>
+              {worker.experienceYears || '5'}+ yrs exp
+            </Text>
+            <Text style={[styles.dot, { color: theme.textMuted }]}>•</Text>
+            <Text style={[styles.distance, { color: theme.textSecondary }]}>
+              📍 {worker.distance || '2.0 km'}
+            </Text>
           </View>
         </View>
       </View>
 
-      <View style={styles.bottomSection}>
+      <View style={[styles.bottomSection, { borderTopColor: theme.borderLight }]}>
         <View style={styles.wageCol}>
-          <Text style={styles.wageLabel}>{t('dailyRate')}</Text>
-          <Text style={styles.wageValue}>₹{worker.dailyRate || 850}<Text style={styles.perDay}>/day</Text></Text>
+          <Text style={[styles.wageLabel, { color: theme.textSecondary }]}>
+            {t('dailyRate')}
+          </Text>
+          <View style={styles.priceRow}>
+            <Text style={[styles.wageValue, { color: theme.textPrimary }]}>
+              ₹{worker.dailyRate || 850}
+            </Text>
+            <Text style={[styles.perDay, { color: theme.textSecondary }]}>/day</Text>
+          </View>
         </View>
 
         <View style={styles.actions}>
           <TouchableOpacity
-            style={styles.viewBtn}
+            style={[
+              styles.viewBtn,
+              {
+                backgroundColor: theme.glassSurface,
+                borderColor: theme.border
+              }
+            ]}
             onPress={() => onSelectWorker(worker)}
             activeOpacity={0.7}
           >
-            <Text style={styles.viewBtnText}>Profile</Text>
+            <Text style={[styles.viewBtnText, { color: theme.textPrimary }]}>
+              Profile
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.bookBtn}
+            style={[
+              styles.bookBtn,
+              {
+                backgroundColor: theme.buttonPrimary
+              }
+            ]}
             onPress={() => onBookDirect(worker)}
             activeOpacity={0.85}
           >
@@ -66,13 +127,10 @@ export default function WorkerCard({ worker, onSelectWorker, onBookDirect }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 18,
+    padding: 15,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.small
+    borderWidth: 1.2
   },
   topSection: {
     flexDirection: 'row',
@@ -83,7 +141,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: COLORS.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -99,9 +156,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: COLORS.onlineGreen,
-    borderWidth: 2,
-    borderColor: COLORS.surface
+    borderWidth: 2
   },
   infoCol: {
     flex: 1
@@ -114,25 +169,22 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    flex: 1
+    fontWeight: '800',
+    flex: 1,
+    letterSpacing: -0.2
   },
   verifiedTag: {
-    backgroundColor: COLORS.accentLight,
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6
   },
   verifiedText: {
-    color: COLORS.accent,
     fontSize: 10,
-    fontWeight: '700'
+    fontWeight: '800'
   },
   trade: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontWeight: '700',
     marginBottom: 4
   },
   metaRow: {
@@ -141,44 +193,43 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 11,
-    color: COLORS.secondary,
-    fontWeight: '600'
+    fontWeight: '700'
   },
   dot: {
     fontSize: 11,
-    color: COLORS.textMuted,
     marginHorizontal: 4
   },
   exp: {
-    fontSize: 11,
-    color: COLORS.textSecondary
+    fontSize: 11
   },
   distance: {
-    fontSize: 11,
-    color: COLORS.textSecondary
+    fontSize: 11
   },
   bottomSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
     paddingTop: 10
   },
   wageCol: {},
   wageLabel: {
     fontSize: 10,
-    color: COLORS.textMuted
+    fontWeight: '600'
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline'
   },
   wageValue: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.secondary
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3
   },
   perDay: {
     fontSize: 10,
-    color: COLORS.textSecondary,
-    fontWeight: '400'
+    marginLeft: 2,
+    fontWeight: '600'
   },
   actions: {
     flexDirection: 'row',
@@ -186,26 +237,22 @@ const styles = StyleSheet.create({
   },
   viewBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1
   },
   viewBtnText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.secondary
+    fontWeight: '700'
   },
   bookBtn: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: COLORS.primary
+    paddingVertical: 7,
+    borderRadius: 10
   },
   bookBtnText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textWhite
+    fontWeight: '800',
+    color: '#FFFFFF'
   }
 });

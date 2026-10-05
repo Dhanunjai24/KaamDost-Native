@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { useTheme } from '../../../shared/theme/ThemeContext';
+import GlassBackground from '../../../shared/components/glass/GlassBackground';
+import GlassCard from '../../../shared/components/glass/GlassCard';
+import GlassButton from '../../../shared/components/glass/GlassButton';
 import { t } from '../../../shared/i18n';
 import api from '../../../shared/api/client';
 
 export default function PhoneLoginScreen({ onLoginSuccess, onSwitchRole }) {
+  const { theme, shadows } = useTheme();
   const [phone, setPhone] = useState('9876543210');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
@@ -57,130 +61,168 @@ export default function PhoneLoginScreen({ onLoginSuccess, onSwitchRole }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.brandTitle}>
-            Kaam<Text style={styles.brandAccent}>Dost</Text>
-          </Text>
-          <Text style={styles.title}>{t('loginTitle')}</Text>
-          <Text style={styles.subtitle}>
-            {otpSent
-              ? `${t('enterOtpPrompt')} +91 ${phone}`
-              : t('loginSubtitle')}
-          </Text>
-        </View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundPrimary }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.backgroundPrimary} />
 
-        {/* Input Card */}
-        <View style={styles.card}>
-          {!otpSent ? (
-            <View>
-              <Text style={styles.inputLabel}>Mobile Number</Text>
-              <View style={styles.phoneInputRow}>
-                <View style={styles.prefixBox}>
-                  <Text style={styles.flag}>🇮🇳</Text>
-                  <Text style={styles.prefix}>+91</Text>
+      <GlassBackground>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={[styles.brandTitle, { color: theme.textPrimary }]}>
+              Kaam<Text style={{ color: theme.accentPrimary }}>Dost</Text>
+            </Text>
+            <Text style={[styles.title, { color: theme.textPrimary }]}>
+              {t('loginTitle')}
+            </Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+              {otpSent
+                ? `${t('enterOtpPrompt')} +91 ${phone}`
+                : t('loginSubtitle')}
+            </Text>
+          </View>
+
+          {/* Frosted Glass Input Card */}
+          <GlassCard style={styles.card} variant="strong">
+            {!otpSent ? (
+              <View>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>
+                  Mobile Number
+                </Text>
+                <View
+                  style={[
+                    styles.phoneInputRow,
+                    {
+                      backgroundColor: theme.glassSurface,
+                      borderColor: theme.border
+                    }
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.prefixBox,
+                      {
+                        backgroundColor: theme.primaryLight,
+                        borderRightColor: theme.border
+                      }
+                    ]}
+                  >
+                    <Text style={styles.flag}>🇮🇳</Text>
+                    <Text style={[styles.prefix, { color: theme.textPrimary }]}>+91</Text>
+                  </View>
+                  <TextInput
+                    style={[styles.phoneInput, { color: theme.textPrimary }]}
+                    placeholder={t('mobilePlaceholder')}
+                    placeholderTextColor={theme.textMuted}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    value={phone}
+                    onChangeText={(val) => {
+                      setPhone(val.replace(/\D/g, ''));
+                      setErrorMsg('');
+                    }}
+                  />
                 </View>
+
+                {errorMsg ? (
+                  <Text style={[styles.errorText, { color: theme.danger }]}>{errorMsg}</Text>
+                ) : null}
+
+                <GlassButton
+                  title={`${t('getOtp')} →`}
+                  onPress={handleSendOtp}
+                  loading={loading}
+                  variant="primary"
+                  size="md"
+                  style={{ marginTop: 8 }}
+                />
+              </View>
+            ) : (
+              <View>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>
+                  Enter 6-Digit OTP
+                </Text>
                 <TextInput
-                  style={styles.phoneInput}
-                  placeholder={t('mobilePlaceholder')}
-                  placeholderTextColor={COLORS.textMuted}
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                  value={phone}
+                  style={[
+                    styles.otpInput,
+                    {
+                      backgroundColor: theme.glassSurface,
+                      borderColor: theme.border,
+                      color: theme.textPrimary
+                    }
+                  ]}
+                  placeholder="• • • • • •"
+                  placeholderTextColor={theme.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  value={otp}
                   onChangeText={(val) => {
-                    setPhone(val.replace(/\D/g, ''));
+                    setOtp(val.replace(/\D/g, ''));
                     setErrorMsg('');
                   }}
                 />
+
+                <View style={styles.otpHelperRow}>
+                  <Text style={[styles.helperText, { color: theme.textSecondary }]}>
+                    Dev OTP: 123456
+                  </Text>
+                  {countdown > 0 ? (
+                    <Text style={[styles.timerText, { color: theme.textSecondary }]}>
+                      Resend in {countdown}s
+                    </Text>
+                  ) : (
+                    <TouchableOpacity onPress={handleSendOtp}>
+                      <Text style={[styles.resendLink, { color: theme.accentPrimary }]}>
+                        {t('resendOtp')}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {errorMsg ? (
+                  <Text style={[styles.errorText, { color: theme.danger }]}>{errorMsg}</Text>
+                ) : null}
+
+                <GlassButton
+                  title={`${t('verifyOtp')} ✓`}
+                  onPress={handleVerifyOtp}
+                  loading={loading}
+                  variant="primary"
+                  size="md"
+                  style={{ marginTop: 10 }}
+                />
+
+                <TouchableOpacity
+                  style={styles.changeNumberBtn}
+                  onPress={() => setOtpSent(false)}
+                >
+                  <Text style={[styles.changeNumberText, { color: theme.textSecondary }]}>
+                    ← Change Mobile Number
+                  </Text>
+                </TouchableOpacity>
               </View>
+            )}
+          </GlassCard>
 
-              {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-
-              <TouchableOpacity
-                style={styles.submitBtn}
-                onPress={handleSendOtp}
-                disabled={loading}
-                activeOpacity={0.85}
-              >
-                {loading ? (
-                  <ActivityIndicator color={COLORS.textWhite} />
-                ) : (
-                  <Text style={styles.submitBtnText}>{t('getOtp')} →</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View>
-              <Text style={styles.inputLabel}>Enter 6-Digit OTP</Text>
-              <TextInput
-                style={styles.otpInput}
-                placeholder="• • • • • •"
-                placeholderTextColor={COLORS.textMuted}
-                keyboardType="number-pad"
-                maxLength={6}
-                value={otp}
-                onChangeText={(val) => {
-                  setOtp(val.replace(/\D/g, ''));
-                  setErrorMsg('');
-                }}
-              />
-
-              <View style={styles.otpHelperRow}>
-                <Text style={styles.helperText}>Dev OTP: 123456</Text>
-                {countdown > 0 ? (
-                  <Text style={styles.timerText}>Resend in {countdown}s</Text>
-                ) : (
-                  <TouchableOpacity onPress={handleSendOtp}>
-                    <Text style={styles.resendLink}>{t('resendOtp')}</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-
-              <TouchableOpacity
-                style={styles.submitBtn}
-                onPress={handleVerifyOtp}
-                disabled={loading}
-                activeOpacity={0.85}
-              >
-                {loading ? (
-                  <ActivityIndicator color={COLORS.textWhite} />
-                ) : (
-                  <Text style={styles.submitBtnText}>{t('verifyOtp')} ✓</Text>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.changeNumberBtn}
-                onPress={() => setOtpSent(false)}
-              >
-                <Text style={styles.changeNumberText}>← Change Mobile Number</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          {/* Worker role switcher */}
+          <View style={styles.footer}>
+            <TouchableOpacity onPress={onSwitchRole} style={styles.switchRoleBtn}>
+              <Text style={[styles.switchRoleText, { color: theme.textSecondary }]}>
+                Are you a Worker / Dost Partner?{' '}
+                <Text style={[styles.switchRoleBold, { color: theme.accentPrimary }]}>
+                  Go to Partner App →
+                </Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Worker role switcher */}
-        <View style={styles.footer}>
-          <TouchableOpacity onPress={onSwitchRole} style={styles.switchRoleBtn}>
-            <Text style={styles.switchRoleText}>
-              Are you a Worker / Dost Partner? <Text style={styles.switchRoleBold}>Go to Partner App →</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </GlassBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background
+    flex: 1
   },
   container: {
     flex: 1,
@@ -192,48 +234,36 @@ const styles = StyleSheet.create({
     marginBottom: 24
   },
   brandTitle: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '900',
-    color: COLORS.secondary,
     letterSpacing: -1,
     marginBottom: 6
   },
-  brandAccent: {
-    color: COLORS.primary
-  },
   title: {
     fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.textPrimary
+    fontWeight: '800'
   },
   subtitle: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     marginTop: 4,
     paddingHorizontal: 20
   },
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.medium
+    borderRadius: 24,
+    padding: 22,
+    borderWidth: 1.2
   },
   inputLabel: {
     fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.secondary,
+    fontWeight: '800',
     marginBottom: 8
   },
   phoneInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    backgroundColor: COLORS.background,
+    borderWidth: 1.2,
+    borderRadius: 14,
     overflow: 'hidden',
     marginBottom: 14
   },
@@ -242,37 +272,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 12,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.border,
-    backgroundColor: COLORS.borderLight
+    borderRightWidth: 1
   },
   flag: {
     fontSize: 14,
-    marginRight: 4
+    marginRight: 6
   },
   prefix: {
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.secondary
+    fontWeight: '800'
   },
   phoneInput: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 16,
-    color: COLORS.textPrimary,
-    fontWeight: '600'
+    fontWeight: '700',
+    letterSpacing: 1
   },
   otpInput: {
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderWidth: 1.2,
+    borderRadius: 14,
+    paddingVertical: 14,
     fontSize: 22,
-    color: COLORS.primary,
-    fontWeight: '800',
+    fontWeight: '900',
     textAlign: 'center',
     letterSpacing: 8,
     marginBottom: 10
@@ -280,63 +303,44 @@ const styles = StyleSheet.create({
   otpHelperRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 14
   },
   helperText: {
-    fontSize: 11,
-    color: COLORS.accent,
-    fontWeight: '600'
+    fontSize: 11
   },
   timerText: {
-    fontSize: 11,
-    color: COLORS.textMuted
+    fontSize: 11
   },
   resendLink: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.primary
-  },
-  errorText: {
-    color: COLORS.danger,
     fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 12
-  },
-  submitBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.small
-  },
-  submitBtnText: {
-    color: COLORS.textWhite,
-    fontSize: 15,
     fontWeight: '800'
   },
+  errorText: {
+    fontSize: 12,
+    marginBottom: 10,
+    fontWeight: '600'
+  },
   changeNumberBtn: {
-    marginTop: 14,
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginTop: 4
   },
   changeNumberText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     fontWeight: '600'
   },
   footer: {
-    marginTop: 24,
-    alignItems: 'center'
+    alignItems: 'center',
+    marginTop: 24
   },
   switchRoleBtn: {
-    padding: 8
+    padding: 10
   },
   switchRoleText: {
-    fontSize: 13,
-    color: COLORS.textSecondary
+    fontSize: 12
   },
   switchRoleBold: {
-    fontWeight: '700',
-    color: COLORS.primary
+    fontWeight: '800'
   }
 });

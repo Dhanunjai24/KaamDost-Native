@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, StatusBar, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
 import WorkerCard from '../components/WorkerCard';
 import WorkerProfileModal from '../components/WorkerProfileModal';
 import BookingModal from '../components/BookingModal';
 import { TRADES_CATALOG } from '../../../shared/constants/trades';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { useTheme } from '../../../shared/theme/ThemeContext';
+import GlassBackground from '../../../shared/components/glass/GlassBackground';
+import GlassSearch from '../../../shared/components/glass/GlassSearch';
+import GlassChip from '../../../shared/components/glass/GlassChip';
 import { t } from '../../../shared/i18n';
 import api from '../../../shared/api/client';
 
 export default function FindWorkersScreen({ onBack, onBookingCreated }) {
+  const { theme, shadows } = useTheme();
   const [workers, setWorkers] = useState([]);
   const [filteredWorkers, setFilteredWorkers] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState('all');
@@ -65,199 +69,159 @@ export default function FindWorkersScreen({ onBack, onBookingCreated }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundPrimary }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.backgroundPrimary} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('findWorkers')}</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      {/* Search Input */}
-      <View style={styles.searchBox}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by worker name, masonry, plumber..."
-          placeholderTextColor={COLORS.textMuted}
-          value={searchQuery}
-          onChangeText={onSearchText}
-        />
-        {searchQuery ? (
-          <TouchableOpacity onPress={() => onSearchText('')}>
-            <Text style={styles.clearIcon}>✕</Text>
+      <GlassBackground>
+        {/* Header */}
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: theme.glassSurfaceStrong,
+              borderBottomColor: theme.border
+            },
+            shadows.small
+          ]}
+        >
+          <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
+            <Text style={[styles.backText, { color: theme.textPrimary }]}>←</Text>
           </TouchableOpacity>
-        ) : null}
-      </View>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+            {t('findWorkers')}
+          </Text>
+          <View style={{ width: 24 }} />
+        </View>
 
-      {/* Trade Filter Pills */}
-      <View style={styles.filterScrollWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterList}>
-          <TouchableOpacity
-            style={[styles.filterPill, selectedTrade === 'all' && styles.filterPillActive]}
-            onPress={() => onSelectTradeFilter('all')}
-          >
-            <Text style={[styles.filterText, selectedTrade === 'all' && styles.filterTextActive]}>
-              All Trades ({workers.length})
-            </Text>
-          </TouchableOpacity>
-          {TRADES_CATALOG.map((tr) => {
-            const active = selectedTrade === tr.id;
-            return (
-              <TouchableOpacity
-                key={tr.id}
-                style={[styles.filterPill, active && styles.filterPillActive]}
-                onPress={() => onSelectTradeFilter(tr.id)}
-              >
-                <Text style={[styles.filterText, active && styles.filterTextActive]}>
-                  {tr.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* Worker List */}
-      <FlatList
-        data={filteredWorkers}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🔍</Text>
-            <Text style={styles.emptyTitle}>No Workers Found</Text>
-            <Text style={styles.emptyDesc}>Try changing your search keyword or selected trade filter.</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <WorkerCard
-            worker={item}
-            onSelectWorker={handleOpenProfile}
-            onBookDirect={handleBookDirect}
+        {/* Search Input Bar using GlassSearch */}
+        <View style={styles.searchWrapper}>
+          <GlassSearch
+            value={searchQuery}
+            onChangeText={onSearchText}
+            placeholder="Search by name, mason, plumber..."
+            onClear={() => onSearchText('')}
           />
-        )}
-      />
+        </View>
 
-      {/* Profile Modal */}
-      <WorkerProfileModal
-        visible={showProfileModal}
-        worker={selectedWorker}
-        onClose={() => setShowProfileModal(false)}
-        onBookDirect={(worker) => {
-          setShowProfileModal(false);
-          setShowBookingModal(true);
-        }}
-        onCallWorker={(worker) => {
-          alert(`Connecting call to +91 ${worker.phone}`);
-        }}
-      />
+        {/* Trade Filter Pills using GlassChip */}
+        <View style={styles.filterScrollWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterList}
+          >
+            <GlassChip
+              label={`All Trades (${workers.length})`}
+              selected={selectedTrade === 'all'}
+              onPress={() => onSelectTradeFilter('all')}
+            />
+            {TRADES_CATALOG.map((tr) => (
+              <GlassChip
+                key={tr.id}
+                label={tr.name}
+                selected={selectedTrade === tr.id}
+                onPress={() => onSelectTradeFilter(tr.id)}
+              />
+            ))}
+          </ScrollView>
+        </View>
 
-      {/* Booking Modal */}
-      <BookingModal
-        visible={showBookingModal}
-        worker={selectedWorker}
-        onClose={() => setShowBookingModal(false)}
-        onConfirmBooking={(booking) => {
-          if (onBookingCreated) onBookingCreated(booking);
-          onBack();
-        }}
-      />
+        {/* Worker List */}
+        <FlatList
+          data={filteredWorkers}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>🔍</Text>
+              <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
+                No Workers Found
+              </Text>
+              <Text style={[styles.emptyDesc, { color: theme.textSecondary }]}>
+                Try adjusting your search query or trade filter.
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <WorkerCard
+              worker={item}
+              onSelectWorker={handleOpenProfile}
+              onBookDirect={handleBookDirect}
+            />
+          )}
+        />
+
+        {/* Profile Modal */}
+        <WorkerProfileModal
+          visible={showProfileModal}
+          worker={selectedWorker}
+          onClose={() => setShowProfileModal(false)}
+          onBookDirect={(worker) => {
+            setShowProfileModal(false);
+            setShowBookingModal(true);
+          }}
+          onCallWorker={(worker) => {
+            alert(`Connecting call to +91 ${worker.phone}`);
+          }}
+        />
+
+        {/* Booking Modal */}
+        <BookingModal
+          visible={showBookingModal}
+          worker={selectedWorker}
+          onClose={() => setShowBookingModal(false)}
+          onConfirmBooking={(booking) => {
+            if (onBookingCreated) onBookingCreated(booking);
+            onBack();
+          }}
+        />
+      </GlassBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background
+    flex: 1
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
     paddingTop: 16,
     paddingBottom: 14,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight
+    borderBottomWidth: 1.2
   },
   backBtn: {
-    paddingRight: 8
+    paddingRight: 8,
+    paddingVertical: 4
   },
   backText: {
     fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.secondary
+    fontWeight: '800'
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.textPrimary
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3
   },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: COLORS.textPrimary,
-    paddingVertical: 10
-  },
-  clearIcon: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-    padding: 4
+  searchWrapper: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4
   },
   filterScrollWrapper: {
-    marginBottom: 8
+    paddingVertical: 8
   },
   filterList: {
-    paddingHorizontal: 16,
-    gap: 8
-  },
-  filterPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight
-  },
-  filterPillActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary
-  },
-  filterText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '600'
-  },
-  filterTextActive: {
-    color: COLORS.textWhite,
-    fontWeight: '700'
+    paddingHorizontal: 16
   },
   list: {
     paddingHorizontal: 16,
-    paddingBottom: 20
+    paddingTop: 6,
+    paddingBottom: 30
   },
   emptyContainer: {
     alignItems: 'center',
@@ -270,11 +234,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: COLORS.textPrimary
+    marginBottom: 4
   },
   emptyDesc: {
     fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 4
+    textAlign: 'center',
+    maxWidth: 240
   }
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { useTheme } from '../../../shared/theme/ThemeContext';
 
 export default function EarningsCard({
   todayEarnings = 1900,
@@ -8,32 +8,52 @@ export default function EarningsCard({
   walletBalance = 3850,
   onRequestPayout
 }) {
+  const { theme, shadows } = useTheme();
+
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.glassSurfaceStrong,
+          borderColor: theme.borderStrong
+        },
+        shadows.medium
+      ]}
+    >
       <View style={styles.topRow}>
         <View>
-          <Text style={styles.label}>Today's Completed Earnings</Text>
-          <Text style={styles.amount}>₹{todayEarnings}</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>
+            Today's Completed Earnings
+          </Text>
+          <Text style={[styles.amount, { color: theme.textPrimary }]}>
+            ₹{todayEarnings}
+          </Text>
         </View>
-        <TouchableOpacity style={styles.payoutBtn} onPress={onRequestPayout}>
+
+        <TouchableOpacity
+          style={[styles.payoutBtn, { backgroundColor: theme.buttonPrimary }]}
+          onPress={onRequestPayout}
+          activeOpacity={0.85}
+        >
           <Text style={styles.payoutText}>⚡ Instant Payout</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.statsRow}>
+      <View style={[styles.statsRow, { borderTopColor: theme.borderLight }]}>
         <View style={styles.statItem}>
-          <Text style={styles.statVal}>{completedJobs}</Text>
-          <Text style={styles.statLbl}>Jobs Today</Text>
+          <Text style={[styles.statVal, { color: theme.textPrimary }]}>{completedJobs}</Text>
+          <Text style={[styles.statLbl, { color: theme.textSecondary }]}>Jobs Today</Text>
         </View>
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
         <View style={styles.statItem}>
-          <Text style={styles.statVal}>₹{walletBalance}</Text>
-          <Text style={styles.statLbl}>Withdrawable</Text>
+          <Text style={[styles.statVal, { color: theme.textPrimary }]}>₹{walletBalance}</Text>
+          <Text style={[styles.statLbl, { color: theme.textSecondary }]}>Withdrawable</Text>
         </View>
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
         <View style={styles.statItem}>
-          <Text style={styles.statVal}>0%</Text>
-          <Text style={styles.statLbl}>Fee / Cut</Text>
+          <Text style={[styles.statVal, { color: theme.success }]}>0%</Text>
+          <Text style={[styles.statLbl, { color: theme.textSecondary }]}>Fee / Cut</Text>
         </View>
       </View>
     </View>
@@ -42,12 +62,11 @@ export default function EarningsCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.secondary,
     marginHorizontal: 16,
     marginVertical: 8,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 18,
-    ...SHADOWS.medium
+    borderWidth: 1.2
   },
   topRow: {
     flexDirection: 'row',
@@ -57,23 +76,21 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: COLORS.textMuted,
-    fontWeight: '600'
+    fontWeight: '700'
   },
   amount: {
     fontSize: 28,
     fontWeight: '900',
-    color: COLORS.textWhite,
-    marginTop: 2
+    marginTop: 2,
+    letterSpacing: -0.5
   },
   payoutBtn: {
-    backgroundColor: COLORS.onlineGreen,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12
   },
   payoutText: {
-    color: COLORS.textWhite,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '800'
   },
@@ -82,7 +99,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
     paddingTop: 12
   },
   statItem: {
@@ -90,18 +106,17 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   statVal: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.primarySoft
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: -0.2
   },
   statLbl: {
     fontSize: 10,
-    color: COLORS.textMuted,
-    marginTop: 2
+    marginTop: 2,
+    fontWeight: '600'
   },
   divider: {
     width: 1,
-    height: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)'
+    height: 22
   }
 });

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { ThemeProvider } from '../shared/theme/ThemeContext';
 import LanguageSelectScreen from './src/screens/LanguageSelectScreen';
 import PhoneLoginScreen from './src/screens/PhoneLoginScreen';
 import CustomerRegisterScreen from './src/screens/CustomerRegisterScreen';
@@ -57,7 +58,8 @@ export default function App({ onSwitchToPartner }) {
   };
 
   return (
-    <View style={styles.container}>
+    <ThemeProvider>
+      <View style={styles.container}>
       {currentScreen === 'language' && (
         <LanguageSelectScreen onContinue={() => setCurrentScreen('login')} />
       )}
@@ -147,7 +149,8 @@ export default function App({ onSwitchToPartner }) {
       {currentScreen === 'support' && (
         <CustomerSupportScreen onBack={() => setCurrentScreen('home')} />
       )}
-    </View>
+      </View>
+    </ThemeProvider>
   );
 }
 

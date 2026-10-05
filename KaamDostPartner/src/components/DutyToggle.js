@@ -1,12 +1,21 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { useTheme } from '../../../shared/theme/ThemeContext';
 
 export default function DutyToggle({ isOnline, onToggle }) {
+  const { theme, shadows } = useTheme();
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.banner, isOnline ? styles.bannerOnline : styles.bannerOffline]}
+        style={[
+          styles.banner,
+          {
+            backgroundColor: isOnline ? theme.successLight : theme.glassSurfaceStrong,
+            borderColor: isOnline ? theme.success : theme.border
+          },
+          shadows.glass
+        ]}
         onPress={onToggle}
         activeOpacity={0.85}
       >
@@ -15,18 +24,35 @@ export default function DutyToggle({ isOnline, onToggle }) {
         </View>
 
         <View style={styles.textCol}>
-          <Text style={styles.title}>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>
             {isOnline ? 'You Are Online & Dispatch Ready' : 'You Are Offline'}
           </Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
             {isOnline
               ? 'Receiving job notifications within 15 km in Sangareddy'
               : 'Tap here to go online and receive immediate customer bookings'}
           </Text>
         </View>
 
-        <View style={[styles.switchTrack, isOnline && styles.switchTrackActive]}>
-          <View style={[styles.switchThumb, isOnline && styles.switchThumbActive]} />
+        <View
+          style={[
+            styles.switchTrack,
+            {
+              backgroundColor: isOnline ? theme.success : theme.borderLight,
+              borderColor: isOnline ? theme.success : theme.border,
+              borderWidth: 1
+            }
+          ]}
+        >
+          <View
+            style={[
+              styles.switchThumb,
+              {
+                backgroundColor: '#FFFFFF',
+                alignSelf: isOnline ? 'flex-end' : 'flex-start'
+              }
+            ]}
+          />
         </View>
       </TouchableOpacity>
     </View>
@@ -36,23 +62,14 @@ export default function DutyToggle({ isOnline, onToggle }) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    marginVertical: 10
+    marginVertical: 8
   },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    ...SHADOWS.small
-  },
-  bannerOnline: {
-    backgroundColor: '#f0fdf4',
-    borderColor: '#86efac'
-  },
-  bannerOffline: {
-    backgroundColor: COLORS.surface,
-    borderColor: COLORS.borderLight
+    borderRadius: 20,
+    borderWidth: 1.2
   },
   iconCircle: {
     width: 36,
@@ -72,32 +89,23 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: '800',
-    color: COLORS.secondary
+    letterSpacing: -0.2
   },
   subtitle: {
     fontSize: 11,
-    color: COLORS.textSecondary,
     marginTop: 2,
     lineHeight: 15
   },
   switchTrack: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.border,
+    width: 48,
+    height: 26,
+    borderRadius: 13,
     padding: 2,
     justifyContent: 'center'
-  },
-  switchTrackActive: {
-    backgroundColor: COLORS.onlineGreen
   },
   switchThumb: {
     width: 20,
     height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.surface
-  },
-  switchThumbActive: {
-    alignSelf: 'flex-end'
+    borderRadius: 10
   }
 });

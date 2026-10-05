@@ -9,7 +9,9 @@ import LanguageSelectModal from '../components/LanguageSelectModal';
 import NotificationsModal from '../components/NotificationsModal';
 import HelpModal from '../components/HelpModal';
 import LegalPolicyModal from '../components/LegalPolicyModal';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { useTheme } from '../../../shared/theme/ThemeContext';
+import GlassBackground from '../../../shared/components/glass/GlassBackground';
+import GlassCard from '../../../shared/components/glass/GlassCard';
 import { t } from '../../../shared/i18n';
 
 export default function CustomerHomeScreen({
@@ -21,6 +23,7 @@ export default function CustomerHomeScreen({
   onOpenSupport,
   onBookingCreated
 }) {
+  const { theme, shadows } = useTheme();
   const [city, setCity] = useState(customer?.address?.city || 'Sangareddy');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrade, setSelectedTrade] = useState(null);
@@ -42,162 +45,261 @@ export default function CustomerHomeScreen({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundPrimary }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.backgroundPrimary} />
 
-      {/* Top Header */}
-      <Header
-        city={city}
-        onSelectCity={() => setShowBookingModal(true)}
-        onOpenLanguage={() => setShowLanguageModal(true)}
-        onOpenNotifications={() => setShowNotificationsModal(true)}
-        onOpenProfile={onOpenDashboard}
-        unreadCount={2}
-      />
-
-      <ScrollView
-        style={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero Section with Quick Search */}
-        <HeroBanner
-          searchQuery={searchQuery}
-          onChangeSearch={setSearchQuery}
-          onPressBookNow={() => {
-            setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
-            setShowBookingModal(true);
-          }}
-          onPressVoiceSearch={onOpenFindWorkers}
+      <GlassBackground>
+        {/* Top Header with Theme Switcher, Language & Profile */}
+        <Header
+          city={city}
+          onSelectCity={() => setShowBookingModal(true)}
+          onOpenLanguage={() => setShowLanguageModal(true)}
+          onOpenNotifications={() => setShowNotificationsModal(true)}
+          onOpenProfile={onOpenDashboard}
+          unreadCount={2}
         />
 
-        {/* Active Booking Card */}
-        <ActiveBookingCard
-          booking={activeBooking}
-          onTrackBooking={onOpenTracking}
-        />
+        <ScrollView
+          style={styles.scroll}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={theme.accentPrimary}
+              colors={[theme.accentPrimary]}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Light Glassmorphic Hero Banner with Search */}
+          <HeroBanner
+            searchQuery={searchQuery}
+            onChangeSearch={setSearchQuery}
+            onPressBookNow={() => {
+              setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
+              setShowBookingModal(true);
+            }}
+            onPressVoiceSearch={onOpenFindWorkers}
+          />
 
-        {/* 13 Telangana Service Categories */}
-        <ServiceGrid onSelectTrade={handleSelectTrade} />
+          {/* Active Booking Glass Card */}
+          <ActiveBookingCard
+            booking={activeBooking}
+            onTrackBooking={onOpenTracking}
+            onNewBooking={() => {
+              setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
+              setShowBookingModal(true);
+            }}
+          />
 
-        {/* Banner: Telangana Labour Welfare Guarantee */}
-        <View style={styles.bannerContainer}>
-          <View style={styles.govBanner}>
-            <View style={styles.govIcon}>
-              <Text style={styles.govEmoji}>🏛️</Text>
-            </View>
-            <View style={styles.govInfo}>
-              <Text style={styles.govTitle}>Telangana Labour Welfare Guarantee</Text>
-              <Text style={styles.govSub}>
-                100% fair daily wages, zero commission deduction from workers, standard government safety norms.
-              </Text>
-            </View>
+          {/* 13 Telangana Service Categories in Light Glass Design */}
+          <ServiceGrid onSelectTrade={handleSelectTrade} />
+
+          {/* Banner: Telangana Labour Welfare Guarantee */}
+          <View style={styles.bannerContainer}>
+            <GlassCard
+              style={[
+                styles.govBanner,
+                {
+                  backgroundColor: theme.glassSurfaceStrong,
+                  borderColor: theme.border
+                }
+              ]}
+              variant="default"
+            >
+              <View style={[styles.govIcon, { backgroundColor: theme.primaryLight }]}>
+                <Text style={styles.govEmoji}>🏛️</Text>
+              </View>
+              <View style={styles.govInfo}>
+                <Text style={[styles.govTitle, { color: theme.textPrimary }]}>
+                  Telangana Labour Welfare Guarantee
+                </Text>
+                <Text style={[styles.govSub, { color: theme.textSecondary }]}>
+                  100% fair daily wages, zero commission deduction from workers, standard government safety norms.
+                </Text>
+              </View>
+            </GlassCard>
           </View>
+
+          {/* Quick Utility Links (Help, Legal, Support) */}
+          <View style={styles.utilityLinksRow}>
+            <TouchableOpacity
+              style={[
+                styles.utilBtn,
+                {
+                  backgroundColor: theme.glassSurface,
+                  borderColor: theme.border
+                },
+                shadows.small
+              ]}
+              onPress={() => setShowHelpModal(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.utilIcon}>❓</Text>
+              <Text style={[styles.utilText, { color: theme.textPrimary }]}>
+                FAQs & Helpline
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.utilBtn,
+                {
+                  backgroundColor: theme.glassSurface,
+                  borderColor: theme.border
+                },
+                shadows.small
+              ]}
+              onPress={onOpenSupport}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.utilIcon}>🤖</Text>
+              <Text style={[styles.utilText, { color: theme.textPrimary }]}>
+                AI Support Chat
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.utilBtn,
+                {
+                  backgroundColor: theme.glassSurface,
+                  borderColor: theme.border
+                },
+                shadows.small
+              ]}
+              onPress={() => setShowLegalModal(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.utilIcon}>📜</Text>
+              <Text style={[styles.utilText, { color: theme.textPrimary }]}>
+                Legal & Terms
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ height: 90 }} />
+        </ScrollView>
+
+        {/* Floating Light Glass Navigation Bar */}
+        <View
+          style={[
+            styles.bottomBar,
+            {
+              backgroundColor: theme.glassSurfaceStrong,
+              borderTopColor: theme.border
+            },
+            shadows.medium
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => {}}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.navIconContainer, { backgroundColor: theme.primaryLight }]}>
+              <Text style={styles.navIcon}>🏠</Text>
+            </View>
+            <Text style={[styles.navText, { color: theme.textPrimary, fontWeight: '800' }]}>
+              Home
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={onOpenFindWorkers}
+            activeOpacity={0.7}
+          >
+            <View style={styles.navIconContainer}>
+              <Text style={styles.navIcon}>🔍</Text>
+            </View>
+            <Text style={[styles.navText, { color: theme.textSecondary }]}>
+              Workers
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.fabBtn,
+              {
+                backgroundColor: theme.buttonPrimary
+              },
+              shadows.large
+            ]}
+            onPress={() => {
+              setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
+              setShowBookingModal(true);
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.fabIcon}>⚡</Text>
+            <Text style={styles.fabText}>Book</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={onOpenTracking}
+            activeOpacity={0.7}
+          >
+            <View style={styles.navIconContainer}>
+              <Text style={styles.navIcon}>📍</Text>
+            </View>
+            <Text style={[styles.navText, { color: theme.textSecondary }]}>
+              Track
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={onOpenDashboard}
+            activeOpacity={0.7}
+          >
+            <View style={styles.navIconContainer}>
+              <Text style={styles.navIcon}>👤</Text>
+            </View>
+            <Text style={[styles.navText, { color: theme.textSecondary }]}>
+              Profile
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Quick Utility Links (Help, Legal, Support) */}
-        <View style={styles.utilityLinksRow}>
-          <TouchableOpacity style={styles.utilBtn} onPress={() => setShowHelpModal(true)}>
-            <Text style={styles.utilIcon}>❓</Text>
-            <Text style={styles.utilText}>FAQs & Helpline</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.utilBtn} onPress={onOpenSupport}>
-            <Text style={styles.utilIcon}>🤖</Text>
-            <Text style={styles.utilText}>AI Support Chat</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.utilBtn} onPress={() => setShowLegalModal(true)}>
-            <Text style={styles.utilIcon}>📜</Text>
-            <Text style={styles.utilText}>Legal & Terms</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ height: 80 }} />
-      </ScrollView>
-
-      {/* Floating Action Bar (Find Workers / Instant Booking) */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {}}
-        >
-          <Text style={[styles.navIcon, styles.navIconActive]}>🏠</Text>
-          <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={onOpenFindWorkers}
-        >
-          <Text style={styles.navIcon}>🔍</Text>
-          <Text style={styles.navText}>Workers</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.fabBtn}
-          onPress={() => {
-            setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
-            setShowBookingModal(true);
+        {/* Modals */}
+        <BookingModal
+          visible={showBookingModal}
+          trade={selectedTrade}
+          onClose={() => setShowBookingModal(false)}
+          onConfirmBooking={(booking) => {
+            if (onBookingCreated) onBookingCreated(booking);
           }}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.fabIcon}>⚡</Text>
-          <Text style={styles.fabText}>Book</Text>
-        </TouchableOpacity>
+        />
 
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={onOpenTracking}
-        >
-          <Text style={styles.navIcon}>📍</Text>
-          <Text style={styles.navText}>Track</Text>
-        </TouchableOpacity>
+        <LanguageSelectModal
+          visible={showLanguageModal}
+          onClose={() => setShowLanguageModal(false)}
+        />
 
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={onOpenDashboard}
-        >
-          <Text style={styles.navIcon}>👤</Text>
-          <Text style={styles.navText}>Profile</Text>
-        </TouchableOpacity>
-      </View>
+        <NotificationsModal
+          visible={showNotificationsModal}
+          onClose={() => setShowNotificationsModal(false)}
+        />
 
-      {/* Modals */}
-      <BookingModal
-        visible={showBookingModal}
-        trade={selectedTrade}
-        onClose={() => setShowBookingModal(false)}
-        onConfirmBooking={(booking) => {
-          if (onBookingCreated) onBookingCreated(booking);
-        }}
-      />
+        <HelpModal
+          visible={showHelpModal}
+          onClose={() => setShowHelpModal(false)}
+        />
 
-      <LanguageSelectModal
-        visible={showLanguageModal}
-        onClose={() => setShowLanguageModal(false)}
-      />
-
-      <NotificationsModal
-        visible={showNotificationsModal}
-        onClose={() => setShowNotificationsModal(false)}
-      />
-
-      <HelpModal
-        visible={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
-      />
-
-      <LegalPolicyModal
-        visible={showLegalModal}
-        onClose={() => setShowLegalModal(false)}
-      />
+        <LegalPolicyModal
+          visible={showLegalModal}
+          onClose={() => setShowLegalModal(false)}
+        />
+      </GlassBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background
+    flex: 1
   },
   scroll: {
     flex: 1
@@ -209,17 +311,12 @@ const styles = StyleSheet.create({
   govBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ecfdf5',
-    borderWidth: 1,
-    borderColor: '#a7f3d0',
-    borderRadius: 14,
     padding: 14
   },
   govIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#d1fae5',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12
@@ -232,12 +329,10 @@ const styles = StyleSheet.create({
   },
   govTitle: {
     fontSize: 13,
-    fontWeight: '800',
-    color: '#065f46'
+    fontWeight: '800'
   },
   govSub: {
     fontSize: 11,
-    color: '#047857',
     marginTop: 2,
     lineHeight: 16
   },
@@ -253,75 +348,67 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 11,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    gap: 4
+    gap: 5
   },
   utilIcon: {
     fontSize: 14
   },
   utilText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.secondary
+    fontWeight: '700'
   },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 64,
-    backgroundColor: COLORS.surface,
+    height: 68,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    paddingHorizontal: 10,
-    ...SHADOWS.medium
+    borderTopWidth: 1.2,
+    paddingHorizontal: 10
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 50
+    width: 52
+  },
+  navIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2
   },
   navIcon: {
-    fontSize: 18,
-    color: COLORS.textMuted
-  },
-  navIconActive: {
-    color: COLORS.primary
+    fontSize: 16
   },
   navText: {
     fontSize: 10,
-    color: COLORS.textMuted,
-    marginTop: 2,
-    fontWeight: '600'
-  },
-  navTextActive: {
-    color: COLORS.primary,
-    fontWeight: '800'
+    fontWeight: '600',
+    letterSpacing: -0.2
   },
   fabBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.primary,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
-    top: -14,
-    ...SHADOWS.large
+    top: -16
   },
   fabIcon: {
     fontSize: 18,
-    color: COLORS.textWhite
+    color: '#FFFFFF'
   },
   fabText: {
     fontSize: 9,
-    color: COLORS.textWhite,
-    fontWeight: '800'
+    color: '#FFFFFF',
+    fontWeight: '900',
+    marginTop: -2
   }
 });

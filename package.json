@@ -23,5 +23,8 @@
     "labour-marketplace"
   ],
   "author": "KaamDost Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "react-native-screens": "3.35.0"
+  }
 }

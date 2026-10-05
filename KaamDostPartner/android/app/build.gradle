@@ -7,9 +7,10 @@ react {
         ? file("../../node_modules")
         : file("../../../node_modules")
 
-    root.set(file(nodeModules.parentFile))
+    root.set(file("../.."))
     reactNativeDir.set(file("${nodeModules}/react-native"))
     codegenDir.set(file("${nodeModules}/@react-native/codegen"))
+    autolinkLibrariesWithApp()
 }
 
 def jscFlavor = 'org.webkit:android-jsc:+'

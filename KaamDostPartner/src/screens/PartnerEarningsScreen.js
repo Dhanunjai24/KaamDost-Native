@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import PayoutModal from '../components/PayoutModal';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { useTheme } from '../../../shared/theme/ThemeContext';
+import GlassBackground from '../../../shared/components/glass/GlassBackground';
+import GlassCard from '../../../shared/components/glass/GlassCard';
+import GlassButton from '../../../shared/components/glass/GlassButton';
 
 export default function PartnerEarningsScreen({ onBack }) {
+  const { theme, shadows } = useTheme();
   const [balance, setBalance] = useState(3850);
   const [showPayout, setShowPayout] = useState(false);
 
@@ -15,172 +19,205 @@ export default function PartnerEarningsScreen({ onBack }) {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundPrimary }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.backgroundPrimary} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Earnings & Daily Ledger</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Balance Card */}
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Available Withdrawable Balance</Text>
-          <Text style={styles.balanceAmount}>₹{balance}</Text>
-          <Text style={styles.balanceSub}>Zero deductions • Direct daily bank transfer</Text>
-
-          <TouchableOpacity style={styles.withdrawBtn} onPress={() => setShowPayout(true)}>
-            <Text style={styles.withdrawBtnText}>⚡ Instant Withdrawal to UPI / Bank</Text>
+      <GlassBackground>
+        {/* Header */}
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: theme.glassSurfaceStrong,
+              borderBottomColor: theme.border
+            },
+            shadows.small
+          ]}
+        >
+          <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
+            <Text style={[styles.backText, { color: theme.textPrimary }]}>←</Text>
           </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+            Earnings & Daily Ledger
+          </Text>
+          <View style={{ width: 24 }} />
         </View>
 
-        {/* Weekly Summary */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>This Week's Summary</Text>
-          <View style={styles.summaryRow}>
-            <View style={styles.sumItem}>
-              <Text style={styles.sumVal}>₹6,750</Text>
-              <Text style={styles.sumLbl}>Total Earned</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.sumItem}>
-              <Text style={styles.sumVal}>7</Text>
-              <Text style={styles.sumLbl}>Jobs Done</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.sumItem}>
-              <Text style={styles.sumVal}>₹250</Text>
-              <Text style={styles.sumLbl}>Tips Received</Text>
-            </View>
-          </View>
-        </View>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Balance Card - Light Frosted Glass */}
+          <GlassCard style={styles.balanceCard} variant="strong">
+            <Text style={[styles.balanceLabel, { color: theme.textSecondary }]}>
+              Available Withdrawable Balance
+            </Text>
+            <Text style={[styles.balanceAmount, { color: theme.textPrimary }]}>
+              ₹{balance}
+            </Text>
+            <Text style={[styles.balanceSub, { color: theme.textSecondary }]}>
+              Zero deductions • Direct daily bank transfer
+            </Text>
 
-        {/* Ledger Transactions */}
-        <View style={styles.ledgerSection}>
-          <Text style={styles.ledgerHeading}>Recent Ledger Transactions</Text>
-          {ledger.map((tx) => (
-            <View key={tx.id} style={styles.txRow}>
-              <View style={[styles.txIconBox, tx.type === 'credit' ? styles.txCredit : styles.txDebit]}>
-                <Text style={styles.txIconText}>{tx.type === 'credit' ? '↓' : '↑'}</Text>
+            <GlassButton
+              title="⚡ Instant Withdrawal to UPI / Bank"
+              onPress={() => setShowPayout(true)}
+              variant="primary"
+              size="md"
+              style={{ marginTop: 14 }}
+            />
+          </GlassCard>
+
+          {/* Weekly Summary */}
+          <GlassCard style={styles.summaryCard} variant="default">
+            <Text style={[styles.summaryTitle, { color: theme.textPrimary }]}>
+              This Week's Summary
+            </Text>
+            <View style={styles.summaryRow}>
+              <View style={styles.sumItem}>
+                <Text style={[styles.sumVal, { color: theme.textPrimary }]}>₹6,750</Text>
+                <Text style={[styles.sumLbl, { color: theme.textSecondary }]}>Total Earned</Text>
               </View>
-              <View style={styles.txInfo}>
-                <Text style={styles.txTitle}>{tx.title}</Text>
-                <Text style={styles.txDate}>{tx.date} • {tx.id}</Text>
+              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+              <View style={styles.sumItem}>
+                <Text style={[styles.sumVal, { color: theme.textPrimary }]}>7</Text>
+                <Text style={[styles.sumLbl, { color: theme.textSecondary }]}>Jobs Done</Text>
               </View>
-              <View style={styles.txRight}>
-                <Text style={[styles.txAmount, tx.type === 'credit' ? styles.amountGreen : styles.amountDark]}>
-                  {tx.amount}
-                </Text>
-                <Text style={styles.txStatus}>{tx.status} ✓</Text>
+              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+              <View style={styles.sumItem}>
+                <Text style={[styles.sumVal, { color: theme.textPrimary }]}>₹250</Text>
+                <Text style={[styles.sumLbl, { color: theme.textSecondary }]}>Tips Received</Text>
               </View>
             </View>
-          ))}
-        </View>
-      </ScrollView>
+          </GlassCard>
 
-      <PayoutModal
-        visible={showPayout}
-        balance={balance}
-        onClose={() => setShowPayout(false)}
-        onSuccess={(amt) => setBalance(prev => Math.max(0, prev - amt))}
-      />
+          {/* Ledger Transactions */}
+          <GlassCard style={styles.ledgerSection} variant="default">
+            <Text style={[styles.ledgerHeading, { color: theme.textPrimary }]}>
+              Recent Ledger Transactions
+            </Text>
+            {ledger.map((tx) => (
+              <View
+                key={tx.id}
+                style={[styles.txRow, { borderBottomColor: theme.borderLight }]}
+              >
+                <View
+                  style={[
+                    styles.txIconBox,
+                    {
+                      backgroundColor: tx.type === 'credit' ? theme.successLight : theme.primaryLight,
+                      borderColor: theme.border,
+                      borderWidth: 1
+                    }
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.txIconText,
+                      { color: tx.type === 'credit' ? theme.success : theme.textPrimary }
+                    ]}
+                  >
+                    {tx.type === 'credit' ? '↓' : '↑'}
+                  </Text>
+                </View>
+
+                <View style={styles.txInfo}>
+                  <Text style={[styles.txTitle, { color: theme.textPrimary }]}>
+                    {tx.title}
+                  </Text>
+                  <Text style={[styles.txDate, { color: theme.textSecondary }]}>
+                    {tx.date} • {tx.id}
+                  </Text>
+                </View>
+
+                <View style={styles.txRight}>
+                  <Text
+                    style={[
+                      styles.txAmount,
+                      { color: tx.type === 'credit' ? theme.success : theme.textPrimary }
+                    ]}
+                  >
+                    {tx.amount}
+                  </Text>
+                  <Text style={[styles.txStatus, { color: theme.success }]}>
+                    {tx.status} ✓
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </GlassCard>
+        </ScrollView>
+
+        <PayoutModal
+          visible={showPayout}
+          balance={balance}
+          onClose={() => setShowPayout(false)}
+          onSuccess={(amt) => setBalance(prev => Math.max(0, prev - amt))}
+        />
+      </GlassBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background
+    flex: 1
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
     paddingTop: 16,
     paddingBottom: 14,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight
+    borderBottomWidth: 1.2
   },
   backBtn: {
-    paddingRight: 8
+    paddingRight: 8,
+    paddingVertical: 4
   },
   backText: {
     fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.secondary
+    fontWeight: '800'
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.textPrimary
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3
   },
   content: {
-    padding: 16
+    padding: 16,
+    paddingBottom: 40
   },
   balanceCard: {
-    backgroundColor: COLORS.secondary,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 20,
-    alignItems: 'center',
-    marginBottom: 14,
-    ...SHADOWS.medium
+    marginBottom: 12
   },
   balanceLabel: {
     fontSize: 12,
-    color: COLORS.textMuted,
-    fontWeight: '600'
+    fontWeight: '700'
   },
   balanceAmount: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: '900',
-    color: COLORS.textWhite,
-    marginVertical: 4
+    marginVertical: 4,
+    letterSpacing: -0.5
   },
   balanceSub: {
-    fontSize: 11,
-    color: COLORS.onlineGreen,
-    fontWeight: '700',
-    marginBottom: 16
-  },
-  withdrawBtn: {
-    backgroundColor: COLORS.onlineGreen,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center'
-  },
-  withdrawBtnText: {
-    color: COLORS.textWhite,
-    fontSize: 14,
-    fontWeight: '800'
+    fontSize: 11
   },
   summaryCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 14
+    marginBottom: 12
   },
   summaryTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: COLORS.secondary,
     marginBottom: 12
   },
   summaryRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'space-between'
   },
   sumItem: {
     flex: 1,
@@ -188,68 +225,54 @@ const styles = StyleSheet.create({
   },
   sumVal: {
     fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.textPrimary
+    fontWeight: '900',
+    letterSpacing: -0.3
   },
   sumLbl: {
     fontSize: 11,
-    color: COLORS.textSecondary,
-    marginTop: 2
+    marginTop: 2,
+    fontWeight: '600'
   },
   divider: {
     width: 1,
-    height: 24,
-    backgroundColor: COLORS.borderLight
+    height: 24
   },
   ledgerSection: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight
+    borderRadius: 20,
+    padding: 16
   },
   ledgerHeading: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: COLORS.secondary,
-    marginBottom: 10
+    fontSize: 14,
+    fontWeight: '900',
+    marginBottom: 12
   },
   txRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight
+    paddingVertical: 12,
+    borderBottomWidth: 1
   },
   txIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10
   },
-  txCredit: {
-    backgroundColor: '#dcfce7'
-  },
-  txDebit: {
-    backgroundColor: '#fee2e2'
-  },
   txIconText: {
-    fontSize: 14,
-    fontWeight: '900'
+    fontSize: 18,
+    fontWeight: '800'
   },
   txInfo: {
     flex: 1
   },
   txTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.textPrimary
+    fontWeight: '800'
   },
   txDate: {
     fontSize: 11,
-    color: COLORS.textMuted,
     marginTop: 2
   },
   txRight: {
@@ -257,18 +280,11 @@ const styles = StyleSheet.create({
   },
   txAmount: {
     fontSize: 14,
-    fontWeight: '800'
-  },
-  amountGreen: {
-    color: COLORS.onlineGreen
-  },
-  amountDark: {
-    color: COLORS.secondary
+    fontWeight: '900'
   },
   txStatus: {
     fontSize: 10,
     fontWeight: '700',
-    color: COLORS.accent,
     marginTop: 2
   }
 });

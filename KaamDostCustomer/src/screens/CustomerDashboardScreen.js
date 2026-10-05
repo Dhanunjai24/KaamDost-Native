@@ -1,317 +1,438 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { useTheme } from '../../../shared/theme/ThemeContext';
+import GlassBackground from '../../../shared/components/glass/GlassBackground';
+import GlassCard from '../../../shared/components/glass/GlassCard';
+import GlassButton from '../../../shared/components/glass/GlassButton';
+import GlassProfileCard from '../../../shared/components/glass/GlassProfileCard';
+import GlassPaymentCard from '../../../shared/components/glass/GlassPaymentCard';
+import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
 import { t } from '../../../shared/i18n';
 
 export default function CustomerDashboardScreen({ customer, onBack, onLogout, onSelectPastBooking }) {
+  const { theme, themeId, switchTheme, shadows } = useTheme();
+  const [showThemeModal, setShowThemeModal] = useState(false);
+
   const pastBookings = [
     { id: 'BK-1001', trade: 'plumbing', tradeName: 'Plumber', worker: 'Venkat Rao', date: 'Yesterday', amount: 849, status: 'COMPLETED' },
     { id: 'BK-1002', trade: 'electrical', tradeName: 'Electrician', worker: 'K. Shiva Kumar', date: '22 Sep 2026', amount: 899, status: 'COMPLETED' },
     { id: 'BK-1003', trade: 'masonry', tradeName: 'Mason', worker: 'Ramesh Reddy', date: '15 Sep 2026', amount: 1045, status: 'COMPLETED' }
   ];
 
+  const themesSummary = [
+    { id: 'light_navy', name: 'Light + Navy Blue', subtitle: 'Default • Cool white & Royal navy', bg: '#F4F8FC', primary: '#0B2341' },
+    { id: 'white_teal', name: 'White + Deep Teal', subtitle: 'Fresh mint & Authoritative teal', bg: '#F6FBFA', primary: '#073B3A' },
+    { id: 'ivory_indigo', name: 'Soft Ivory + Deep Indigo', subtitle: 'Warm ivory & Aristocratic indigo', bg: '#FAF9F6', primary: '#25234A' }
+  ];
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundPrimary }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.backgroundPrimary} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Account & History</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Profile Header Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarEmoji}>👤</Text>
-          </View>
-          <View style={styles.profileInfo}>
-            <Text style={styles.name}>{customer?.name || 'Ravi Kumar'}</Text>
-            <Text style={styles.phone}>+91 {customer?.phone || '9876543210'}</Text>
-            <View style={styles.verifiedRow}>
-              <Text style={styles.verifiedBadge}>100% UIDAI Verified ✓</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Wallet Balance Card */}
-        <View style={styles.walletCard}>
-          <View style={styles.walletLeft}>
-            <Text style={styles.walletLabel}>KaamDost Wallet</Text>
-            <Text style={styles.walletAmount}>₹100<Text style={styles.walletBonus}> (Bonus)</Text></Text>
-          </View>
+      <GlassBackground>
+        {/* Header */}
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: theme.glassSurfaceStrong,
+              borderBottomColor: theme.border
+            },
+            shadows.small
+          ]}
+        >
+          <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
+            <Text style={[styles.backText, { color: theme.textPrimary }]}>←</Text>
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+            My Account & Settings
+          </Text>
           <TouchableOpacity
-            style={styles.addMoneyBtn}
-            onPress={() => Alert.alert('Add Funds', 'Instant UPI top-up enabled.')}
+            onPress={() => setShowThemeModal(true)}
+            style={[styles.paletteBtn, { backgroundColor: theme.primaryLight }]}
+            activeOpacity={0.7}
           >
-            <Text style={styles.addMoneyText}>+ Add Money</Text>
+            <Text style={styles.paletteIcon}>🎨</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Saved Address Section */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Default Service Address</Text>
-          <View style={styles.addressBox}>
-            <Text style={styles.addressIcon}>📍</Text>
-            <View style={styles.addressInfo}>
-              <Text style={styles.addressType}>Home (Default)</Text>
-              <Text style={styles.addressText}>Plot 42, Near Old Bus Stand Road, Sangareddy, Telangana - 502001</Text>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Profile Header Glass Card */}
+          <GlassProfileCard
+            name={customer?.name || 'Ravi Kumar'}
+            phone={customer?.phone || '9876543210'}
+            city={customer?.address?.city || 'Sangareddy'}
+            isVerified={true}
+          />
+
+          {/* Wallet Balance Glass Card */}
+          <GlassPaymentCard
+            balance={100}
+            bonusAmount={100}
+            onAddMoney={() => Alert.alert('Add Funds', 'Instant UPI top-up enabled via secure gateway.')}
+          />
+
+          {/* Theme Selector Section */}
+          <GlassCard style={styles.themeSectionCard} variant="strong">
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+                  Appearance & 2-Color Theme
+                </Text>
+                <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
+                  Select your preferred glassmorphic visual system
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowThemeModal(true)}
+                style={[styles.quickChangeBtn, { backgroundColor: theme.primaryLight }]}
+              >
+                <Text style={[styles.quickChangeText, { color: theme.accentPrimary }]}>
+                  All Themes
+                </Text>
+              </TouchableOpacity>
             </View>
-          </View>
-        </View>
 
-        {/* Past Bookings History */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Past Bookings History</Text>
-          {pastBookings.map((b) => (
-            <TouchableOpacity
-              key={b.id}
-              style={styles.bookingItem}
-              onPress={() => onSelectPastBooking && onSelectPastBooking(b)}
-            >
-              <View style={styles.bookingIcon}>
-                <Text style={styles.bIconEmoji}>🛠️</Text>
-              </View>
-              <View style={styles.bookingInfo}>
-                <Text style={styles.bookingTrade}>{b.tradeName} • {b.worker}</Text>
-                <Text style={styles.bookingDate}>{b.date} • {b.id}</Text>
-              </View>
-              <View style={styles.bookingRight}>
-                <Text style={styles.bookingAmount}>₹{b.amount}</Text>
-                <Text style={styles.bookingStatus}>Completed ✓</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+            <View style={styles.themeOptionsGrid}>
+              {themesSummary.map((tItem) => {
+                const isActive = themeId === tItem.id;
+                return (
+                  <TouchableOpacity
+                    key={tItem.id}
+                    style={[
+                      styles.themePillCard,
+                      {
+                        backgroundColor: isActive ? theme.primaryLight : theme.glassSurface,
+                        borderColor: isActive ? theme.accentPrimary : theme.border
+                      }
+                    ]}
+                    onPress={() => switchTheme(tItem.id)}
+                    activeOpacity={0.8}
+                  >
+                    <View
+                      style={[
+                        styles.themeSwatch,
+                        { backgroundColor: tItem.bg, borderColor: tItem.primary }
+                      ]}
+                    >
+                      <View
+                        style={[styles.themeSwatchDot, { backgroundColor: tItem.primary }]}
+                      />
+                    </View>
+                    <View style={styles.themeInfoCol}>
+                      <Text
+                        style={[
+                          styles.themeTitleText,
+                          {
+                            color: theme.textPrimary,
+                            fontWeight: isActive ? '900' : '700'
+                          }
+                        ]}
+                      >
+                        {tItem.name}
+                      </Text>
+                      <Text style={[styles.themeSubText, { color: theme.textSecondary }]}>
+                        {tItem.subtitle}
+                      </Text>
+                    </View>
+                    {isActive ? (
+                      <View
+                        style={[
+                          styles.activeCheckPill,
+                          { backgroundColor: theme.accentPrimary }
+                        ]}
+                      >
+                        <Text style={styles.checkIcon}>✓</Text>
+                      </View>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </GlassCard>
 
-        {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
-          <Text style={styles.logoutText}>Log Out of KaamDost</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          {/* Saved Address Section */}
+          <GlassCard style={styles.sectionCard} variant="default">
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+              Default Service Address
+            </Text>
+            <View style={styles.addressBox}>
+              <View
+                style={[
+                  styles.addressIconBox,
+                  { backgroundColor: theme.primaryLight, borderColor: theme.border, borderWidth: 1 }
+                ]}
+              >
+                <Text style={styles.addressIcon}>📍</Text>
+              </View>
+              <View style={styles.addressInfo}>
+                <Text style={[styles.addressType, { color: theme.textPrimary }]}>
+                  Home (Default Delivery Point)
+                </Text>
+                <Text style={[styles.addressText, { color: theme.textSecondary }]}>
+                  Plot 42, Near Old Bus Stand Road, Sangareddy, Telangana - 502001
+                </Text>
+              </View>
+            </View>
+          </GlassCard>
+
+          {/* Past Bookings History */}
+          <GlassCard style={styles.sectionCard} variant="default">
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+              Past Bookings History
+            </Text>
+            {pastBookings.map((b) => (
+              <TouchableOpacity
+                key={b.id}
+                style={[styles.bookingItem, { borderBottomColor: theme.borderLight }]}
+                onPress={() => onSelectPastBooking && onSelectPastBooking(b)}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.bookingIcon,
+                    { backgroundColor: theme.primaryLight, borderColor: theme.border, borderWidth: 1 }
+                  ]}
+                >
+                  <Text style={styles.bIconEmoji}>🛠️</Text>
+                </View>
+                <View style={styles.bookingInfo}>
+                  <Text style={[styles.bookingTrade, { color: theme.textPrimary }]}>
+                    {b.tradeName} • {b.worker}
+                  </Text>
+                  <Text style={[styles.bookingDate, { color: theme.textSecondary }]}>
+                    {b.date} • {b.id}
+                  </Text>
+                </View>
+                <View style={styles.bookingRight}>
+                  <Text style={[styles.bookingAmount, { color: theme.textPrimary }]}>
+                    ₹{b.amount}
+                  </Text>
+                  <View style={[styles.statusTag, { backgroundColor: theme.successLight }]}>
+                    <Text style={[styles.statusText, { color: theme.success }]}>
+                      Completed ✓
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </GlassCard>
+
+          {/* Logout Button */}
+          <GlassButton
+            title="Log Out of KaamDost"
+            onPress={onLogout}
+            variant="secondary"
+            size="md"
+            style={{
+              marginTop: 10,
+              marginBottom: 34,
+              borderColor: theme.danger,
+              backgroundColor: theme.dangerLight
+            }}
+            textStyle={{ color: theme.danger }}
+          />
+        </ScrollView>
+
+        <ThemeSwitcherModal
+          visible={showThemeModal}
+          onClose={() => setShowThemeModal(false)}
+        />
+      </GlassBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background
+    flex: 1
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
     paddingTop: 16,
     paddingBottom: 14,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight
+    borderBottomWidth: 1.2
   },
   backBtn: {
-    paddingRight: 8
+    paddingRight: 8,
+    paddingVertical: 4
   },
   backText: {
     fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.secondary
+    fontWeight: '800'
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.textPrimary
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3
+  },
+  paletteBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  paletteIcon: {
+    fontSize: 16
   },
   content: {
     padding: 16
   },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 12,
-    ...SHADOWS.small
+  themeSectionCard: {
+    marginVertical: 6,
+    borderRadius: 20
   },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14
-  },
-  avatarEmoji: {
-    fontSize: 28
-  },
-  profileInfo: {
-    flex: 1
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.textPrimary
-  },
-  phone: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 2
-  },
-  verifiedRow: {
-    marginTop: 6
-  },
-  verifiedBadge: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.accent,
-    backgroundColor: COLORS.accentLight,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6
-  },
-  walletCard: {
+  sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.secondary,
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 14,
-    ...SHADOWS.medium
-  },
-  walletLeft: {},
-  walletLabel: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    fontWeight: '600'
-  },
-  walletAmount: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: COLORS.textWhite,
-    marginTop: 2
-  },
-  walletBonus: {
-    fontSize: 12,
-    color: COLORS.primarySoft,
-    fontWeight: '600'
-  },
-  addMoneyBtn: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10
-  },
-  addMoneyText: {
-    color: COLORS.textWhite,
-    fontWeight: '700',
-    fontSize: 12
-  },
-  sectionCard: {
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    alignItems: 'flex-start',
     marginBottom: 12
   },
   sectionTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: -0.2
+  },
+  sectionSubtitle: {
+    fontSize: 11,
+    marginTop: 2
+  },
+  quickChangeBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8
+  },
+  quickChangeText: {
+    fontSize: 11,
+    fontWeight: '700'
+  },
+  themeOptionsGrid: {
+    gap: 8
+  },
+  themePillCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1.2
+  },
+  themeSwatch: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10
+  },
+  themeSwatchDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7
+  },
+  themeInfoCol: {
+    flex: 1
+  },
+  themeTitleText: {
     fontSize: 13,
-    fontWeight: '800',
-    color: COLORS.secondary,
-    marginBottom: 10
+    letterSpacing: -0.2
+  },
+  themeSubText: {
+    fontSize: 10,
+    marginTop: 1
+  },
+  activeCheckPill: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8
+  },
+  checkIcon: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900'
+  },
+  sectionCard: {
+    marginVertical: 6,
+    borderRadius: 20
   },
   addressBox: {
     flexDirection: 'row',
-    alignItems: 'flex-start'
+    alignItems: 'flex-start',
+    marginTop: 10
+  },
+  addressIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10
   },
   addressIcon: {
-    fontSize: 18,
-    marginRight: 8,
-    marginTop: 2
+    fontSize: 18
   },
   addressInfo: {
     flex: 1
   },
   addressType: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textPrimary
+    fontSize: 13,
+    fontWeight: '800'
   },
   addressText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     lineHeight: 16,
     marginTop: 2
   },
   bookingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight
+    paddingVertical: 12,
+    borderBottomWidth: 1
   },
   bookingIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.background,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10
   },
   bIconEmoji: {
-    fontSize: 16
+    fontSize: 18
   },
   bookingInfo: {
     flex: 1
   },
   bookingTrade: {
     fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.textPrimary
+    fontWeight: '800'
   },
   bookingDate: {
     fontSize: 11,
-    color: COLORS.textMuted,
     marginTop: 2
   },
   bookingRight: {
     alignItems: 'flex-end'
   },
   bookingAmount: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: COLORS.secondary
+    fontSize: 15,
+    fontWeight: '900'
   },
-  bookingStatus: {
+  statusTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 3
+  },
+  statusText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.accent,
-    marginTop: 2
-  },
-  logoutBtn: {
-    marginTop: 10,
-    marginBottom: 30,
-    backgroundColor: '#fee2e2',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#fca5a5'
-  },
-  logoutText: {
-    color: COLORS.danger,
-    fontWeight: '800',
-    fontSize: 14
+    fontWeight: '800'
   }
 });
