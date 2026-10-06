@@ -44,7 +44,7 @@ export default function ServiceGrid({ onSelectTrade }) {
           style={[
             styles.toggleBtn,
             {
-              backgroundColor: theme.primaryLight,
+              backgroundColor: 'transparent',
               borderColor: theme.border,
               borderWidth: 1
             }

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, StatusBar, BackHandler } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { enableScreens } from 'react-native-screens';
 import { ThemeProvider } from '../shared/theme/ThemeContext';
 import LanguageSelectScreen from './src/screens/LanguageSelectScreen';
 import PhoneLoginScreen from './src/screens/PhoneLoginScreen';
@@ -12,6 +14,8 @@ import FindWorkersScreen from './src/screens/FindWorkersScreen';
 import TrackingScreen from './src/screens/TrackingScreen';
 import CustomerDashboardScreen from './src/screens/CustomerDashboardScreen';
 import CustomerSupportScreen from './src/screens/CustomerSupportScreen';
+
+enableScreens();
 
 export default function App({ onSwitchToPartner }) {
   const [currentScreen, setCurrentScreen] = useState('home');
@@ -57,9 +61,25 @@ export default function App({ onSwitchToPartner }) {
     setCurrentScreen('home');
   };
 
+  // Native Android hardware back button handler
+  useEffect(() => {
+    const onBackPress = () => {
+      if (currentScreen !== 'home' && currentScreen !== 'login') {
+        setCurrentScreen('home');
+        return true;
+      }
+      return false;
+    };
+
+    const backSubscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => backSubscription.remove();
+  }, [currentScreen]);
+
   return (
-    <ThemeProvider>
-      <View style={styles.container}>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={styles.container}>
       {currentScreen === 'language' && (
         <LanguageSelectScreen onContinue={() => setCurrentScreen('login')} />
       )}
@@ -150,7 +170,8 @@ export default function App({ onSwitchToPartner }) {
         <CustomerSupportScreen onBack={() => setCurrentScreen('home')} />
       )}
       </View>
-    </ThemeProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import HeroBanner from '../components/HeroBanner';
 import ServiceGrid from '../components/ServiceGrid';
@@ -12,6 +13,7 @@ import LegalPolicyModal from '../components/LegalPolicyModal';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
+import GlassFloatingBottomNav from '../../../shared/components/glass/GlassFloatingBottomNav';
 import { t } from '../../../shared/i18n';
 
 export default function CustomerHomeScreen({
@@ -181,87 +183,15 @@ export default function CustomerHomeScreen({
           <View style={{ height: 90 }} />
         </ScrollView>
 
-        {/* Floating Light Glass Navigation Bar */}
-        <View
-          style={[
-            styles.bottomBar,
-            {
-              backgroundColor: theme.glassSurfaceStrong,
-              borderTopColor: theme.border
-            },
-            shadows.medium
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.navItem}
-            onPress={() => {}}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.navIconContainer, { backgroundColor: theme.primaryLight }]}>
-              <Text style={styles.navIcon}>🏠</Text>
-            </View>
-            <Text style={[styles.navText, { color: theme.textPrimary, fontWeight: '800' }]}>
-              Home
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.navItem}
-            onPress={onOpenFindWorkers}
-            activeOpacity={0.7}
-          >
-            <View style={styles.navIconContainer}>
-              <Text style={styles.navIcon}>🔍</Text>
-            </View>
-            <Text style={[styles.navText, { color: theme.textSecondary }]}>
-              Workers
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.fabBtn,
-              {
-                backgroundColor: theme.buttonPrimary
-              },
-              shadows.large
-            ]}
-            onPress={() => {
-              setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
-              setShowBookingModal(true);
-            }}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.fabIcon}>⚡</Text>
-            <Text style={styles.fabText}>Book</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.navItem}
-            onPress={onOpenTracking}
-            activeOpacity={0.7}
-          >
-            <View style={styles.navIconContainer}>
-              <Text style={styles.navIcon}>📍</Text>
-            </View>
-            <Text style={[styles.navText, { color: theme.textSecondary }]}>
-              Track
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.navItem}
-            onPress={onOpenDashboard}
-            activeOpacity={0.7}
-          >
-            <View style={styles.navIconContainer}>
-              <Text style={styles.navIcon}>👤</Text>
-            </View>
-            <Text style={[styles.navText, { color: theme.textSecondary }]}>
-              Profile
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Floating Capsule Bottom Navigation Bar Matching Screenshot */}
+        <GlassFloatingBottomNav
+          activeId="home"
+          onSelect={(id) => {
+            if (id === 'jobs' || id === 'workers') onOpenFindWorkers();
+            else if (id === 'wallet') onOpenTracking();
+            else if (id === 'profile') onOpenDashboard();
+          }}
+        />
 
         {/* Modals */}
         <BookingModal

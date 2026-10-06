@@ -23,13 +23,21 @@ export default function ThemeSwitcherModal({ visible, onClose }) {
       bgSample: '#F6FBFA',
       primarySample: '#073B3A'
     },
-    {
+        {
       id: 'ivory_indigo',
       name: 'Theme 3: Soft Ivory + Deep Indigo',
       badge: 'PREMIUM',
       description: 'Warm soft ivory background with sophisticated deep indigo typography.',
       bgSample: '#FAF9F6',
       primarySample: '#25234A'
+    },
+    {
+      id: 'slate_orange',
+      name: 'Theme 4: Dark Slate + Saffron Orange',
+      badge: 'PARTNER PRO',
+      description: 'Ultra-modern dark slate glass with high-visibility saffron orange accents.',
+      bgSample: '#0B1320',
+      primarySample: '#FF6B00'
     }
   ];
 

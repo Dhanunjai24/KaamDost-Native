@@ -9,7 +9,7 @@ export default function GlassCategoryCard({
   variant = 'card', // 'card' (compact grid) or 'banner' (row item)
   style
 }) {
-  const { theme, shadows } = useTheme();
+  const { theme } = useTheme();
 
   if (variant === 'banner') {
     return (
@@ -17,10 +17,9 @@ export default function GlassCategoryCard({
         style={[
           styles.bannerCard,
           {
-            backgroundColor: theme.glassSurface,
+            backgroundColor: 'transparent',
             borderColor: theme.border
           },
-          shadows.glass,
           style
         ]}
         onPress={onPress}
@@ -67,10 +66,9 @@ export default function GlassCategoryCard({
       style={[
         styles.gridCard,
         {
-          backgroundColor: theme.glassSurface,
+          backgroundColor: 'transparent',
           borderColor: theme.border
         },
-        shadows.glass,
         style
       ]}
       onPress={onPress}
@@ -120,7 +118,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    backgroundColor: 'transparent'
   },
   circularIconContainer: {
     width: 48,
@@ -162,7 +161,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     padding: 14,
-    marginBottom: 10
+    marginBottom: 10,
+    backgroundColor: 'transparent'
   },
   bannerEmoji: {
     fontSize: 22

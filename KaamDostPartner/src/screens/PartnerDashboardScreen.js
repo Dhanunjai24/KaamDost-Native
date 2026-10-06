@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, StyleSheet, StatusBar, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import PartnerHeader from '../components/PartnerHeader';
-import DutyToggle from '../components/DutyToggle';
 import EarningsCard from '../components/EarningsCard';
 import ActiveJobCard from '../components/ActiveJobCard';
 import JobRequestModal from '../components/JobRequestModal';
 import PayoutModal from '../components/PayoutModal';
-import ChatModal from '../../KaamDostCustomer/src/components/ChatModal';
-import NotificationsModal from '../../KaamDostCustomer/src/components/NotificationsModal';
+import NotificationsModal from '../components/NotificationsModal';
+import ChatModal from '../components/ChatModal';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
-import GlassCard from '../../../shared/components/glass/GlassCard';
+import GlassFloatingBottomNav from '../../../shared/components/glass/GlassFloatingBottomNav';
 
 export default function PartnerDashboardScreen({
   partner,
@@ -19,89 +19,78 @@ export default function PartnerDashboardScreen({
   onOpenSupport,
   onLogout
 }) {
-  const { theme, shadows } = useTheme();
+  const { theme } = useTheme();
+  const [activeTab, setActiveTab] = useState('home');
   const [isOnline, setIsOnline] = useState(true);
-  const [activeJob, setActiveJob] = useState({
-    id: 'JOB-902',
-    tradeName: partner?.tradeName || 'Mason / Civil Work',
-    status: 'ARRIVING',
-    customerName: 'Ravi Kumar',
-    customerPhone: '9876543210',
-    address: 'Balaji Nagar, Sangareddy (1.4 km)',
-    dailyRate: partner?.dailyRate || 950,
-    startOtp: '4829',
-    workNotes: 'Wall plastering & floor tile repair'
-  });
-
-  const [pendingJobRequest, setPendingJobRequest] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [todayEarnings, setTodayEarnings] = useState(1850);
+  const [completedJobsCount, setCompletedJobsCount] = useState(18);
+  const [hoursWorked, setHoursWorked] = useState(9.5);
+  const [rating, setRating] = useState('4.9');
+  const [reviewsCount, setReviewsCount] = useState(31);
+  const [walletBalance, setWalletBalance] = useState(3850);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [pendingJobRequest, setPendingJobRequest] = useState(null);
 
-  const [todayEarnings, setTodayEarnings] = useState(1900);
-  const [completedJobsCount, setCompletedJobsCount] = useState(2);
-  const [walletBalance, setWalletBalance] = useState(3850);
-
-  const handleToggleDuty = () => {
-    setIsOnline(!isOnline);
-  };
+  const [activeJob, setActiveJob] = useState({
+    id: 'lead_901',
+    tradeName: 'New Masonry Task',
+    location: 'Sangareddy',
+    distance: '2.4 km away',
+    dailyRate: 950,
+    status: 'INCOMING',
+    customerName: 'Anil Varma',
+    customerPhone: '9848011223',
+    address: 'Near Old Bus Stand, Sangareddy'
+  });
 
   const handleRefresh = () => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 800);
   };
 
-  // Simulate an incoming job alert for demo
-  const triggerDemoJob = () => {
-    setPendingJobRequest({
-      id: 'JOB-' + Math.floor(Math.random() * 8999 + 1000),
-      tradeName: partner?.tradeName || 'Mason Work',
-      dailyRate: partner?.dailyRate || 950,
-      address: 'Near Old Bus Stand, Sangareddy (0.8 km)',
-      workNotes: 'Ceiling crack repair and emergency wall support'
-    });
-  };
-
-  const handleAcceptJob = (job) => {
-    setActiveJob({
-      ...job,
-      status: 'ARRIVING',
-      customerName: 'Srinivas Goud',
-      customerPhone: '9849011223',
-      startOtp: '5192'
-    });
-    setPendingJobRequest(null);
-  };
-
-  const handleDeclineJob = () => {
-    setPendingJobRequest(null);
+  const handleToggleDuty = () => {
+    const nextState = !isOnline;
+    setIsOnline(nextState);
+    Alert.alert(
+      nextState ? 'Duty Activated 🟢' : 'Duty Deactivated ⚪',
+      nextState
+        ? 'You are now online to receive task alerts in Sangareddy.'
+        : 'You are offline. No new job alerts will be received.'
+    );
   };
 
   const handleJobStatusChange = (newStatus) => {
     if (newStatus === 'COMPLETED') {
-      setActiveJob(prev => ({ ...prev, status: 'COMPLETED' }));
-      setTodayEarnings(prev => prev + (activeJob.dailyRate || 950));
+      setActiveJob(null);
+      setTodayEarnings(prev => prev + 950);
       setCompletedJobsCount(prev => prev + 1);
-      setWalletBalance(prev => prev + (activeJob.dailyRate || 950));
-      setTimeout(() => {
-        Alert.alert('Payment Received!', `₹${activeJob.dailyRate || 950} credited to your ledger.`);
-        setActiveJob(null);
-      }, 1500);
+      Alert.alert('Payment Received!', '₹950 credited to your earnings.');
     } else {
-      setActiveJob(prev => ({ ...prev, status: newStatus }));
+      setActiveJob(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+  };
+
+  const handleNavSelect = (id) => {
+    setActiveTab(id);
+    if (id === 'wallet') {
+      if (onOpenEarnings) onOpenEarnings();
+    } else if (id === 'profile') {
+      if (onOpenProfile) onOpenProfile();
     }
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundPrimary }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={theme.backgroundPrimary} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#0B1320' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B1320" />
 
       <GlassBackground>
-        {/* Partner Header */}
+        {/* Top Header Matching Screenshot 2 */}
         <PartnerHeader
-          partnerName={partner?.name || 'Ramesh Reddy'}
-          trade={partner?.tradeName || 'Mason'}
+          partnerName={partner?.name || 'RAJU KUMAR'}
+          rating={rating}
           isOnline={isOnline}
           onToggleDuty={handleToggleDuty}
           onOpenNotifications={() => setShowNotifications(true)}
@@ -110,127 +99,90 @@ export default function PartnerDashboardScreen({
 
         <ScrollView
           style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={theme.accentPrimary}
-              colors={[theme.accentPrimary]}
+              tintColor="#FF6B00"
+              colors={['#FF6B00']}
             />
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Duty Status Switcher */}
-          <DutyToggle isOnline={isOnline} onToggle={handleToggleDuty} />
-
-          {/* Today's Earnings & Instant Payout Card */}
+          {/* Today's Earnings Card Matching Screenshot 2 */}
           <EarningsCard
             todayEarnings={todayEarnings}
-            completedJobs={completedJobsCount}
-            walletBalance={walletBalance}
             onRequestPayout={() => setShowPayoutModal(true)}
           />
 
-          {/* Current Active Job Card */}
+          {/* New Masonry Task Alert Card Matching Screenshot 2 */}
           <ActiveJobCard
             job={activeJob}
             onStatusChange={handleJobStatusChange}
             onOpenChat={() => setShowChat(true)}
           />
 
-          {/* Demo Button to trigger incoming customer job popup */}
-          <View style={styles.demoCardContainer}>
-            <GlassCard style={styles.demoCard} variant="subtle">
-              <Text style={[styles.demoTitle, { color: theme.textPrimary }]}>
-                💡 Demo Simulator
-              </Text>
-              <TouchableOpacity
-                style={[styles.demoBtn, { backgroundColor: theme.primaryLight, borderColor: theme.border, borderWidth: 1 }]}
-                onPress={triggerDemoJob}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.demoBtnText, { color: theme.textPrimary }]}>
-                  Simulate Incoming Customer Job Alert 🔔
-                </Text>
-              </TouchableOpacity>
-            </GlassCard>
-          </View>
-
-          {/* Welfare Guarantee Card */}
-          <View style={styles.welfareContainer}>
-            <GlassCard style={styles.welfareCard} variant="default">
-              <Text style={styles.welfareIcon}>🛡️</Text>
-              <View style={styles.welfareInfo}>
-                <Text style={[styles.welfareTitle, { color: theme.textPrimary }]}>
-                  Telangana Worker Protection Act
-                </Text>
-                <Text style={[styles.welfareSub, { color: theme.textSecondary }]}>
-                  Accidental insurance up to ₹5,00,000 active during work hours. Emergency desk available 24/7.
-                </Text>
+          {/* 3-Column Metrics / Stats Card Matching Screenshot 2 */}
+          <View style={styles.metricsWrapper}>
+            <View
+              style={[
+                styles.metricsCard,
+                {
+                  backgroundColor: 'rgba(26, 38, 57, 0.72)',
+                  borderColor: 'rgba(255, 255, 255, 0.16)'
+                }
+              ]}
+            >
+              {/* Column 1: Completed Jobs */}
+              <View style={styles.metricCol}>
+                <View style={styles.metricIconBox}>
+                  <Text style={styles.metricIcon}>☑️</Text>
+                </View>
+                <Text style={styles.metricLabel}>Completed Jobs</Text>
+                <Text style={styles.metricVal}>({completedJobsCount})</Text>
               </View>
-            </GlassCard>
+
+              {/* Divider */}
+              <View style={styles.verticalDivider} />
+
+              {/* Column 2: Hours Worked */}
+              <View style={styles.metricCol}>
+                <View style={styles.metricIconBox}>
+                  <Text style={styles.metricIcon}>🕒</Text>
+                </View>
+                <Text style={styles.metricLabel}>Hours Worked</Text>
+                <Text style={styles.metricVal}>({hoursWorked}h)</Text>
+              </View>
+
+              {/* Divider */}
+              <View style={styles.verticalDivider} />
+
+              {/* Column 3: Rating */}
+              <View style={styles.metricCol}>
+                <View style={styles.metricIconBox}>
+                  <Text style={styles.metricIcon}>⭐</Text>
+                </View>
+                <Text style={styles.metricLabel}>Rating</Text>
+                <Text style={styles.metricVal}>
+                  {rating} <Text style={{ color: '#F59E0B' }}>★</Text>
+                </Text>
+                <Text style={styles.reviewSub}>{reviewsCount} Reviews</Text>
+              </View>
+            </View>
           </View>
 
-          <View style={{ height: 90 }} />
+          {/* Bottom spacing so content never gets hidden behind floating nav */}
+          <View style={{ height: 100 }} />
         </ScrollView>
 
-        {/* Light Glassmorphic Bottom Navigation Bar */}
-        <View
-          style={[
-            styles.bottomBar,
-            {
-              backgroundColor: theme.glassSurfaceStrong,
-              borderTopColor: theme.border
-            },
-            shadows.medium
-          ]}
-        >
-          <TouchableOpacity style={styles.navItem} onPress={() => {}} activeOpacity={0.7}>
-            <View style={[styles.navIconContainer, { backgroundColor: theme.primaryLight }]}>
-              <Text style={styles.navIcon}>📊</Text>
-            </View>
-            <Text style={[styles.navText, { color: theme.textPrimary, fontWeight: '800' }]}>
-              Jobs
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navItem} onPress={onOpenEarnings} activeOpacity={0.7}>
-            <View style={styles.navIconContainer}>
-              <Text style={styles.navIcon}>💰</Text>
-            </View>
-            <Text style={[styles.navText, { color: theme.textSecondary }]}>
-              Earnings
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navItem} onPress={onOpenSupport} activeOpacity={0.7}>
-            <View style={styles.navIconContainer}>
-              <Text style={styles.navIcon}>🛟</Text>
-            </View>
-            <Text style={[styles.navText, { color: theme.textSecondary }]}>
-              Support
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navItem} onPress={onOpenProfile} activeOpacity={0.7}>
-            <View style={styles.navIconContainer}>
-              <Text style={styles.navIcon}>👤</Text>
-            </View>
-            <Text style={[styles.navText, { color: theme.textSecondary }]}>
-              Profile
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Incoming Job Modal */}
-        <JobRequestModal
-          visible={!!pendingJobRequest}
-          job={pendingJobRequest}
-          onAccept={handleAcceptJob}
-          onDecline={handleDeclineJob}
+        {/* Floating Capsule Bottom Navigation Bar Matching Screenshot 1 */}
+        <GlassFloatingBottomNav
+          activeId={activeTab}
+          onSelect={handleNavSelect}
         />
 
-        {/* Payout Modal */}
+        {/* Modals */}
         <PayoutModal
           visible={showPayoutModal}
           balance={walletBalance}
@@ -240,16 +192,14 @@ export default function PartnerDashboardScreen({
           }}
         />
 
-        {/* Notifications Modal */}
         <NotificationsModal
           visible={showNotifications}
           onClose={() => setShowNotifications(false)}
         />
 
-        {/* Chat Modal */}
         <ChatModal
           visible={showChat}
-          partnerName="Ravi Kumar (Customer)"
+          partnerName="Anil Varma (Customer)"
           onClose={() => setShowChat(false)}
         />
       </GlassBackground>
@@ -264,84 +214,55 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1
   },
-  demoCardContainer: {
-    paddingHorizontal: 16,
-    marginVertical: 4
+  scrollContent: {
+    paddingBottom: 20
   },
-  demoCard: {
-    borderRadius: 18,
-    padding: 14
-  },
-  demoTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    marginBottom: 8
-  },
-  demoBtn: {
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center'
-  },
-  demoBtnText: {
-    fontSize: 12,
-    fontWeight: '800'
-  },
-  welfareContainer: {
+  metricsWrapper: {
     paddingHorizontal: 16,
     marginVertical: 6
   },
-  welfareCard: {
+  metricsCard: {
+    borderRadius: 22,
+    borderWidth: 1.2,
+    paddingVertical: 18,
+    paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
-    padding: 14
+    justifyContent: 'space-between',
+    elevation: 0
   },
-  welfareIcon: {
-    fontSize: 24,
-    marginRight: 12
-  },
-  welfareInfo: {
-    flex: 1
-  },
-  welfareTitle: {
-    fontSize: 13,
-    fontWeight: '800'
-  },
-  welfareSub: {
-    fontSize: 11,
-    marginTop: 2,
-    lineHeight: 16
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 68,
-    flexDirection: 'row',
+  metricCol: {
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'space-around',
-    borderTopWidth: 1.2,
-    paddingHorizontal: 10
+    justifyContent: 'center'
   },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 60
+  metricIconBox: {
+    marginBottom: 4
   },
-  navIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2
-  },
-  navIcon: {
+  metricIcon: {
     fontSize: 16
   },
-  navText: {
-    fontSize: 10,
-    fontWeight: '600'
+  metricLabel: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center'
+  },
+  metricVal: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 2
+  },
+  reviewSub: {
+    color: '#64748B',
+    fontSize: 9,
+    fontWeight: '600',
+    marginTop: 1
+  },
+  verticalDivider: {
+    width: 1,
+    height: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)'
   }
 });

@@ -1,105 +1,103 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
 
 export default function PartnerHeader({
-  partnerName = 'Ramesh Reddy',
-  trade = 'Mason',
+  partnerName = 'RAJU KUMAR',
+  rating = '4.9',
   isOnline = true,
   onToggleDuty,
   onOpenNotifications,
   onOpenEarnings
 }) {
-  const { theme, shadows } = useTheme();
+  const { theme } = useTheme();
   const [showThemeModal, setShowThemeModal] = useState(false);
+  const [currentLang, setCurrentLang] = useState('తెలుగు');
+
+  const toggleLanguage = () => {
+    setCurrentLang(prev => (prev === 'తెలుగు' ? 'English' : 'తెలుగు'));
+  };
 
   return (
-    <View
-      style={[
-        styles.header,
-        {
-          backgroundColor: theme.glassSurfaceStrong,
-          borderBottomColor: theme.border
-        },
-        shadows.small
-      ]}
-    >
-      <View style={styles.leftCol}>
-        <View style={styles.brandRow}>
-          <Text style={[styles.brandTitle, { color: theme.textPrimary }]}>
-            Kaam<Text style={{ color: theme.accentPrimary }}>Dost</Text>
-          </Text>
-          <View style={[styles.partnerBadge, { backgroundColor: theme.primaryLight }]}>
-            <Text style={[styles.partnerBadgeText, { color: theme.textPrimary }]}>
-              PARTNER
+    <View style={styles.container}>
+      <View style={styles.topRow}>
+        {/* Worker Avatar & Identity */}
+        <View style={styles.workerIdentity}>
+          <View style={styles.avatarContainer}>
+            <View style={[styles.avatarCircle, { backgroundColor: '#1E293B', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
+              {/* Photo representation with worker avatar */}
+              <Text style={styles.avatarEmoji}>👷🏾‍♂️</Text>
+            </View>
+            {/* Duty Active Indicator Dot */}
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: isOnline ? '#22C55E' : '#64748B' }
+              ]}
+            />
+          </View>
+
+          <View style={styles.nameAndRating}>
+            <Text style={[styles.workerName, { color: '#FFFFFF' }]} numberOfLines={1}>
+              {partnerName.toUpperCase()}
             </Text>
+            <View style={styles.ratingRow}>
+              <Text style={styles.ratingText}>{rating}</Text>
+              <Text style={styles.starIcon}>★</Text>
+            </View>
           </View>
         </View>
 
-        <Text style={[styles.partnerInfo, { color: theme.textSecondary }]}>
-          👷 {partnerName} • <Text style={[styles.tradeText, { color: theme.accentPrimary }]}>{trade}</Text>
-        </Text>
+        {/* Right Controls: Duty Switch & Telugu Badge */}
+        <View style={styles.rightControls}>
+          {/* Duty Switch Pill */}
+          <TouchableOpacity
+            style={[
+              styles.dutySwitchTrack,
+              {
+                backgroundColor: isOnline ? '#22C55E' : '#334155'
+              }
+            ]}
+            onPress={onToggleDuty}
+            activeOpacity={0.85}
+          >
+            <View
+              style={[
+                styles.dutySwitchThumb,
+                {
+                  alignSelf: isOnline ? 'flex-end' : 'flex-start',
+                  backgroundColor: '#FF6B00'
+                }
+              ]}
+            />
+          </TouchableOpacity>
+
+          {/* Language Pill Badge */}
+          <TouchableOpacity
+            style={[
+              styles.langPill,
+              {
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                borderColor: 'rgba(255, 255, 255, 0.18)'
+              }
+            ]}
+            onPress={toggleLanguage}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.langText}>{currentLang}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={styles.rightCol}>
-        {/* Theme Palette Switcher */}
-        <TouchableOpacity
-          style={[
-            styles.iconBtn,
-            {
-              backgroundColor: theme.glassSurface,
-              borderColor: theme.border
-            }
-          ]}
-          onPress={() => setShowThemeModal(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.iconText}>🎨</Text>
-        </TouchableOpacity>
-
-        {/* Duty Status Badge / Toggle */}
-        <TouchableOpacity
-          style={[
-            styles.dutyPill,
-            {
-              backgroundColor: isOnline ? theme.successLight : theme.glassSurface,
-              borderColor: isOnline ? theme.success : theme.border
-            }
-          ]}
-          onPress={onToggleDuty}
-          activeOpacity={0.8}
-        >
-          <View
-            style={[
-              styles.dot,
-              { backgroundColor: isOnline ? theme.success : theme.textMuted }
-            ]}
-          />
-          <Text
-            style={[
-              styles.dutyText,
-              { color: isOnline ? theme.success : theme.textMuted }
-            ]}
-          >
-            {isOnline ? 'ONLINE' : 'OFFLINE'}
+      {/* Duty Status Subtitle */}
+      <View style={styles.dutyStatusRow}>
+        <Text style={styles.dutyLabel}>
+          Duty:{' '}
+          <Text style={{ color: isOnline ? '#22C55E' : '#94A3B8', fontWeight: '800' }}>
+            {isOnline ? 'ACTIVE 🟢' : 'OFFLINE ⚪'}
           </Text>
-        </TouchableOpacity>
-
-        {/* Notifications */}
-        <TouchableOpacity
-          style={[
-            styles.iconBtn,
-            {
-              backgroundColor: theme.glassSurface,
-              borderColor: theme.border
-            }
-          ]}
-          onPress={onOpenNotifications}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.iconText}>🔔</Text>
-        </TouchableOpacity>
+        </Text>
       </View>
 
       <ThemeSwitcherModal
@@ -111,78 +109,105 @@ export default function PartnerHeader({
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingTop: 14,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
+  container: {
+    paddingTop: 16,
+    paddingBottom: 10,
+    paddingHorizontal: 20
+  },
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1.2
+    justifyContent: 'space-between'
   },
-  leftCol: {
-    flex: 1
-  },
-  brandRow: {
+  workerIdentity: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6
+    alignItems: 'center'
   },
-  brandTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: -0.5
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 12
   },
-  partnerBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6
-  },
-  partnerBadgeText: {
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.5
-  },
-  partnerInfo: {
-    fontSize: 12,
-    marginTop: 4
-  },
-  tradeText: {
-    fontWeight: '800'
-  },
-  rightCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8
-  },
-  dutyPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 1.2
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6
-  },
-  dutyText: {
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0.5
-  },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  avatarCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden'
+  },
+  avatarEmoji: {
+    fontSize: 28
+  },
+  statusDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: '#0B1320'
+  },
+  nameAndRating: {
+    justifyContent: 'center'
+  },
+  workerName: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.2
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2
+  },
+  ratingText: {
+    color: '#CBD5E1',
+    fontSize: 13,
+    fontWeight: '700',
+    marginRight: 3
+  },
+  starIcon: {
+    color: '#F59E0B',
+    fontSize: 14
+  },
+  rightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  dutySwitchTrack: {
+    width: 50,
+    height: 28,
+    borderRadius: 14,
+    padding: 3,
+    justifyContent: 'center'
+  },
+  dutySwitchThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    elevation: 2
+  },
+  langPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
     borderWidth: 1
   },
-  iconText: {
-    fontSize: 16
+  langText: {
+    color: '#E2E8F0',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  dutyStatusRow: {
+    marginTop: 6,
+    paddingLeft: 62
+  },
+  dutyLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '600'
   }
 });

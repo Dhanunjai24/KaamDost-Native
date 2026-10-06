@@ -11,6 +11,32 @@ const config = {
       path.resolve(projectRoot, 'node_modules'),
       path.resolve(monorepoRoot, 'node_modules'),
     ],
+    extraNodeModules: {
+      'react': path.resolve(projectRoot, 'node_modules/react'),
+      'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
+    },
+    resolveRequest: (context, moduleName, platform) => {
+      const isProjectDep =
+        moduleName === 'react' ||
+        moduleName.startsWith('react/') ||
+        moduleName === 'react-native' ||
+        moduleName.startsWith('react-native/') ||
+        moduleName === '@react-native-async-storage/async-storage' ||
+        moduleName.startsWith('@react-native-async-storage/') ||
+        moduleName === 'react-native-safe-area-context' ||
+        moduleName.startsWith('react-native-safe-area-context/') ||
+        moduleName === 'react-native-screens' ||
+        moduleName.startsWith('react-native-screens/');
+
+      if (isProjectDep) {
+        return context.resolveRequest(
+          context,
+          path.resolve(projectRoot, 'node_modules', moduleName),
+          platform
+        );
+      }
+      return context.resolveRequest(context, moduleName, platform);
+    },
     // Block Android Gradle build cache & outputs from file watching
     blockList: [
       /.*[/\\]android[/\\]\.gradle[/\\].*/,
