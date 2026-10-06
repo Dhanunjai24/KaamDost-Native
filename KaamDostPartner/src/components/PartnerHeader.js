@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
 
@@ -25,7 +25,15 @@ export default function PartnerHeader({
         {/* Worker Avatar & Identity */}
         <View style={styles.workerIdentity}>
           <View style={styles.avatarContainer}>
-            <View style={[styles.avatarCircle, { backgroundColor: '#1E293B', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
+            <View
+              style={[
+                styles.avatarCircle,
+                {
+                  backgroundColor: theme.isDark ? '#1E293B' : theme.glassSurfaceStrong,
+                  borderColor: theme.border
+                }
+              ]}
+            >
               {/* Photo representation with worker avatar */}
               <Text style={styles.avatarEmoji}>👷🏾‍♂️</Text>
             </View>
@@ -33,30 +41,33 @@ export default function PartnerHeader({
             <View
               style={[
                 styles.statusDot,
-                { backgroundColor: isOnline ? '#22C55E' : '#64748B' }
+                {
+                  backgroundColor: isOnline ? '#22C55E' : '#64748B',
+                  borderColor: theme.backgroundPrimary
+                }
               ]}
             />
           </View>
 
           <View style={styles.nameAndRating}>
-            <Text style={[styles.workerName, { color: '#FFFFFF' }]} numberOfLines={1}>
+            <Text style={[styles.workerName, { color: theme.textPrimary }]} numberOfLines={1}>
               {partnerName.toUpperCase()}
             </Text>
             <View style={styles.ratingRow}>
-              <Text style={styles.ratingText}>{rating}</Text>
+              <Text style={[styles.ratingText, { color: theme.textSecondary }]}>{rating}</Text>
               <Text style={styles.starIcon}>★</Text>
             </View>
           </View>
         </View>
 
-        {/* Right Controls: Duty Switch & Telugu Badge */}
+        {/* Right Controls: Duty Switch, Theme Palette & Telugu Badge */}
         <View style={styles.rightControls}>
           {/* Duty Switch Pill */}
           <TouchableOpacity
             style={[
               styles.dutySwitchTrack,
               {
-                backgroundColor: isOnline ? '#22C55E' : '#334155'
+                backgroundColor: isOnline ? '#22C55E' : (theme.isDark ? '#334155' : '#CBD5E1')
               }
             ]}
             onPress={onToggleDuty}
@@ -67,10 +78,26 @@ export default function PartnerHeader({
                 styles.dutySwitchThumb,
                 {
                   alignSelf: isOnline ? 'flex-end' : 'flex-start',
-                  backgroundColor: '#FF6B00'
+                  backgroundColor: theme.accentPrimary || '#FF6B00'
                 }
               ]}
             />
+          </TouchableOpacity>
+
+          {/* Theme Switcher Button */}
+          <TouchableOpacity
+            style={[
+              styles.langPill,
+              {
+                backgroundColor: theme.primaryLight || 'rgba(255, 107, 0, 0.15)',
+                borderColor: theme.accentPrimary || 'rgba(255, 107, 0, 0.4)',
+                paddingHorizontal: 8
+              }
+            ]}
+            onPress={() => setShowThemeModal(true)}
+            activeOpacity={0.75}
+          >
+            <Text style={{ fontSize: 13 }}>🎨</Text>
           </TouchableOpacity>
 
           {/* Language Pill Badge */}
@@ -78,23 +105,23 @@ export default function PartnerHeader({
             style={[
               styles.langPill,
               {
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                borderColor: 'rgba(255, 255, 255, 0.18)'
+                backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : theme.glassSurface,
+                borderColor: theme.border
               }
             ]}
             onPress={toggleLanguage}
             activeOpacity={0.75}
           >
-            <Text style={styles.langText}>{currentLang}</Text>
+            <Text style={[styles.langText, { color: theme.textPrimary }]}>{currentLang}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Duty Status Subtitle */}
       <View style={styles.dutyStatusRow}>
-        <Text style={styles.dutyLabel}>
+        <Text style={[styles.dutyLabel, { color: theme.textSecondary }]}>
           Duty:{' '}
-          <Text style={{ color: isOnline ? '#22C55E' : '#94A3B8', fontWeight: '800' }}>
+          <Text style={{ color: isOnline ? '#22C55E' : (theme.isDark ? '#94A3B8' : '#64748B'), fontWeight: '800' }}>
             {isOnline ? 'ACTIVE 🟢' : 'OFFLINE ⚪'}
           </Text>
         </Text>
@@ -146,8 +173,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    borderWidth: 2,
-    borderColor: '#0B1320'
+    borderWidth: 2
   },
   nameAndRating: {
     justifyContent: 'center'
@@ -163,7 +189,6 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   ratingText: {
-    color: '#CBD5E1',
     fontSize: 13,
     fontWeight: '700',
     marginRight: 3
@@ -175,7 +200,7 @@ const styles = StyleSheet.create({
   rightControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10
+    gap: 8
   },
   dutySwitchTrack: {
     width: 50,
@@ -191,13 +216,12 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   langPill: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
     borderWidth: 1
   },
   langText: {
-    color: '#E2E8F0',
     fontSize: 12,
     fontWeight: '600'
   },
@@ -207,7 +231,6 @@ const styles = StyleSheet.create({
   },
   dutyLabel: {
     fontSize: 11,
-    color: '#94A3B8',
     fontWeight: '600'
   }
 });

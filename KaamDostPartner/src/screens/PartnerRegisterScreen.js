@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { TRADES_CATALOG } from '../../../shared/constants/trades';
-import { TELANGANA_CITIES } from '../../../shared/constants/cities';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import GlassBackground from '../../../shared/components/glass/GlassBackground';
+import GlassCard from '../../../shared/components/glass/GlassCard';
+import GlassButton from '../../../shared/components/glass/GlassButton';
+import api from '../../../shared/api/client';
 
-export default function PartnerRegisterScreen({ onContinue, onBackToLogin }) {
+export default function PartnerRegisterScreen({ phone = '9848012345', onContinue, onBackToLogin }) {
   const [name, setName] = useState('Ramesh Reddy');
-  const [phone, setPhone] = useState('9848012345');
   const [age, setAge] = useState('32');
   const [selectedTrade, setSelectedTrade] = useState('masonry');
   const [dailyRate, setDailyRate] = useState('950');
@@ -14,244 +16,210 @@ export default function PartnerRegisterScreen({ onContinue, onBackToLogin }) {
   const [expYears, setExpYears] = useState('8');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleNext = () => {
-    if (!name || !phone || !dailyRate) {
-      setErrorMsg('Please complete all required fields');
+  const handleNext = async () => {
+    if (!name.trim() || name.trim().length < 3) {
+      setErrorMsg('Please enter your full name (at least 3 characters)');
       return;
     }
+    const numAge = Number(age);
+    if (!age || numAge < 18) {
+      setErrorMsg('Partner must be at least 18 years old (e-Shram adult requirement)');
+      return;
+    }
+    if (!dailyRate || Number(dailyRate) < 400) {
+      setErrorMsg('Please enter a valid daily rate (minimum ₹400/day)');
+      return;
+    }
+
+    setErrorMsg('');
     const tradeObj = TRADES_CATALOG.find(t => t.id === selectedTrade) || TRADES_CATALOG[0];
-    onContinue({
-      name,
+    const data = {
+      name: name.trim(),
       phone,
-      age,
+      age: numAge,
       trade: selectedTrade,
       tradeName: tradeObj.name,
       dailyRate: Number(dailyRate),
-      city,
+      city: city.trim(),
       experienceYears: Number(expYears)
-    });
+    };
+
+    try {
+      await api.registerWorker(data);
+    } catch (e) {}
+
+    onContinue(data);
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onBackToLogin} style={styles.backBtn}>
-            <Text style={styles.backText}>←</Text>
-          </TouchableOpacity>
-          <View style={styles.headerInfo}>
-            <Text style={styles.title}>Worker Partner Registration</Text>
-            <Text style={styles.subtitle}>Telangana State Labour Board standard onboarding</Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#0B1320' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B1320" />
+      <GlassBackground>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+          {/* Stepper Header */}
+          <View style={styles.stepperRow}>
+            <Text style={styles.stepBadge}>Step 3 of 6</Text>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: '50%' }]} />
+            </View>
           </View>
-        </View>
 
-        <View style={styles.card}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Full Name (As on Aadhaar) *</Text>
+          <View style={styles.header}>
+            <Text style={styles.title}>Professional Trade Profile</Text>
+            <Text style={styles.subtitle}>వృత్తి వివరాలు & రోజువారీ రేటు సెటప్</Text>
+            <Text style={styles.subtext}>Select your primary trade and standard daily wage</Text>
+          </View>
+
+          {/* Personal Info Card */}
+          <GlassCard style={styles.card}>
+            <Text style={styles.inputLabel}>Full Name (పూర్తి పేరు) *</Text>
             <TextInput
               style={styles.input}
               value={name}
               onChangeText={setName}
               placeholder="e.g. Ramesh Reddy"
+              placeholderTextColor="rgba(255,255,255,0.4)"
             />
-          </View>
 
-          <View style={styles.row}>
-            <View style={[styles.field, { flex: 1, marginRight: 8 }]}>
-              <Text style={styles.label}>Mobile Number *</Text>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                maxLength={10}
-              />
+            <View style={styles.row}>
+              <View style={styles.halfCol}>
+                <Text style={styles.inputLabel}>Age (వయస్సు - 18+) *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={age}
+                  onChangeText={setAge}
+                  keyboardType="numeric"
+                  placeholder="32"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                />
+              </View>
+              <View style={styles.halfCol}>
+                <Text style={styles.inputLabel}>Experience (Years) *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={expYears}
+                  onChangeText={setExpYears}
+                  keyboardType="numeric"
+                  placeholder="8"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                />
+              </View>
             </View>
-            <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Age (Must be 18+) *</Text>
-              <TextInput
-                style={styles.input}
-                value={age}
-                onChangeText={setAge}
-                keyboardType="number-pad"
-                maxLength={2}
-              />
-            </View>
-          </View>
+          </GlassCard>
 
-          {/* Primary Trade Selection */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Select Primary Skill / Trade *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tradesRow}>
-              {TRADES_CATALOG.map((tr) => {
-                const active = selectedTrade === tr.id;
-                return (
-                  <TouchableOpacity
-                    key={tr.id}
-                    style={[styles.tradePill, active && styles.tradePillActive]}
-                    onPress={() => {
-                      setSelectedTrade(tr.id);
-                      setDailyRate(String(tr.dailyRate));
-                    }}
-                  >
-                    <Text style={[styles.tradePillText, active && styles.tradePillTextActive]}>
-                      {tr.name} (₹{tr.dailyRate})
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+          {/* Trade Selection */}
+          <GlassCard style={styles.card}>
+            <Text style={styles.sectionHeading}>Select Primary Trade (ప్రధాన వృత్తి) *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tradeScroll}>
+              <View style={styles.tradeGrid}>
+                {TRADES_CATALOG.slice(0, 10).map((t) => {
+                  const isSelected = selectedTrade === t.id;
+                  return (
+                    <TouchableOpacity
+                      key={t.id}
+                      style={[styles.tradeCard, isSelected && styles.tradeCardActive]}
+                      onPress={() => {
+                        setSelectedTrade(t.id);
+                        if (t.defaultRate) setDailyRate(String(t.defaultRate));
+                      }}
+                    >
+                      <Text style={styles.tradeIcon}>{t.icon || '🔨'}</Text>
+                      <Text style={[styles.tradeName, isSelected && styles.tradeNameActive]}>{t.name}</Text>
+                      <Text style={styles.tradeRate}>₹{t.defaultRate || 850}/day</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </ScrollView>
-          </View>
 
-          <View style={styles.row}>
-            <View style={[styles.field, { flex: 1, marginRight: 8 }]}>
-              <Text style={styles.label}>Daily Wage Expected (₹) *</Text>
-              <TextInput
-                style={styles.input}
-                value={dailyRate}
-                onChangeText={setDailyRate}
-                keyboardType="number-pad"
-              />
+            <View style={styles.row} style={{ marginTop: 14 }}>
+              <View style={styles.halfCol}>
+                <Text style={styles.inputLabel}>Daily Wage Rate (₹/రోజు) *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={dailyRate}
+                  onChangeText={setDailyRate}
+                  keyboardType="numeric"
+                  placeholder="950"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                />
+              </View>
+              <View style={styles.halfCol}>
+                <Text style={styles.inputLabel}>Base City (పట్టణం) *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={city}
+                  onChangeText={setCity}
+                  placeholder="Sangareddy"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                />
+              </View>
             </View>
-            <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Experience (Years) *</Text>
-              <TextInput
-                style={styles.input}
-                value={expYears}
-                onChangeText={setExpYears}
-                keyboardType="number-pad"
-              />
-            </View>
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Primary Working City / District *</Text>
-            <TextInput
-              style={styles.input}
-              value={city}
-              onChangeText={setCity}
-              placeholder="e.g. Sangareddy"
-            />
-          </View>
+          </GlassCard>
 
           {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
-          <TouchableOpacity style={styles.submitBtn} onPress={handleNext}>
-            <Text style={styles.submitBtnText}>Continue to Document Verification →</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          {/* Next Button */}
+          <View style={styles.footer}>
+            <GlassButton
+              title="Continue to Step 4: Service Base (ముందుకు) →"
+              onPress={handleNext}
+              variant="primary"
+              size="large"
+            />
+          </View>
+        </ScrollView>
+      </GlassBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background
-  },
-  container: {
-    padding: 16
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16
-  },
-  backBtn: {
-    paddingRight: 10
-  },
-  backText: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.secondary
-  },
-  headerInfo: {
-    flex: 1
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.secondary
-  },
-  subtitle: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 2
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.small
-  },
-  field: {
-    marginBottom: 12
-  },
-  row: {
-    flexDirection: 'row'
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 6
-  },
+  safeArea: { flex: 1 },
+  scroll: { flex: 1 },
+  container: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 30 },
+  stepperRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
+  stepBadge: { fontSize: 12, fontWeight: '700', color: '#FF6B00', textTransform: 'uppercase', letterSpacing: 0.5 },
+  progressBar: { flex: 1, height: 6, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#FF6B00', borderRadius: 3 },
+  header: { marginBottom: 16 },
+  title: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.3 },
+  subtitle: { fontSize: 13, fontWeight: '600', color: '#FF8800', marginTop: 2 },
+  subtext: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
+  card: { padding: 16, marginBottom: 14 },
+  sectionHeading: { fontSize: 13, fontWeight: '700', color: '#FFFFFF', marginBottom: 10 },
+  inputLabel: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginTop: 8, marginBottom: 6 },
   input: {
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.background
-  },
-  tradesRow: {
-    gap: 8,
-    paddingVertical: 4
-  },
-  tradePill: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: COLORS.background,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: COLORS.border
-  },
-  tradePillActive: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary
-  },
-  tradePillText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '600'
-  },
-  tradePillTextActive: {
-    color: COLORS.primaryDark,
-    fontWeight: '800'
-  },
-  errorText: {
-    color: COLORS.danger,
-    fontSize: 12,
-    marginBottom: 10,
-    fontWeight: '600'
-  },
-  submitBtn: {
-    backgroundColor: COLORS.primary,
+    borderColor: 'rgba(255,255,255,0.15)',
     borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-    ...SHADOWS.small
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#FFFFFF',
+    fontSize: 14
   },
-  submitBtnText: {
-    color: COLORS.textWhite,
-    fontSize: 14,
-    fontWeight: '800'
-  }
+  row: { flexDirection: 'row', gap: 12 },
+  halfCol: { flex: 1 },
+  tradeScroll: { marginHorizontal: -4 },
+  tradeGrid: { flexDirection: 'row', gap: 10, paddingVertical: 4 },
+  tradeCard: {
+    width: 110,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center'
+  },
+  tradeCardActive: {
+    backgroundColor: 'rgba(255,107,0,0.2)',
+    borderColor: '#FF6B00'
+  },
+  tradeIcon: { fontSize: 26, marginBottom: 6 },
+  tradeName: { fontSize: 11, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
+  tradeNameActive: { color: '#FF8800' },
+  tradeRate: { fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  errorText: { color: '#EF4444', fontSize: 13, fontWeight: '600', marginTop: 4, marginBottom: 8 },
+  footer: { marginTop: 10 }
 });

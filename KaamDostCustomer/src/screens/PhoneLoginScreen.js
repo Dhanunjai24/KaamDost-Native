@@ -8,7 +8,7 @@ import GlassButton from '../../../shared/components/glass/GlassButton';
 import { t } from '../../../shared/i18n';
 import api from '../../../shared/api/client';
 
-export default function PhoneLoginScreen({ onLoginSuccess, onSwitchRole }) {
+export default function PhoneLoginScreen({ onLoginSuccess, onGoToRegister, onSwitchRole }) {
   const { theme, shadows } = useTheme();
   const [phone, setPhone] = useState('9876543210');
   const [otpSent, setOtpSent] = useState(false);

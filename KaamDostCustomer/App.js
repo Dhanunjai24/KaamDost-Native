@@ -18,6 +18,7 @@ import CustomerSupportScreen from './src/screens/CustomerSupportScreen';
 enableScreens();
 
 export default function App({ onSwitchToPartner }) {
+  // Screen routing: language -> login -> register -> address -> aadhaar -> accountComplete -> home
   const [currentScreen, setCurrentScreen] = useState('home');
   const [customer, setCustomer] = useState({
     id: 'cust_101',
@@ -80,20 +81,27 @@ export default function App({ onSwitchToPartner }) {
       <ThemeProvider>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.container}>
+      {/* Step 1: Language Selection */}
       {currentScreen === 'language' && (
         <LanguageSelectScreen onContinue={() => setCurrentScreen('login')} />
       )}
 
+      {/* Step 2: Mobile Number + OTP Login */}
       {currentScreen === 'login' && (
         <PhoneLoginScreen
           onLoginSuccess={(user) => {
             setCustomer(prev => ({ ...prev, ...user }));
             setCurrentScreen('home');
           }}
+          onGoToRegister={(data) => {
+            setCustomer(prev => ({ ...prev, ...data }));
+            setCurrentScreen('register');
+          }}
           onSwitchRole={onSwitchToPartner}
         />
       )}
 
+      {/* Step 3: Basic Profile Registration */}
       {currentScreen === 'register' && (
         <CustomerRegisterScreen
           phone={customer.phone}
@@ -104,6 +112,7 @@ export default function App({ onSwitchToPartner }) {
         />
       )}
 
+      {/* Step 4: Gender & Multiple Addresses */}
       {currentScreen === 'address' && (
         <CustomerAddressScreen
           onContinue={(data) => {
@@ -113,6 +122,7 @@ export default function App({ onSwitchToPartner }) {
         />
       )}
 
+      {/* Step 5: Aadhaar Verification & Live Selfie */}
       {currentScreen === 'aadhaar' && (
         <CustomerAadhaarScreen
           onContinue={(data) => {
@@ -122,6 +132,7 @@ export default function App({ onSwitchToPartner }) {
         />
       )}
 
+      {/* Step 6: 5-Point Checklist Account Completion */}
       {currentScreen === 'accountComplete' && (
         <AccountCompleteScreen
           customer={customer}
@@ -129,6 +140,7 @@ export default function App({ onSwitchToPartner }) {
         />
       )}
 
+      {/* Main Customer Portal */}
       {currentScreen === 'home' && (
         <CustomerHomeScreen
           customer={customer}
@@ -161,7 +173,8 @@ export default function App({ onSwitchToPartner }) {
         <CustomerDashboardScreen
           customer={customer}
           onBack={() => setCurrentScreen('home')}
-          onLogout={() => setCurrentScreen('login')}
+          onLogout={() => setCurrentScreen('language')}
+          onRestartOnboarding={() => setCurrentScreen('language')}
           onSelectPastBooking={() => setCurrentScreen('support')}
         />
       )}

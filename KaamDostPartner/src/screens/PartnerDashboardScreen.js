@@ -83,8 +83,8 @@ export default function PartnerDashboardScreen({
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#0B1320' }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B1320" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundPrimary }]}>
+      <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.backgroundPrimary} />
 
       <GlassBackground>
         {/* Top Header Matching Screenshot 2 */}

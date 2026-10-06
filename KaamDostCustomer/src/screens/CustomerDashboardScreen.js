@@ -10,7 +10,7 @@ import GlassPaymentCard from '../../../shared/components/glass/GlassPaymentCard'
 import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
 import { t } from '../../../shared/i18n';
 
-export default function CustomerDashboardScreen({ customer, onBack, onLogout, onSelectPastBooking }) {
+export default function CustomerDashboardScreen({ customer, onBack, onLogout, onRestartOnboarding, onSelectPastBooking }) {
   const { theme, themeId, switchTheme, shadows } = useTheme();
   const [showThemeModal, setShowThemeModal] = useState(false);
 
