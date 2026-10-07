@@ -55,6 +55,11 @@ export default function WorkerCard({ worker, onSelectWorker, onBookDirect }) {
                 Verified ✓
               </Text>
             </View>
+            <View style={[styles.verifiedTag, { backgroundColor: '#dbeafe', borderColor: '#bfdbfe', borderWidth: 1 }]}>
+              <Text style={[styles.verifiedText, { color: '#1d4ed8' }]}>
+                🏛️ e-Shram
+              </Text>
+            </View>
           </View>
 
           <Text style={[styles.trade, { color: theme.accentPrimary }]}>

@@ -1,13 +1,19 @@
 // KaamDost - React Native Full REST API Client
 import { Platform } from 'react-native';
+import { APP_ENV } from '@env';
 
 const PRODUCTION_SERVER = 'https://kaamdost.onrender.com';
 const LOCAL_ANDROID_EMULATOR = 'http://10.0.2.2:3000';
 const LOCAL_HOST = 'http://127.0.0.1:3000';
 
+// APP_ENV is injected at build time from .env via react-native-dotenv
+const _APP_ENV = APP_ENV || (typeof process !== 'undefined' && process.env && process.env.APP_ENV) || 'development';
+
 export const getBaseUrl = () => {
+  if (_APP_ENV === 'production') {
+    return PRODUCTION_SERVER;
+  }
   if (Platform.OS === 'android') {
-    // In Android emulator or physical device via reverse proxy
     return LOCAL_ANDROID_EMULATOR;
   }
   return LOCAL_HOST;
@@ -249,6 +255,32 @@ class ApiService {
     return this.request(`/api/bookings/${jobId}/status`, {
       method: 'POST',
       body: JSON.stringify({ status, ...payload })
+    });
+  }
+
+  // Real-time Live Event Stream for Booking Updates
+  subscribeToBookingStream(bookingId, onUpdate, onError) {
+    let active = true;
+    const poll = async () => {
+      if (!active) return;
+      try {
+        const res = await this.getBookingDetails(bookingId);
+        if (res && (res.booking || res.data)) {
+          onUpdate(res.booking || res.data);
+        }
+      } catch (e) {
+        if (onError) onError(e);
+      }
+      if (active) setTimeout(poll, 3500);
+    };
+    poll();
+    return () => { active = false; };
+  }
+
+  verifyCustomerPayment(paymentData) {
+    return this.request(`/api/customer/bookings/${paymentData.bookingId || 'current'}/payment`, {
+      method: 'POST',
+      body: JSON.stringify(paymentData)
     });
   }
 }

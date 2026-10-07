@@ -3,6 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Scro
 import ChatModal from '../components/ChatModal';
 import PaymentModal from '../components/PaymentModal';
 import RatingTipModal from '../components/RatingTipModal';
+import LeafletMapView from '../../../shared/components/gps/LeafletMapView';
+import SosModal from '../../../shared/components/sos/SosModal';
+import VoicePlayer from '../../../shared/components/voice/VoicePlayer';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { STATUS_LABELS } from '../../../shared/constants/states';
 import { t } from '../../../shared/i18n';
@@ -11,6 +14,7 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
   const [showChat, setShowChat] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showRating, setShowRating] = useState(false);
+  const [showSos, setShowSos] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(booking?.status || 'ARRIVING');
 
   if (!booking) {
@@ -75,39 +79,50 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
         <TouchableOpacity onPress={onBack} style={styles.backBtn}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Live Booking Tracking</Text>
-        <TouchableOpacity
-          onPress={() => {
-            Alert.alert(
-              'Cancel Booking',
-              'Are you sure you want to cancel this booking? Free cancellation applies.',
-              [
-                { text: 'No', style: 'cancel' },
-                { text: 'Yes, Cancel', style: 'destructive', onPress: () => onCancelBooking && onCancelBooking(booking.id) }
-              ]
-            );
-          }}
-        >
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Live GPS Tracking</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.sosHeaderBtn} onPress={() => setShowSos(true)}>
+            <Text style={styles.sosHeaderText}>🚨 SOS</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert(
+                'Cancel Booking',
+                'Are you sure you want to cancel this booking? Free cancellation applies.',
+                [
+                  { text: 'No', style: 'cancel' },
+                  { text: 'Yes, Cancel', style: 'destructive', onPress: () => onCancelBooking && onCancelBooking(booking.id) }
+                ]
+              );
+            }}
+          >
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Live GPS Map Simulation Card */}
-        <View style={styles.mapCard}>
-          <View style={styles.mapOverlay}>
-            <View style={styles.mapPulse}>
-              <Text style={styles.workerPin}>👷</Text>
-            </View>
-            <View style={styles.destPin}>
-              <Text style={styles.housePin}>🏠</Text>
-            </View>
-          </View>
+        {/* Interactive OpenStreetMap Leaflet GPS View */}
+        <View style={styles.leafletWrapper}>
+          <LeafletMapView
+            customerLocation={{ lat: 17.6190, lng: 78.0805, title: booking.address || 'Customer Site' }}
+            workerLocation={{ lat: 17.6275, lng: 78.0890, title: booking.workerName || 'Worker Live' }}
+            height={260}
+          />
           <View style={styles.etaBar}>
             <Text style={styles.etaText}>
-              ETA: <Text style={styles.etaBold}>{booking.estimatedArrival || '12 mins'}</Text> (1.4 km away)
+              ETA: <Text style={styles.etaBold}>{booking.estimatedArrival || '12 mins'}</Text> • 1.4 km distance
             </Text>
           </View>
+        </View>
+
+        {/* Regional Voice Audio Speech Player */}
+        <View style={styles.voiceSection}>
+          <VoicePlayer
+            text={`మీ వర్కర్ ${booking.workerName || 'రమేష్ రెడ్డి'} మీ లొకేషన్‌కు వస్తున్నారు. అంచనా సమయం పన్నెండు నిమిషాలు.`}
+            lang="te"
+            label="వాయిస్ అప్‌డేట్ వినండి (Telugu Audio ETA)"
+          />
         </View>
 
         {/* Stepper Progress */}
@@ -232,6 +247,12 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
           onBack();
         }}
       />
+
+      <SosModal
+        visible={showSos}
+        onClose={() => setShowSos(false)}
+        userRole="customer"
+      />
     </SafeAreaView>
   );
 }
@@ -251,6 +272,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  sosHeaderBtn: {
+    backgroundColor: '#dc2626',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8
+  },
+  sosHeaderText: {
+    color: '#ffffff',
+    fontWeight: '800',
+    fontSize: 12
+  },
+  leafletWrapper: {
+    marginBottom: 12,
+    borderRadius: 16,
+    overflow: 'hidden'
+  },
+  voiceSection: {
+    marginBottom: 16
   },
   backBtn: {
     paddingRight: 8

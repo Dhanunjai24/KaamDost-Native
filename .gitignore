@@ -31,3 +31,9 @@ yarn-error.log*
 *.swo
 .DS_Store
 Thumbs.db
+
+# Agent configs
+.gemini/
+.agent/
+.agents/
+.gsd/

@@ -9,7 +9,8 @@ export default function PartnerHeader({
   isOnline = true,
   onToggleDuty,
   onOpenNotifications,
-  onOpenEarnings
+  onOpenEarnings,
+  onOpenSos
 }) {
   const { theme, shadows } = useTheme();
   const [showThemeModal, setShowThemeModal] = useState(false);
@@ -43,6 +44,23 @@ export default function PartnerHeader({
       </View>
 
       <View style={styles.rightCol}>
+        {/* SOS Emergency Button */}
+        {onOpenSos && (
+          <TouchableOpacity
+            style={[
+              styles.iconBtn,
+              {
+                backgroundColor: '#fee2e2',
+                borderColor: '#fca5a5'
+              }
+            ]}
+            onPress={onOpenSos}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.iconText}>🚨</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Theme Palette Switcher */}
         <TouchableOpacity
           style={[

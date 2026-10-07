@@ -4,6 +4,7 @@ import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 
 export default function PartnerKycScreen({ partnerData, onKycApproved }) {
   const [aadhaar, setAadhaar] = useState('892145671234');
+  const [eshramUan, setEshramUan] = useState('100984829104');
   const [bankAcc, setBankAcc] = useState('501004829104');
   const [ifsc, setIfsc] = useState('SBIN0001245');
   const [upiId, setUpiId] = useState('ramesh.reddy@sbi');
@@ -64,7 +65,32 @@ export default function PartnerKycScreen({ partnerData, onKycApproved }) {
           </View>
         </View>
 
-        {/* 2. Bank Details */}
+        {/* 2. Government e-Shram & Labour Welfare Link */}
+        <View style={styles.card}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.sectionTitle}>2. e-Shram Welfare Link</Text>
+            <View style={{ backgroundColor: '#dcfce7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}>
+              <Text style={{ color: '#16a34a', fontWeight: '800', fontSize: 11 }}>GOVT VERIFIED</Text>
+            </View>
+          </View>
+          <Text style={styles.label}>12-Digit e-Shram Universal Account No (UAN)</Text>
+          <TextInput
+            style={styles.input}
+            value={eshramUan}
+            onChangeText={setEshramUan}
+            keyboardType="number-pad"
+            maxLength={12}
+            placeholder="e.g. 100984829104"
+          />
+          <View style={styles.verifiedRow}>
+            <Text style={styles.verifiedIcon}>🏛️</Text>
+            <Text style={styles.verifiedNote}>
+              Links Pradhan Mantri Suraksha Bima Yojana (PMSBY) ₹2 Lakh accidental insurance & Telangana BOCW welfare.
+            </Text>
+          </View>
+        </View>
+
+        {/* 3. Bank Details */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>2. Bank Account (For Instant Wages)</Text>
           <View style={styles.field}>

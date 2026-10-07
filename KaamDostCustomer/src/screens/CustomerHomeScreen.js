@@ -9,6 +9,8 @@ import LanguageSelectModal from '../components/LanguageSelectModal';
 import NotificationsModal from '../components/NotificationsModal';
 import HelpModal from '../components/HelpModal';
 import LegalPolicyModal from '../components/LegalPolicyModal';
+import SosModal from '../../../shared/components/sos/SosModal';
+import AdminOpsModal from '../../../shared/components/admin/AdminOpsModal';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
@@ -32,6 +34,8 @@ export default function CustomerHomeScreen({
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
+  const [showSosModal, setShowSosModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const handleSelectTrade = (trade) => {
@@ -56,6 +60,8 @@ export default function CustomerHomeScreen({
           onOpenLanguage={() => setShowLanguageModal(true)}
           onOpenNotifications={() => setShowNotificationsModal(true)}
           onOpenProfile={onOpenDashboard}
+          onOpenSos={() => setShowSosModal(true)}
+          onOpenAdmin={() => setShowAdminModal(true)}
           unreadCount={2}
         />
 
@@ -291,6 +297,17 @@ export default function CustomerHomeScreen({
         <LegalPolicyModal
           visible={showLegalModal}
           onClose={() => setShowLegalModal(false)}
+        />
+
+        <SosModal
+          visible={showSosModal}
+          onClose={() => setShowSosModal(false)}
+          userRole="customer"
+        />
+
+        <AdminOpsModal
+          visible={showAdminModal}
+          onClose={() => setShowAdminModal(false)}
         />
       </GlassBackground>
     </SafeAreaView>

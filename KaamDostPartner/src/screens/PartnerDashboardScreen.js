@@ -8,6 +8,7 @@ import JobRequestModal from '../components/JobRequestModal';
 import PayoutModal from '../components/PayoutModal';
 import ChatModal from '../../KaamDostCustomer/src/components/ChatModal';
 import NotificationsModal from '../../KaamDostCustomer/src/components/NotificationsModal';
+import SosModal from '../../../shared/components/sos/SosModal';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
@@ -37,6 +38,7 @@ export default function PartnerDashboardScreen({
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showSosModal, setShowSosModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const [todayEarnings, setTodayEarnings] = useState(1900);
@@ -106,6 +108,7 @@ export default function PartnerDashboardScreen({
           onToggleDuty={handleToggleDuty}
           onOpenNotifications={() => setShowNotifications(true)}
           onOpenEarnings={onOpenEarnings}
+          onOpenSos={() => setShowSosModal(true)}
         />
 
         <ScrollView
@@ -251,6 +254,13 @@ export default function PartnerDashboardScreen({
           visible={showChat}
           partnerName="Ravi Kumar (Customer)"
           onClose={() => setShowChat(false)}
+        />
+
+        {/* 24/7 Safety SOS Modal */}
+        <SosModal
+          visible={showSosModal}
+          onClose={() => setShowSosModal(false)}
+          userRole="worker"
         />
       </GlassBackground>
     </SafeAreaView>

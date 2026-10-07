@@ -10,6 +10,8 @@ export default function Header({
   onOpenLanguage,
   onOpenNotifications,
   onOpenProfile,
+  onOpenSos,
+  onOpenAdmin,
   unreadCount = 2
 }) {
   const { theme, shadows } = useTheme();
@@ -55,8 +57,29 @@ export default function Header({
           </TouchableOpacity>
         </View>
 
-        {/* Action icons: Theme Switcher, Language, Notification, Profile */}
+        {/* Action icons: SOS, Admin, Theme Switcher, Language, Notification, Profile */}
         <View style={styles.actionsRow}>
+          {/* 24/7 SOS Desk */}
+          {onOpenSos && (
+            <TouchableOpacity
+              style={[styles.iconBtn, { backgroundColor: '#fee2e2', borderColor: '#fca5a5' }]}
+              onPress={onOpenSos}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.iconText}>🚨</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Admin Operations Console */}
+          {onOpenAdmin && (
+            <TouchableOpacity
+              style={[styles.iconBtn, { backgroundColor: '#f1f5f9', borderColor: '#cbd5e1' }]}
+              onPress={onOpenAdmin}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.iconText}>🛡️</Text>
+            </TouchableOpacity>
+          )}
           {/* Theme Palette Switcher Button */}
           <TouchableOpacity
             style={[
