@@ -1,0 +1,38 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "Official GitHub MCP server for repository, issue, pull request, and release management.",
+      "manualSetup": "Set GITHUB_TOKEN environment variable with repo access permissions."
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "${DATABASE_URL}"
+      ],
+      "env": {
+        "DATABASE_URL": "${DATABASE_URL}"
+      },
+      "description": "PostgreSQL MCP server for live database schema inspection, query validation, and migration safety.",
+      "manualSetup": "Configure DATABASE_URL (e.g., postgresql://postgres:password@localhost:5432/kaamdost)."
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ],
+      "description": "Playwright MCP server for browser automation, E2E journey validation, and screenshot capture.",
+      "manualSetup": "Run 'npx -y playwright install' to ensure browser binaries are downloaded locally."
+    }
+  }
+}

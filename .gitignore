@@ -37,3 +37,6 @@ Thumbs.db
 .agent/
 .agents/
 .gsd/
+NUL
+*/NUL
+**/NUL

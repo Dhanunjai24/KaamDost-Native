@@ -3,120 +3,97 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 
 export default function EarningsCard({
-  todayEarnings = 1900,
-  completedJobs = 2,
-  walletBalance = 3850,
+  todayEarnings = 1850,
   onRequestPayout
 }) {
-  const { theme, shadows } = useTheme();
+  const { theme } = useTheme();
 
   return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.glassSurfaceStrong,
-          borderColor: theme.borderStrong
-        },
-        shadows.medium
-      ]}
-    >
-      <View style={styles.topRow}>
-        <View>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>
-            Today's Completed Earnings
-          </Text>
-          <Text style={[styles.amount, { color: theme.textPrimary }]}>
-            ₹{todayEarnings}
-          </Text>
-        </View>
+    <View style={styles.cardWrapper}>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: 'rgba(26, 38, 57, 0.72)',
+            borderColor: 'rgba(255, 255, 255, 0.16)'
+          }
+        ]}
+      >
+        {/* Title */}
+        <Text style={styles.title}>Today's Earnings</Text>
 
+        {/* Amount */}
+        <Text style={styles.amount}>₹{todayEarnings.toLocaleString('en-IN')}</Text>
+
+        {/* Instant UPI Transfer Button */}
         <TouchableOpacity
-          style={[styles.payoutBtn, { backgroundColor: theme.buttonPrimary }]}
+          style={styles.upiBtn}
           onPress={onRequestPayout}
           activeOpacity={0.85}
         >
-          <Text style={styles.payoutText}>⚡ Instant Payout</Text>
+          <View style={styles.upiLogoBox}>
+            <Text style={styles.upiText}>UPI</Text>
+          </View>
+          <Text style={styles.upiBtnLabel}>Instant UPI Transfer 💸</Text>
         </TouchableOpacity>
-      </View>
-
-      <View style={[styles.statsRow, { borderTopColor: theme.borderLight }]}>
-        <View style={styles.statItem}>
-          <Text style={[styles.statVal, { color: theme.textPrimary }]}>{completedJobs}</Text>
-          <Text style={[styles.statLbl, { color: theme.textSecondary }]}>Jobs Today</Text>
-        </View>
-        <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-        <View style={styles.statItem}>
-          <Text style={[styles.statVal, { color: theme.textPrimary }]}>₹{walletBalance}</Text>
-          <Text style={[styles.statLbl, { color: theme.textSecondary }]}>Withdrawable</Text>
-        </View>
-        <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-        <View style={styles.statItem}>
-          <Text style={[styles.statVal, { color: theme.success }]}>0%</Text>
-          <Text style={[styles.statLbl, { color: theme.textSecondary }]}>Fee / Cut</Text>
-        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    paddingHorizontal: 16,
+    marginVertical: 8
+  },
   card: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1.2
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderRadius: 24,
+    borderWidth: 1.2,
+    paddingVertical: 22,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    marginBottom: 16
+    elevation: 0
   },
-  label: {
-    fontSize: 12,
-    fontWeight: '700'
+  title: {
+    color: '#CBD5E1',
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.1
   },
   amount: {
-    fontSize: 28,
+    color: '#FF6B00',
+    fontSize: 48,
     fontWeight: '900',
-    marginTop: 2,
-    letterSpacing: -0.5
+    letterSpacing: -0.5,
+    marginVertical: 8
   },
-  payoutBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12
-  },
-  payoutText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800'
-  },
-  statsRow: {
+  upiBtn: {
+    backgroundColor: '#FF6B00',
+    width: '100%',
+    height: 50,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    paddingTop: 12
+    justifyContent: 'center',
+    marginTop: 4,
+    elevation: 0
   },
-  statItem: {
-    flex: 1,
-    alignItems: 'center'
+  upiLogoBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.20)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+    marginRight: 8
   },
-  statVal: {
-    fontSize: 16,
+  upiText: {
+    color: '#FFFFFF',
+    fontSize: 11,
     fontWeight: '900',
-    letterSpacing: -0.2
+    fontStyle: 'italic'
   },
-  statLbl: {
-    fontSize: 10,
-    marginTop: 2,
-    fontWeight: '600'
-  },
-  divider: {
-    width: 1,
-    height: 22
+  upiBtnLabel: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800'
   }
 });

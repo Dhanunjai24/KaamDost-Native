@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, StatusBar, BackHandler } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { enableScreens } from 'react-native-screens';
 import { ThemeProvider } from '../shared/theme/ThemeContext';
 import LanguageSelectScreen from './src/screens/LanguageSelectScreen';
 import PhoneLoginScreen from './src/screens/PhoneLoginScreen';
@@ -13,7 +15,10 @@ import TrackingScreen from './src/screens/TrackingScreen';
 import CustomerDashboardScreen from './src/screens/CustomerDashboardScreen';
 import CustomerSupportScreen from './src/screens/CustomerSupportScreen';
 
+enableScreens();
+
 export default function App({ onSwitchToPartner }) {
+  // Screen routing: language -> login -> register -> address -> aadhaar -> accountComplete -> home
   const [currentScreen, setCurrentScreen] = useState('home');
   const [customer, setCustomer] = useState({
     id: 'cust_101',
@@ -57,23 +62,46 @@ export default function App({ onSwitchToPartner }) {
     setCurrentScreen('home');
   };
 
+  // Native Android hardware back button handler
+  useEffect(() => {
+    const onBackPress = () => {
+      if (currentScreen !== 'home' && currentScreen !== 'login') {
+        setCurrentScreen('home');
+        return true;
+      }
+      return false;
+    };
+
+    const backSubscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => backSubscription.remove();
+  }, [currentScreen]);
+
   return (
-    <ThemeProvider>
-      <View style={styles.container}>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={styles.container}>
+      {/* Step 1: Language Selection */}
       {currentScreen === 'language' && (
         <LanguageSelectScreen onContinue={() => setCurrentScreen('login')} />
       )}
 
+      {/* Step 2: Mobile Number + OTP Login */}
       {currentScreen === 'login' && (
         <PhoneLoginScreen
           onLoginSuccess={(user) => {
             setCustomer(prev => ({ ...prev, ...user }));
             setCurrentScreen('home');
           }}
+          onGoToRegister={(data) => {
+            setCustomer(prev => ({ ...prev, ...data }));
+            setCurrentScreen('register');
+          }}
           onSwitchRole={onSwitchToPartner}
         />
       )}
 
+      {/* Step 3: Basic Profile Registration */}
       {currentScreen === 'register' && (
         <CustomerRegisterScreen
           phone={customer.phone}
@@ -84,6 +112,7 @@ export default function App({ onSwitchToPartner }) {
         />
       )}
 
+      {/* Step 4: Gender & Multiple Addresses */}
       {currentScreen === 'address' && (
         <CustomerAddressScreen
           onContinue={(data) => {
@@ -93,6 +122,7 @@ export default function App({ onSwitchToPartner }) {
         />
       )}
 
+      {/* Step 5: Aadhaar Verification & Live Selfie */}
       {currentScreen === 'aadhaar' && (
         <CustomerAadhaarScreen
           onContinue={(data) => {
@@ -102,6 +132,7 @@ export default function App({ onSwitchToPartner }) {
         />
       )}
 
+      {/* Step 6: 5-Point Checklist Account Completion */}
       {currentScreen === 'accountComplete' && (
         <AccountCompleteScreen
           customer={customer}
@@ -109,6 +140,7 @@ export default function App({ onSwitchToPartner }) {
         />
       )}
 
+      {/* Main Customer Portal */}
       {currentScreen === 'home' && (
         <CustomerHomeScreen
           customer={customer}
@@ -141,7 +173,8 @@ export default function App({ onSwitchToPartner }) {
         <CustomerDashboardScreen
           customer={customer}
           onBack={() => setCurrentScreen('home')}
-          onLogout={() => setCurrentScreen('login')}
+          onLogout={() => setCurrentScreen('language')}
+          onRestartOnboarding={() => setCurrentScreen('language')}
           onSelectPastBooking={() => setCurrentScreen('support')}
         />
       )}
@@ -150,7 +183,8 @@ export default function App({ onSwitchToPartner }) {
         <CustomerSupportScreen onBack={() => setCurrentScreen('home')} />
       )}
       </View>
-    </ThemeProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 

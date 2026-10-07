@@ -1,390 +1,198 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
 import { useTheme } from '../../../shared/theme/ThemeContext';
-import GlassButton from '../../../shared/components/glass/GlassButton';
 
-export default function ActiveJobCard({ job, onStatusChange, onOpenChat }) {
-  const { theme, shadows } = useTheme();
+export default function ActiveJobCard({
+  job,
+  onStatusChange,
+  onOpenChat
+}) {
+  const { theme } = useTheme();
   const [enteredOtp, setEnteredOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
 
-  if (!job) {
-    return (
-      <View
-        style={[
-          styles.emptyCard,
-          {
-            backgroundColor: theme.glassSurface,
-            borderColor: theme.border
-          },
-          shadows.glass
-        ]}
-      >
-        <Text style={styles.emptyIcon}>☕</Text>
-        <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
-          No Active Job Right Now
-        </Text>
-        <Text style={[styles.emptyDesc, { color: theme.textSecondary }]}>
-          Stay online to get nearby bookings. New customer requests will ring with an alert.
-        </Text>
-      </View>
-    );
-  }
+  // If no job is active, show the incoming lead alert from Screenshot 2
+  const currentTask = job || {
+    id: 'lead_901',
+    tradeName: 'New Masonry Task',
+    location: 'Sangareddy',
+    distance: '2.4 km away',
+    dailyRate: 950,
+    status: 'INCOMING'
+  };
+
+  const handleAccept = () => {
+    Alert.alert('Task Accepted!', 'You have accepted the Masonry Task in Sangareddy. Proceeding to location.');
+    if (onStatusChange) {
+      onStatusChange('ARRIVING');
+    }
+  };
 
   const handleStartWork = () => {
-    if (enteredOtp.trim() !== (job.startOtp || '4829')) {
-      Alert.alert('Incorrect OTP', 'Please request the 4-digit start OTP shown on customer screen.');
+    if (!enteredOtp || enteredOtp.length !== 4) {
+      Alert.alert('Invalid OTP', 'Please enter the 4-digit start OTP provided by the customer.');
       return;
     }
     setIsVerifying(true);
     setTimeout(() => {
       setIsVerifying(false);
-      onStatusChange('STARTED');
-    }, 600);
+      Alert.alert('OTP Verified!', 'Work started successfully.');
+      if (onStatusChange) onStatusChange('STARTED');
+    }, 800);
   };
 
   return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.glassSurfaceStrong,
-          borderColor: theme.borderStrong
-        },
-        shadows.medium
-      ]}
-    >
-      {/* Top Banner */}
-      <View style={styles.topRow}>
-        <View style={[styles.tradeBadge, { backgroundColor: theme.primaryLight }]}>
-          <Text style={[styles.tradeText, { color: theme.textPrimary }]}>
-            {job.tradeName || 'Mason Work'}
-          </Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: theme.primaryLight }]}>
-          <Text style={[styles.statusText, { color: theme.accentPrimary }]}>
-            ● {job.status}
-          </Text>
-        </View>
-      </View>
-
-      {/* Customer Info */}
-      <View style={styles.customerRow}>
-        <View
-          style={[
-            styles.avatar,
-            {
-              backgroundColor: theme.primaryLight,
-              borderColor: theme.border,
-              borderWidth: 1
-            }
-          ]}
-        >
-          <Text style={styles.avatarEmoji}>👤</Text>
-        </View>
-
-        <View style={styles.customerInfo}>
-          <Text style={[styles.custName, { color: theme.textPrimary }]}>
-            {job.customerName || 'Ravi Kumar'}
-          </Text>
-          <Text style={[styles.custPhone, { color: theme.textSecondary }]}>
-            📞 +91 {job.customerPhone || '9876543210'}
-          </Text>
-          <Text style={[styles.custAddr, { color: theme.textSecondary }]} numberOfLines={1}>
-            📍 {job.address || 'Sangareddy'}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={[
-            styles.chatBtn,
-            {
-              backgroundColor: theme.glassSurface,
-              borderColor: theme.border,
-              borderWidth: 1
-            }
-          ]}
-          onPress={onOpenChat}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.chatIcon}>💬</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Action by state */}
-      {job.status === 'ARRIVING' && (
-        <View style={[styles.actionsContainer, { borderTopColor: theme.borderLight }]}>
-          <View style={styles.otpInputBox}>
-            <Text style={[styles.otpLabel, { color: theme.textPrimary }]}>
-              Ask Customer for 4-Digit Start OTP:
+    <View style={styles.cardWrapper}>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: 'rgba(26, 38, 57, 0.72)',
+            borderColor: 'rgba(255, 255, 255, 0.16)'
+          }
+        ]}
+      >
+        {/* Header Row: Task Icon + Title + Location */}
+        <View style={styles.topRow}>
+          <View style={styles.iconBadge}>
+            <Text style={styles.toolEmoji}>🔨</Text>
+          </View>
+          <View style={styles.taskInfo}>
+            <Text style={styles.taskTitle}>
+              {currentTask.tradeName || 'New Masonry Task'}
             </Text>
-            <TextInput
-              style={[
-                styles.otpInput,
-                {
-                  backgroundColor: theme.glassSurface,
-                  borderColor: theme.accentPrimary,
-                  color: theme.textPrimary
-                }
-              ]}
-              placeholder="e.g. 4829"
-              placeholderTextColor={theme.textMuted}
-              keyboardType="number-pad"
-              maxLength={4}
-              value={enteredOtp}
-              onChangeText={setEnteredOtp}
-            />
+            <View style={styles.locationRow}>
+              <Text style={styles.locIcon}>📍</Text>
+              <Text style={styles.locText}>
+                {currentTask.location || currentTask.address || 'Sangareddy'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Bottom Row: Distance & Action Button */}
+        <View style={styles.bottomRow}>
+          <View style={styles.distanceRow}>
+            <Text style={styles.distPin}>📍</Text>
+            <Text style={styles.distText}>
+              {currentTask.distance || '2.4 km away'}
+            </Text>
           </View>
 
-          <View style={styles.btnRow}>
+          {(!job || job.status === 'INCOMING') ? (
             <TouchableOpacity
-              style={[
-                styles.navBtn,
-                {
-                  backgroundColor: theme.glassSurface,
-                  borderColor: theme.border
-                }
-              ]}
-              onPress={() => Alert.alert('Navigation', 'Opening navigation to customer location.')}
-              activeOpacity={0.75}
-            >
-              <Text style={[styles.navBtnText, { color: theme.textPrimary }]}>
-                🗺️ Navigate
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.startBtn, { backgroundColor: theme.buttonPrimary }]}
-              onPress={handleStartWork}
-              disabled={isVerifying}
+              style={styles.acceptBtn}
+              onPress={handleAccept}
               activeOpacity={0.85}
             >
-              <Text style={styles.startBtnText}>
-                {isVerifying ? 'Verifying...' : '⚡ Verify & Start Work'}
-              </Text>
+              <Text style={styles.acceptBtnText}>Accept</Text>
             </TouchableOpacity>
-          </View>
+          ) : job.status === 'ARRIVING' ? (
+            <TouchableOpacity
+              style={styles.acceptBtn}
+              onPress={() => onStatusChange('STARTED')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.acceptBtnText}>Start Work</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.acceptBtn, { backgroundColor: '#10B981' }]}
+              onPress={() => onStatusChange('COMPLETED')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.acceptBtnText}>Complete</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      )}
-
-      {job.status === 'STARTED' && (
-        <View style={[styles.actionsContainer, { borderTopColor: theme.borderLight }]}>
-          <View style={[styles.progressBox, { backgroundColor: theme.primaryLight }]}>
-            <Text style={[styles.progressText, { color: theme.textPrimary }]}>
-              ⚡ Work is currently in progress...
-            </Text>
-            <Text style={[styles.timerText, { color: theme.textSecondary }]}>
-              Duration: 1 Day • Wage: ₹{job.dailyRate || 950}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.completeBtn, { backgroundColor: theme.buttonPrimary }]}
-            onPress={() => onStatusChange('COMPLETED')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.completeBtnText}>
-              ✅ Mark Work Completed & Request Pay
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {job.status === 'COMPLETED' && (
-        <View style={[styles.actionsContainer, { borderTopColor: theme.borderLight }]}>
-          <View style={[styles.completedBox, { backgroundColor: theme.successLight }]}>
-            <Text style={[styles.completedTitle, { color: theme.success }]}>
-              Job Completed Successfully! 🎉
-            </Text>
-            <Text style={[styles.completedSub, { color: theme.success }]}>
-              Payment of ₹{job.dailyRate || 950} credited to today’s ledger.
-            </Text>
-          </View>
-        </View>
-      )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    paddingHorizontal: 16,
+    marginVertical: 6
+  },
   card: {
-    marginHorizontal: 16,
-    marginVertical: 10,
     borderRadius: 22,
+    borderWidth: 1.2,
     padding: 16,
-    borderWidth: 1.2
+    elevation: 0
   },
   topRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12
+    alignItems: 'center'
   },
-  tradeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8
-  },
-  tradeText: {
-    fontSize: 13,
-    fontWeight: '800'
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '800'
-  },
-  customerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+  iconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 107, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 0, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10
+    marginRight: 12
   },
-  avatarEmoji: {
-    fontSize: 24
+  toolEmoji: {
+    fontSize: 22
   },
-  customerInfo: {
+  taskInfo: {
     flex: 1
   },
-  custName: {
-    fontSize: 15,
+  taskTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '800',
     letterSpacing: -0.2
   },
-  custPhone: {
-    fontSize: 12,
-    marginTop: 1
-  },
-  custAddr: {
-    fontSize: 11,
-    marginTop: 2
-  },
-  chatBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  chatIcon: {
-    fontSize: 18
-  },
-  actionsContainer: {
-    borderTopWidth: 1,
-    paddingTop: 12
-  },
-  otpInputBox: {
-    marginBottom: 10
-  },
-  otpLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    marginBottom: 6
-  },
-  otpInput: {
-    borderWidth: 1.5,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 4
-  },
-  btnRow: {
+  locationRow: {
     flexDirection: 'row',
-    gap: 8
+    alignItems: 'center',
+    marginTop: 3
   },
-  navBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  locIcon: {
+    fontSize: 12,
+    marginRight: 4
+  },
+  locText: {
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '600'
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    paddingTop: 6
+  },
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  distPin: {
+    fontSize: 14,
+    marginRight: 4
+  },
+  distText: {
+    color: '#CBD5E1',
+    fontSize: 13,
+    fontWeight: '600'
+  },
+  acceptBtn: {
+    backgroundColor: '#FF6B00',
+    paddingHorizontal: 26,
+    paddingVertical: 10,
     borderRadius: 12,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center'
   },
-  navBtnText: {
-    fontSize: 13,
-    fontWeight: '800'
-  },
-  startBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  startBtnText: {
+  acceptBtnText: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800'
-  },
-  progressBox: {
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10
-  },
-  progressText: {
-    fontSize: 13,
-    fontWeight: '800'
-  },
-  timerText: {
-    fontSize: 11,
-    marginTop: 2
-  },
-  completeBtn: {
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center'
-  },
-  completeBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800'
-  },
-  completedBox: {
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center'
-  },
-  completedTitle: {
     fontSize: 14,
     fontWeight: '800'
-  },
-  completedSub: {
-    fontSize: 11,
-    marginTop: 2
-  },
-  emptyCard: {
-    marginHorizontal: 16,
-    marginVertical: 10,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1
-  },
-  emptyIcon: {
-    fontSize: 32,
-    marginBottom: 8
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '800'
-  },
-  emptyDesc: {
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 4,
-    lineHeight: 18
   }
 });

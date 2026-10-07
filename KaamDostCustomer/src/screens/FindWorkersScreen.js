@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import WorkerCard from '../components/WorkerCard';
 import WorkerProfileModal from '../components/WorkerProfileModal';
 import BookingModal from '../components/BookingModal';

@@ -32,7 +32,7 @@ export default function GlassButton({
     };
   } else if (variant === 'secondary') {
     containerStyle = {
-      backgroundColor: theme.glassSurface,
+      backgroundColor: 'transparent',
       borderWidth: 1,
       borderColor: theme.border,
       ...shadows.small

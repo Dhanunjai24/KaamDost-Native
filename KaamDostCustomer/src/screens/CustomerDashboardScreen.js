@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
@@ -9,7 +10,7 @@ import GlassPaymentCard from '../../../shared/components/glass/GlassPaymentCard'
 import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
 import { t } from '../../../shared/i18n';
 
-export default function CustomerDashboardScreen({ customer, onBack, onLogout, onSelectPastBooking }) {
+export default function CustomerDashboardScreen({ customer, onBack, onLogout, onRestartOnboarding, onSelectPastBooking }) {
   const { theme, themeId, switchTheme, shadows } = useTheme();
   const [showThemeModal, setShowThemeModal] = useState(false);
 

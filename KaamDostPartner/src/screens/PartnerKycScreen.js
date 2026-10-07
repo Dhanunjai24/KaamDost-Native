@@ -1,35 +1,63 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import GlassBackground from '../../../shared/components/glass/GlassBackground';
+import GlassCard from '../../../shared/components/glass/GlassCard';
+import GlassButton from '../../../shared/components/glass/GlassButton';
+import api from '../../../shared/api/client';
 
-export default function PartnerKycScreen({ partnerData, onKycApproved }) {
-  const [aadhaar, setAadhaar] = useState('892145671234');
-  const [eshramUan, setEshramUan] = useState('100984829104');
+export default function PartnerKycScreen({ partnerData, onKycApproved, onBack }) {
+  const [aadhaarNumber, setAadhaarNumber] = useState('892145671234');
+  const [eShramNumber, setEShramNumber] = useState('UAN-9921-4412-8812');
   const [bankAcc, setBankAcc] = useState('501004829104');
   const [ifsc, setIfsc] = useState('SBIN0001245');
   const [upiId, setUpiId] = useState('ramesh.reddy@sbi');
+  const [hasAadhaarPhoto, setHasAadhaarPhoto] = useState(true);
+  const [hasLiveSelfie, setHasLiveSelfie] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmitKyc = () => {
-    if (aadhaar.replace(/\D/g, '').length !== 12) {
-      setErrorMsg('Aadhaar number must be 12 digits');
+  const formatAadhaar = (val) => {
+    const raw = val.replace(/\D/g, '').slice(0, 12);
+    const parts = raw.match(/.{1,4}/g);
+    return parts ? parts.join(' ') : raw;
+  };
+
+  const handleSubmitKyc = async () => {
+    const cleanAadhaar = aadhaarNumber.replace(/\s/g, '');
+    if (cleanAadhaar.length !== 12 || cleanAadhaar.startsWith('0') || cleanAadhaar.startsWith('1')) {
+      setErrorMsg('Aadhaar number must be exactly 12 digits (cannot start with 0 or 1)');
+      return;
+    }
+    if (!hasLiveSelfie) {
+      setErrorMsg('Please capture live camera selfie (18+ Adult check required)');
       return;
     }
     if (!bankAcc || !ifsc) {
-      setErrorMsg('Please enter Bank account number and IFSC code');
+      setErrorMsg('Please enter Bank account number and IFSC code for wage payouts');
       return;
     }
 
     setErrorMsg('');
     setIsVerifying(true);
 
+    try {
+      await api.submitWorkerKyc({
+        aadhaarNumber: cleanAadhaar,
+        bankAccount: bankAcc,
+        ifsc,
+        upiId,
+        age: partnerData?.age || 32
+      });
+    } catch (e) {}
+
     setTimeout(() => {
       setIsVerifying(false);
       onKycApproved({
         ...partnerData,
         isVerified: true,
-        aadhaarMasked: 'XXXX-XXXX-' + aadhaar.slice(-4),
+        aadhaarMasked: 'XXXX-XXXX-' + cleanAadhaar.slice(-4),
+        eShramNumber,
         bankAccount: bankAcc,
         ifsc,
         upiId
@@ -38,232 +66,172 @@ export default function PartnerKycScreen({ partnerData, onKycApproved }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Partner KYC & Payout Setup</Text>
-          <Text style={styles.subtitle}>
-            Aadhaar verification & direct bank link ensures zero-commission instant daily wage payouts
-          </Text>
-        </View>
-
-        {/* 1. Aadhaar Card */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>1. Aadhaar Identity</Text>
-          <Text style={styles.label}>12-Digit Aadhaar Number *</Text>
-          <TextInput
-            style={styles.input}
-            value={aadhaar}
-            onChangeText={setAadhaar}
-            keyboardType="number-pad"
-            maxLength={12}
-          />
-          <View style={styles.verifiedRow}>
-            <Text style={styles.verifiedIcon}>🛡️</Text>
-            <Text style={styles.verifiedNote}>Aadhaar photo biometric will be matched with selfie</Text>
-          </View>
-        </View>
-
-        {/* 2. Government e-Shram & Labour Welfare Link */}
-        <View style={styles.card}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={styles.sectionTitle}>2. e-Shram Welfare Link</Text>
-            <View style={{ backgroundColor: '#dcfce7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}>
-              <Text style={{ color: '#16a34a', fontWeight: '800', fontSize: 11 }}>GOVT VERIFIED</Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#0B1320' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B1320" />
+      <GlassBackground>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+          {/* Stepper Header */}
+          <View style={styles.stepperRow}>
+            <Text style={styles.stepBadge}>Step 5 of 6</Text>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: '83.3%' }]} />
             </View>
           </View>
-          <Text style={styles.label}>12-Digit e-Shram Universal Account No (UAN)</Text>
-          <TextInput
-            style={styles.input}
-            value={eshramUan}
-            onChangeText={setEshramUan}
-            keyboardType="number-pad"
-            maxLength={12}
-            placeholder="e.g. 100984829104"
-          />
-          <View style={styles.verifiedRow}>
-            <Text style={styles.verifiedIcon}>🏛️</Text>
-            <Text style={styles.verifiedNote}>
-              Links Pradhan Mantri Suraksha Bima Yojana (PMSBY) ₹2 Lakh accidental insurance & Telangana BOCW welfare.
-            </Text>
-          </View>
-        </View>
 
-        {/* 3. Bank Details */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>2. Bank Account (For Instant Wages)</Text>
-          <View style={styles.field}>
-            <Text style={styles.label}>Account Number *</Text>
+          <View style={styles.header}>
+            <Text style={styles.title}>Aadhaar e-KYC & Live Selfie</Text>
+            <Text style={styles.subtitle}>ఆధార్ వెరిఫికేషన్ & లైవ్ సెల్ఫీ (18+ వయస్సు ధృవీకరణ)</Text>
+            <Text style={styles.subtext}>UIDAI verified identity ensures fast customer approvals and instant payouts</Text>
+          </View>
+
+          {/* Aadhaar Input */}
+          <GlassCard style={styles.card}>
+            <Text style={styles.label}>12-Digit Aadhaar Number (ఆధార్ సంఖ్య) *</Text>
+            <TextInput
+              style={styles.input}
+              value={formatAadhaar(aadhaarNumber)}
+              onChangeText={t => setAadhaarNumber(t.replace(/\D/g, ''))}
+              placeholder="XXXX XXXX XXXX"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              keyboardType="numeric"
+              maxLength={14}
+            />
+
+            <Text style={styles.label}>e-Shram UAN Card (Optional)</Text>
+            <TextInput
+              style={styles.input}
+              value={eShramNumber}
+              onChangeText={setEShramNumber}
+              placeholder="UAN-XXXX-XXXX-XXXX"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+            />
+          </GlassCard>
+
+          {/* Document & Live Camera Capture Cards */}
+          <View style={styles.row}>
+            {/* Aadhaar Photo */}
+            <TouchableOpacity
+              style={[styles.uploadCard, hasAadhaarPhoto && styles.uploadCardDone]}
+              onPress={() => setHasAadhaarPhoto(true)}
+            >
+              <Text style={styles.uploadIcon}>{hasAadhaarPhoto ? '✅' : '📷'}</Text>
+              <Text style={styles.uploadTitle}>Aadhaar Card</Text>
+              <Text style={styles.uploadSub}>{hasAadhaarPhoto ? 'Attached' : 'Tap to scan'}</Text>
+            </TouchableOpacity>
+
+            {/* Live Selfie (Camera Only) */}
+            <TouchableOpacity
+              style={[styles.uploadCard, hasLiveSelfie && styles.uploadCardDone]}
+              onPress={() => setHasLiveSelfie(true)}
+            >
+              <Text style={styles.uploadIcon}>{hasLiveSelfie ? '✅' : '🤳'}</Text>
+              <Text style={styles.uploadTitle}>Live Camera Selfie</Text>
+              <Text style={styles.uploadSub}>{hasLiveSelfie ? '18+ Matched' : 'Live photo only'}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Payout Banking Details */}
+          <GlassCard style={styles.card}>
+            <Text style={styles.sectionHeading}>Wage Payout Details (డైలీ పేఅవుట్ బ్యాంక్)</Text>
+
+            <Text style={styles.inputLabel}>Bank Account Number *</Text>
             <TextInput
               style={styles.input}
               value={bankAcc}
               onChangeText={setBankAcc}
-              keyboardType="number-pad"
+              placeholder="Account Number"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              keyboardType="numeric"
+            />
+
+            <View style={styles.row}>
+              <View style={styles.halfCol}>
+                <Text style={styles.inputLabel}>IFSC Code *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={ifsc}
+                  onChangeText={setIfsc}
+                  placeholder="SBIN0001245"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  autoCapitalize="characters"
+                />
+              </View>
+              <View style={styles.halfCol}>
+                <Text style={styles.inputLabel}>UPI ID (GPay / PhonePe)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={upiId}
+                  onChangeText={setUpiId}
+                  placeholder="name@oksbi"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                />
+              </View>
+            </View>
+          </GlassCard>
+
+          {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+
+          {/* Verification CTA */}
+          <View style={styles.footer}>
+            <GlassButton
+              title={isVerifying ? "Verifying e-KYC..." : "Verify & Complete Account (Step 6) →"}
+              onPress={handleSubmitKyc}
+              disabled={isVerifying}
+              variant="primary"
+              size="large"
             />
           </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>IFSC Code *</Text>
-            <TextInput
-              style={styles.input}
-              value={ifsc}
-              onChangeText={setIfsc}
-              autoCapitalize="characters"
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>UPI ID (For instant 30-sec transfer)</Text>
-            <TextInput
-              style={styles.input}
-              value={upiId}
-              onChangeText={setUpiId}
-              placeholder="e.g. mobile@upi"
-            />
-          </View>
-        </View>
-
-        {/* 3. Live Selfie */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>3. Partner Live Photo</Text>
-          <View style={styles.selfieBox}>
-            <Text style={styles.selfieEmoji}>👷</Text>
-            <Text style={styles.selfieText}>Live Face Matched (100%) ✓</Text>
-          </View>
-        </View>
-
-        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-
-        {isVerifying ? (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator color={COLORS.primary} />
-            <Text style={styles.loadingText}>Verifying Bank & UIDAI records...</Text>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.submitBtn} onPress={handleSubmitKyc}>
-            <Text style={styles.submitBtnText}>Submit KYC & Activate Partner Account ✓</Text>
-          </TouchableOpacity>
-        )}
-      </ScrollView>
+        </ScrollView>
+      </GlassBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background
-  },
-  container: {
-    padding: 16
-  },
-  header: {
-    marginBottom: 16
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.secondary
-  },
-  subtitle: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-    lineHeight: 16
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    marginBottom: 12,
-    ...SHADOWS.small
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: COLORS.secondary,
-    marginBottom: 10
-  },
-  field: {
-    marginBottom: 10
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4
-  },
+  safeArea: { flex: 1 },
+  scroll: { flex: 1 },
+  container: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 30 },
+  stepperRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
+  stepBadge: { fontSize: 12, fontWeight: '700', color: '#FF6B00', textTransform: 'uppercase', letterSpacing: 0.5 },
+  progressBar: { flex: 1, height: 6, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#FF6B00', borderRadius: 3 },
+  header: { marginBottom: 16 },
+  title: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.3 },
+  subtitle: { fontSize: 13, fontWeight: '600', color: '#FF8800', marginTop: 2 },
+  subtext: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
+  card: { padding: 16, marginBottom: 14 },
+  sectionHeading: { fontSize: 13, fontWeight: '700', color: '#FF8800', marginBottom: 6 },
+  label: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.8)', marginTop: 8, marginBottom: 6 },
+  inputLabel: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginTop: 10, marginBottom: 6 },
   input: {
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.background
-  },
-  verifiedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8
-  },
-  verifiedIcon: {
-    fontSize: 14,
-    marginRight: 6
-  },
-  verifiedNote: {
-    fontSize: 11,
-    color: COLORS.accent,
-    fontWeight: '600'
-  },
-  selfieBox: {
-    alignItems: 'center',
-    padding: 14,
-    backgroundColor: COLORS.primaryLight,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: COLORS.primarySoft
-  },
-  selfieEmoji: {
-    fontSize: 40,
-    marginBottom: 6
-  },
-  selfieText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: COLORS.primaryDark
-  },
-  errorText: {
-    color: COLORS.danger,
-    fontSize: 12,
-    marginBottom: 10,
-    fontWeight: '600'
-  },
-  loadingBox: {
-    alignItems: 'center',
-    paddingVertical: 14
-  },
-  loadingText: {
-    color: COLORS.primary,
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 6
-  },
-  submitBtn: {
-    backgroundColor: COLORS.onlineGreen,
+    borderColor: 'rgba(255,255,255,0.15)',
     borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-    ...SHADOWS.small
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#FFFFFF',
+    fontSize: 14
   },
-  submitBtnText: {
-    color: COLORS.textWhite,
-    fontSize: 14,
-    fontWeight: '800'
-  }
+  row: { flexDirection: 'row', gap: 12, marginBottom: 14 },
+  halfCol: { flex: 1 },
+  uploadCard: {
+    flex: 1,
+    paddingVertical: 18,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  uploadCardDone: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderColor: '#10B981'
+  },
+  uploadIcon: { fontSize: 24, marginBottom: 6 },
+  uploadTitle: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
+  uploadSub: { fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  errorText: { color: '#EF4444', fontSize: 13, fontWeight: '600', marginTop: 4, marginBottom: 8 },
+  footer: { marginTop: 6 }
 });

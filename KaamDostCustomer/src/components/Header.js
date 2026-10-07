@@ -85,7 +85,7 @@ export default function Header({
             style={[
               styles.iconBtn,
               {
-                backgroundColor: theme.glassSurface,
+                backgroundColor: 'transparent',
                 borderColor: theme.border
               }
             ]}
@@ -100,7 +100,7 @@ export default function Header({
             style={[
               styles.iconBtn,
               {
-                backgroundColor: theme.glassSurface,
+                backgroundColor: 'transparent',
                 borderColor: theme.border
               }
             ]}
@@ -115,7 +115,7 @@ export default function Header({
             style={[
               styles.iconBtn,
               {
-                backgroundColor: theme.glassSurface,
+                backgroundColor: 'transparent',
                 borderColor: theme.border
               }
             ]}

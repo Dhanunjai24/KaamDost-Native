@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
@@ -7,7 +8,7 @@ import GlassButton from '../../../shared/components/glass/GlassButton';
 import { t } from '../../../shared/i18n';
 import api from '../../../shared/api/client';
 
-export default function PhoneLoginScreen({ onLoginSuccess, onSwitchRole }) {
+export default function PhoneLoginScreen({ onLoginSuccess, onGoToRegister, onSwitchRole }) {
   const { theme, shadows } = useTheme();
   const [phone, setPhone] = useState('9876543210');
   const [otpSent, setOtpSent] = useState(false);

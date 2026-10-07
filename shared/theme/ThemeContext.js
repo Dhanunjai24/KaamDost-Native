@@ -12,14 +12,14 @@ export const ThemeContext = createContext({
   switchTheme: () => {}
 });
 
-export function ThemeProvider({ children }) {
-  const [themeId, setThemeIdState] = useState('light_navy');
+export function ThemeProvider({ children, initialTheme = "light_navy", storageKey = THEME_STORAGE_KEY }) {
+  const [themeId, setThemeIdState] = useState(initialTheme);
 
   useEffect(() => {
     // Load persisted theme on mount
     (async () => {
       try {
-        const saved = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+        const saved = await AsyncStorage.getItem(storageKey);
         if (saved && THEMES[saved]) {
           setThemeIdState(saved);
         }
@@ -33,7 +33,7 @@ export function ThemeProvider({ children }) {
     if (THEMES[newThemeId]) {
       setThemeIdState(newThemeId);
       try {
-        await AsyncStorage.setItem(THEME_STORAGE_KEY, newThemeId);
+        await AsyncStorage.setItem(storageKey, newThemeId);
       } catch (err) {
         console.warn('Failed to persist theme:', err);
       }

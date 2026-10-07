@@ -1,4 +1,6 @@
 import { AppRegistry } from 'react-native';
-import App from './App';
+import CustomerApp from './App';
+import PartnerApp from '../KaamDostPartner/App';
 
-AppRegistry.registerComponent('KaamDostCustomer', () => App);
+AppRegistry.registerComponent('KaamDostCustomer', () => CustomerApp);
+AppRegistry.registerComponent('KaamDostPartner', () => PartnerApp);

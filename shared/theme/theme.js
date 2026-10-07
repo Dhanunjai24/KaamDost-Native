@@ -210,6 +210,75 @@ export const THEMES = {
     badgeGold: '#F59E0B',
     onlineGreen: '#10B981',
     offlineGray: '#87869E'
+  },
+  // THEME 4 — DARK SLATE + SAFFRON ORANGE (PARTNER HERO THEME)
+  slate_orange: {
+    id: 'slate_orange',
+    name: 'Dark Slate + Saffron Orange',
+    tagline: 'High-visibility outdoor contrast with electric saffron orange accents',
+    isDefault: false,
+
+    // Backgrounds (Deep dark slate for field readability)
+    backgroundPrimary: '#0B1320',
+    backgroundSecondary: '#111C2E',
+    background: '#0B1320',
+
+    // Glass surfaces
+    glassSurface: 'rgba(26, 38, 57, 0.70)',
+    glassSurfaceStrong: 'rgba(36, 52, 78, 0.85)',
+    glassSurfaceSubtle: 'rgba(26, 38, 57, 0.50)',
+    surface: '#111C2E',
+    surfaceCard: 'rgba(26, 38, 57, 0.80)',
+
+    // Typography (High contrast crisp white & slate silver)
+    textPrimary: '#FFFFFF',
+    textSecondary: '#94A3B8',
+    textMuted: '#64748B',
+    textWhite: '#FFFFFF',
+
+    // Accents & UI Elements (Vibrant Saffron Orange)
+    primary: '#FF6B00',
+    primaryDark: '#D95B00',
+    primaryLight: 'rgba(255, 107, 0, 0.16)',
+    primarySoft: 'rgba(255, 107, 0, 0.10)',
+    accent: '#FF6B00',
+    accentPrimary: '#FF6B00',
+    accentLight: '#FF8A00',
+    secondary: '#FF8A00',
+    secondaryLight: 'rgba(255, 138, 0, 0.18)',
+
+    // Borders (10% to 25% subtle glass outline)
+    border: 'rgba(255, 255, 255, 0.12)',
+    borderLight: 'rgba(255, 255, 255, 0.08)',
+    borderStrong: 'rgba(255, 107, 0, 0.40)',
+    glassBorder: 'rgba(255, 255, 255, 0.12)',
+
+    // Buttons
+    buttonPrimary: '#FF6B00',
+    buttonPrimaryText: '#FFFFFF',
+    buttonSecondary: 'rgba(26, 38, 57, 0.80)',
+    buttonSecondaryText: '#FF8A00',
+    buttonSecondaryBorder: 'rgba(255, 107, 0, 0.35)',
+
+    // Shadows & Ambient Glows (Warm Orange Glow)
+    shadowColor: '#000000',
+    ambientGlow1: 'rgba(255, 107, 0, 0.15)',
+    ambientGlow2: 'rgba(255, 138, 0, 0.10)',
+
+    // Status colors (Semantic)
+    success: '#10B981',
+    successLight: 'rgba(16, 185, 129, 0.18)',
+    warning: '#F59E0B',
+    warningLight: 'rgba(245, 158, 11, 0.18)',
+    danger: '#EF4444',
+    dangerLight: 'rgba(239, 68, 68, 0.18)',
+    info: '#FF6B00',
+    infoLight: 'rgba(255, 107, 0, 0.15)',
+
+    badgeGreen: '#10B981',
+    badgeGold: '#FF6B00',
+    onlineGreen: '#10B981',
+    offlineGray: '#64748B'
   }
 };
 
@@ -220,7 +289,7 @@ export const createShadows = (shadowColor = '#0B2341') => ({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 5,
-    elevation: 2
+    elevation: 0
   },
   medium: {
     shadowColor,
@@ -241,7 +310,7 @@ export const createShadows = (shadowColor = '#0B2341') => ({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.07,
     shadowRadius: 22,
-    elevation: 3
+    elevation: 0
   }
 });
 

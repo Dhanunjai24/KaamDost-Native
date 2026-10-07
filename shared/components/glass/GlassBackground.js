@@ -5,23 +5,31 @@ import { useTheme } from '../../theme/ThemeContext';
 export default function GlassBackground({ children, style }) {
   const { theme } = useTheme();
 
+  const isDark = theme.id === 'slate_orange' || (theme.backgroundPrimary && theme.backgroundPrimary.startsWith('#0'));
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundPrimary }, style]}>
-      {/* Decorative ambient radial glows behind the glass surfaces */}
+      {/* Ambient blurred glowing orbs creating exact depth and illuminated blur backdrop */}
       <View
         pointerEvents="none"
         style={[
           styles.glowCircle,
           styles.glowTopRight,
-          { backgroundColor: theme.ambientGlow1 }
+          {
+            backgroundColor: isDark ? 'rgba(255, 107, 0, 0.16)' : (theme.ambientGlow1 || 'rgba(23, 63, 107, 0.08)'),
+            width: isDark ? 280 : 240,
+            height: isDark ? 280 : 240
+          }
         ]}
       />
       <View
         pointerEvents="none"
         style={[
           styles.glowCircle,
-          styles.glowBottomLeft,
-          { backgroundColor: theme.ambientGlow2 }
+          styles.glowMiddleLeft,
+          {
+            backgroundColor: isDark ? 'rgba(56, 189, 248, 0.10)' : (theme.ambientGlow2 || 'rgba(72, 98, 125, 0.06)')
+          }
         ]}
       />
       <View
@@ -29,7 +37,19 @@ export default function GlassBackground({ children, style }) {
         style={[
           styles.glowCircle,
           styles.glowCenterRight,
-          { backgroundColor: theme.ambientGlow1 }
+          {
+            backgroundColor: isDark ? 'rgba(255, 138, 0, 0.12)' : (theme.ambientGlow1 || 'rgba(23, 63, 107, 0.08)')
+          }
+        ]}
+      />
+      <View
+        pointerEvents="none"
+        style={[
+          styles.glowCircle,
+          styles.glowBottomLeft,
+          {
+            backgroundColor: isDark ? 'rgba(30, 58, 95, 0.35)' : (theme.ambientGlow2 || 'rgba(72, 98, 125, 0.06)')
+          }
         ]}
       />
       {children}
@@ -47,21 +67,25 @@ const styles = StyleSheet.create({
     borderRadius: 9999
   },
   glowTopRight: {
-    top: -60,
-    right: -60,
-    width: 240,
-    height: 240
+    top: -40,
+    right: -40
   },
-  glowBottomLeft: {
-    bottom: 40,
-    left: -70,
-    width: 260,
-    height: 260
+  glowMiddleLeft: {
+    top: '32%',
+    left: -80,
+    width: 220,
+    height: 220
   },
   glowCenterRight: {
-    top: '40%',
-    right: -90,
+    top: '48%',
+    right: -70,
     width: 200,
     height: 200
+  },
+  glowBottomLeft: {
+    bottom: 20,
+    left: -60,
+    width: 260,
+    height: 260
   }
 });
