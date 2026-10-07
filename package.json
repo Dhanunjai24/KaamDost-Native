@@ -8,6 +8,7 @@
     "KaamDostPartner"
   ],
   "scripts": {
+    "start": "node server.js",
     "start:customer": "npm run start --prefix KaamDostCustomer",
     "start:partner": "npm run start --prefix KaamDostPartner",
     "android:customer": "npm run android --prefix KaamDostCustomer",
@@ -23,8 +24,5 @@
     "labour-marketplace"
   ],
   "author": "KaamDost Team",
-  "license": "MIT",
-  "dependencies": {
-    "react-native-screens": "3.35.0"
-  }
+  "license": "MIT"
 }
