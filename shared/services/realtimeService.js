@@ -9,6 +9,18 @@
  */
 
 import { Platform } from 'react-native';
+let _APP_ENV = 'development';
+let _SOCKET_URL = null;
+try {
+  const env = require('@env');
+  _APP_ENV = env.APP_ENV || _APP_ENV;
+  _SOCKET_URL = env.SOCKET_SERVER_URL || null;
+} catch (e) {
+  if (typeof process !== 'undefined' && process.env) {
+    _APP_ENV = process.env.APP_ENV || _APP_ENV;
+    _SOCKET_URL = process.env.SOCKET_SERVER_URL || null;
+  }
+}
 
 class RealtimeService {
   constructor() {
@@ -25,8 +37,14 @@ class RealtimeService {
   }
 
   getGatewayUrl() {
-    // In Android emulator 10.0.2.2 points to host machine, 127.0.0.1 on physical device with adb reverse
-    const host = '127.0.0.1';
+    if (_SOCKET_URL) {
+      const formatted = _SOCKET_URL.replace(/^http/, 'ws');
+      return formatted.endsWith('/realtime') ? formatted : `${formatted}/realtime`;
+    }
+    if (_APP_ENV === 'production') {
+      return 'wss://kaamdost.onrender.com/realtime';
+    }
+    const host = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
     return `ws://${host}:3000/realtime`;
   }
 

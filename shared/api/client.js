@@ -1,15 +1,22 @@
 // KaamDost - React Native Full REST API Client
 import { Platform } from 'react-native';
-import { APP_ENV } from '@env';
+let _APP_ENV = 'development';
+let _API_BASE_URL = null;
+try {
+  const env = require('@env');
+  _APP_ENV = env.APP_ENV || _APP_ENV;
+  _API_BASE_URL = env.API_BASE_URL || null;
+} catch (e) {}
 
 const PRODUCTION_SERVER = 'https://kaamdost.onrender.com';
 const LOCAL_ANDROID_EMULATOR = 'http://10.0.2.2:3000';
 const LOCAL_HOST = 'http://127.0.0.1:3000';
 
 // APP_ENV is injected at build time from .env via react-native-dotenv
-const _APP_ENV = APP_ENV || (typeof process !== 'undefined' && process.env && process.env.APP_ENV) || 'development';
+// APP_ENV resolved from environment above
 
 export const getBaseUrl = () => {
+  if (_API_BASE_URL && _API_BASE_URL.startsWith('http')) return _API_BASE_URL;
   if (_APP_ENV === 'production') {
     return PRODUCTION_SERVER;
   }
