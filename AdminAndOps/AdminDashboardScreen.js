@@ -9,11 +9,7 @@ import GlassTab from '../shared/components/glass/GlassTab';
 export default function AdminDashboardScreen({ onBack }) {
   const { theme, shadows } = useTheme();
   const [activeTab, setActiveTab] = useState('kpis'); // 'kpis', 'kyc', 'ai'
-  const [kycQueue, setKycQueue] = useState([
-    { id: 'KYC-01', name: 'Naveen Chary', trade: 'Carpenter', phone: '9848011223', aadhaar: 'XXXX-XXXX-4912', city: 'Sangareddy', status: 'Pending Review' },
-    { id: 'KYC-02', name: 'Md. Ismail', trade: 'Electrician', phone: '9848055667', aadhaar: 'XXXX-XXXX-9102', city: 'Patancheru', status: 'Pending Review' },
-    { id: 'KYC-03', name: 'K. Raju', trade: 'Plumber', phone: '9848088990', aadhaar: 'XXXX-XXXX-3341', city: 'Hyderabad', status: 'Pending Review' }
-  ]);
+  const [kycQueue, setKycQueue] = useState([]);
 
   const approveKyc = (id) => {
     Alert.alert('KYC Approved', `Worker ${id} verified and added to dispatch pool.`);

@@ -1,21 +1,176 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  ScrollView,
+  ActivityIndicator,
+  Image,
+  Alert,
+  Platform,
+  PermissionsAndroid,
+  NativeModules
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { t } from '../../../shared/i18n';
 
 export default function CustomerAadhaarScreen({ onContinue }) {
-  const [aadhaarNumber, setAadhaarNumber] = useState('542189012345');
-  const [hasAadhaarDoc, setHasAadhaarDoc] = useState(true);
-  const [hasLiveSelfie, setHasLiveSelfie] = useState(true);
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [aadhaarPhotoUri, setAadhaarPhotoUri] = useState(null);
+  const [selfieUri, setSelfieUri] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationProgress, setVerificationProgress] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const isMountedRef = React.useRef(true);
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   const formatAadhaar = (val) => {
     const raw = val.replace(/\D/g, '').slice(0, 12);
     const parts = raw.match(/.{1,4}/g);
     return parts ? parts.join(' ') : raw;
+  };
+
+  const handlePickAadhaarDoc = () => {
+    Alert.alert(
+      'Upload Aadhaar Card',
+      'Please capture or choose a clear photo of your Aadhaar card:',
+      [
+        {
+          text: 'Take Photo (Camera)',
+          onPress: async () => {
+            const hasPermission = await requestCameraPermission();
+            if (!hasPermission) {
+              Alert.alert('Camera Permission Needed', 'Camera access is required to capture your Aadhaar card photo.');
+              return;
+            }
+            launchCamera(
+              {
+                mediaType: 'photo',
+                cameraType: 'back',
+                quality: 0.85,
+                maxWidth: 1280,
+                maxHeight: 1280,
+                saveToPhotos: false
+              },
+              (res) => {
+                if (res.didCancel) return;
+                if (res.errorCode) {
+                  launchImageLibrary({ mediaType: 'photo', quality: 0.85, maxWidth: 1280, maxHeight: 1280 }, (res2) => {
+                    if (res2.assets && res2.assets[0]?.uri) {
+                      setAadhaarPhotoUri(res2.assets[0].uri);
+                      setErrorMsg('');
+                    }
+                  });
+                  return;
+                }
+                if (res.assets && res.assets[0]?.uri) {
+                  setAadhaarPhotoUri(res.assets[0].uri);
+                  setErrorMsg('');
+                }
+              }
+            );
+          }
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: () => {
+            launchImageLibrary(
+              { mediaType: 'photo', quality: 0.85, maxWidth: 1280, maxHeight: 1280 },
+              (res) => {
+                if (res.didCancel) return;
+                if (res.assets && res.assets[0]?.uri) {
+                  setAadhaarPhotoUri(res.assets[0].uri);
+                  setErrorMsg('');
+                }
+              }
+            );
+          }
+        },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'Camera Permission Required',
+            message: 'KaamDost requires camera access to capture your live verification selfie.',
+            buttonNeutral: 'Ask Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'Grant Access',
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleTakeLiveSelfie = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      Alert.alert(
+        'Camera Permission Needed',
+        'Live selfie verification strictly requires front camera access. Manual/gallery upload is not permitted for security.'
+      );
+      return;
+    }
+
+    if (NativeModules.FaceRecognitionModule && NativeModules.FaceRecognitionModule.startFaceCapture) {
+      try {
+        const result = await NativeModules.FaceRecognitionModule.startFaceCapture();
+        if (result && result.success && result.uri) {
+          setSelfieUri(result.uri);
+          setErrorMsg('');
+          return;
+        } else if (result && result.error && result.error !== 'Cancelled') {
+          Alert.alert('Face Recognition Notice', result.error);
+          return;
+        } else if (result && result.error === 'Cancelled') {
+          return; // User dismissed scanner
+        }
+      } catch (err) {
+        console.warn('Native FaceRecognition error:', err);
+      }
+    }
+
+    // Direct front camera fallback
+    launchCamera(
+      {
+        mediaType: 'photo',
+        cameraType: 'front',
+        quality: 0.85,
+        saveToPhotos: false
+      },
+      (res) => {
+        if (res.didCancel) return;
+        if (res.errorCode) {
+          Alert.alert(
+            'Camera Error',
+            res.errorMessage || 'Unable to open camera for live selfie. Direct camera capture is required.'
+          );
+          return;
+        }
+        if (res.assets && res.assets[0]?.uri) {
+          setSelfieUri(res.assets[0].uri);
+          setErrorMsg('');
+        }
+      }
+    );
   };
 
   const handleVerify = () => {
@@ -24,12 +179,12 @@ export default function CustomerAadhaarScreen({ onContinue }) {
       setErrorMsg('Aadhaar number must be exactly 12 numeric digits');
       return;
     }
-    if (!hasAadhaarDoc) {
-      setErrorMsg('Please upload or capture Aadhaar card document');
+    if (!aadhaarPhotoUri) {
+      setErrorMsg('Aadhaar photo must be uploaded');
       return;
     }
-    if (!hasLiveSelfie) {
-      setErrorMsg('Please capture a live selfie for identity matching');
+    if (!selfieUri) {
+      setErrorMsg('Live selfie must be captured via front camera (gallery upload not allowed)');
       return;
     }
 
@@ -38,20 +193,27 @@ export default function CustomerAadhaarScreen({ onContinue }) {
     setVerificationProgress('Encrypting identity data (AES-256)...');
 
     setTimeout(() => {
+      if (!isMountedRef.current) return;
       setVerificationProgress('Validating UIDAI database records...');
       setTimeout(() => {
+        if (!isMountedRef.current) return;
         setVerificationProgress('Matching live selfie with Aadhaar photo (18+ adult check)...');
         setTimeout(() => {
+          if (!isMountedRef.current) return;
           setIsVerifying(false);
           onContinue({
             aadhaarNumber: clean,
             maskedAadhaar: 'XXXX-XXXX-' + clean.slice(-4),
+            aadhaarPhotoUri,
+            selfieUri,
             aadhaarVerified: true,
+            hasAadhaarDoc: true,
+            hasLiveSelfie: true,
             isAdult: true
           });
-        }, 800);
-      }, 800);
-    }, 800);
+        }, 200);
+      }, 200);
+    }, 200);
   };
 
   return (
@@ -76,7 +238,7 @@ export default function CustomerAadhaarScreen({ onContinue }) {
         {/* 1. Aadhaar Card Input */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>1. Aadhaar Card Details</Text>
-          <Text style={styles.label}>12-Digit Aadhaar Number</Text>
+          <Text style={styles.label}>12-Digit Aadhaar Number *</Text>
           <TextInput
             style={styles.aadhaarInput}
             value={formatAadhaar(aadhaarNumber)}
@@ -91,44 +253,68 @@ export default function CustomerAadhaarScreen({ onContinue }) {
 
           <View style={styles.docUploadRow}>
             <TouchableOpacity
-              style={[styles.uploadBox, hasAadhaarDoc && styles.uploadBoxDone]}
-              onPress={() => setHasAadhaarDoc(true)}
+              style={[styles.uploadBox, aadhaarPhotoUri && styles.uploadBoxDone]}
+              onPress={handlePickAadhaarDoc}
+              activeOpacity={0.8}
             >
-              <Text style={styles.uploadIcon}>{hasAadhaarDoc ? '✅' : '📷'}</Text>
-              <Text style={styles.uploadLabel}>
-                {hasAadhaarDoc ? 'Aadhaar Photo Attached' : 'Capture / Upload Aadhaar'}
-              </Text>
+              {aadhaarPhotoUri ? (
+                <View style={styles.previewContainer}>
+                  <Image source={{ uri: aadhaarPhotoUri }} style={styles.docPreviewImage} resizeMode="cover" />
+                  <View style={styles.changeOverlay}>
+                    <Text style={styles.changeOverlayText}>Change Photo 🔄</Text>
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.uploadIcon}>📷</Text>
+                  <Text style={styles.uploadLabel}>Capture / Upload Aadhaar Card *</Text>
+                  <Text style={styles.uploadHint}>Camera or Gallery (Front Side)</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* 2. Live Selfie Camera */}
+        {/* 2. Live Face Recognition Auto-Capture */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>2. Live Selfie Camera Check</Text>
-          <Text style={styles.sectionDesc}>
-            Position your face directly in front of the camera with good lighting. Prevents identity theft.
-          </Text>
-
-          <View style={styles.selfieOval}>
-            <Text style={styles.selfieEmoji}>{hasLiveSelfie ? '👤' : '📸'}</Text>
-            <View style={styles.selfieBadge}>
-              <Text style={styles.selfieBadgeText}>
-                {hasLiveSelfie ? 'Live Face Matched ✓' : 'Camera Ready'}
-              </Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>2. Live Face Recognition</Text>
+            <View style={styles.liveBadge}>
+              <Text style={styles.liveBadgeText}>✨ AI AUTO-CAPTURE</Text>
             </View>
           </View>
+          <Text style={styles.sectionDesc}>
+            Align your face in the oval frame. AI will automatically detect your face, verify liveness, and auto-capture the picture without pressing any buttons.
+          </Text>
+
+          <TouchableOpacity
+            style={styles.selfieOval}
+            onPress={handleTakeLiveSelfie}
+            activeOpacity={0.85}
+          >
+            {selfieUri ? (
+              <Image source={{ uri: selfieUri }} style={styles.selfieImage} resizeMode="cover" />
+            ) : (
+              <Text style={styles.selfieEmoji}>👤</Text>
+            )}
+            <View style={styles.selfieBadge}>
+              <Text style={styles.selfieBadgeText}>
+                {selfieUri ? 'Face Verified & Captured ✓' : 'Start Face Scanner *'}
+              </Text>
+            </View>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.retakeBtn}
-            onPress={() => setHasLiveSelfie(true)}
+            onPress={handleTakeLiveSelfie}
           >
             <Text style={styles.retakeText}>
-              {hasLiveSelfie ? 'Retake Selfie' : 'Open Front Camera'}
+              {selfieUri ? 'Retake Face Scan (Auto-Capture)' : 'Start AI Face Recognition (Auto-Picture) *'}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+        {errorMsg ? <Text style={styles.errorText}>⚠️ {errorMsg}</Text> : null}
 
         {isVerifying ? (
           <View style={styles.verifyingBox}>
@@ -136,7 +322,7 @@ export default function CustomerAadhaarScreen({ onContinue }) {
             <Text style={styles.progressText}>{verificationProgress}</Text>
           </View>
         ) : (
-          <TouchableOpacity style={styles.submitBtn} onPress={handleVerify}>
+          <TouchableOpacity style={styles.submitBtn} onPress={handleVerify} activeOpacity={0.85}>
             <Text style={styles.submitBtnText}>Verify Identity with UIDAI ✓</Text>
           </TouchableOpacity>
         )}
@@ -151,18 +337,22 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background
   },
   container: {
-    padding: 20
+    padding: 20,
+    paddingBottom: 40
   },
   stepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     marginBottom: 16
   },
   stepText: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.primary,
-    marginBottom: 6
+    color: COLORS.primary
   },
   progressBar: {
+    flex: 1,
     height: 6,
     backgroundColor: COLORS.borderLight,
     borderRadius: 3,
@@ -170,13 +360,14 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: COLORS.primary
+    backgroundColor: COLORS.primary,
+    borderRadius: 3
   },
   header: {
-    marginBottom: 16
+    marginBottom: 20
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     color: COLORS.secondary
   },
@@ -194,6 +385,25 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderLight,
     marginBottom: 14,
     ...SHADOWS.small
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8
+  },
+  liveBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#6EE7B7'
+  },
+  liveBadgeText: {
+    color: '#059669',
+    fontSize: 10,
+    fontWeight: '800'
   },
   sectionTitle: {
     fontSize: 14,
@@ -234,34 +444,72 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
-    backgroundColor: COLORS.background
+    backgroundColor: COLORS.background,
+    overflow: 'hidden'
   },
   uploadBoxDone: {
     borderColor: COLORS.accent,
     backgroundColor: COLORS.accentLight,
-    borderStyle: 'solid'
+    borderStyle: 'solid',
+    padding: 6
   },
   uploadIcon: {
-    fontSize: 22,
+    fontSize: 24,
     marginBottom: 4
   },
   uploadLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.textPrimary
   },
+  uploadHint: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2
+  },
+  previewContainer: {
+    width: '100%',
+    height: 140,
+    borderRadius: 8,
+    overflow: 'hidden',
+    position: 'relative'
+  },
+  docPreviewImage: {
+    width: '100%',
+    height: '100%'
+  },
+  changeOverlay: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6
+  },
+  changeOverlayText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700'
+  },
   selfieOval: {
-    width: 120,
-    height: 150,
-    borderRadius: 60,
-    borderWidth: 2,
+    width: 130,
+    height: 160,
+    borderRadius: 65,
+    borderWidth: 2.5,
     borderColor: COLORS.primary,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.primaryLight,
     marginVertical: 10,
-    position: 'relative'
+    position: 'relative',
+    overflow: 'visible'
+  },
+  selfieImage: {
+    width: 126,
+    height: 156,
+    borderRadius: 63
   },
   selfieEmoji: {
     fontSize: 48
@@ -296,7 +544,8 @@ const styles = StyleSheet.create({
     color: COLORS.danger,
     fontSize: 12,
     marginBottom: 10,
-    fontWeight: '600'
+    fontWeight: '700',
+    textAlign: 'center'
   },
   verifyingBox: {
     backgroundColor: COLORS.primaryLight,

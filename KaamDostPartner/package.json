@@ -6,6 +6,9 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "start": "react-native start",
+    "start:all": "node ../../start_all.js",
+    "start:backend": "node ../../backend/src/server.js",
+    "adb:reverse": "adb reverse tcp:3000 tcp:3000 && adb reverse tcp:8081 tcp:8081",
     "test": "jest",
     "lint": "eslint ."
   },
@@ -16,6 +19,7 @@
     "@react-native-community/geolocation": "^3.4.0",
     "react": "18.3.1",
     "react-native": "0.76.5",
+    "react-native-image-picker": "^8.2.1",
     "react-native-safe-area-context": "^5.10.1",
     "react-native-screens": "3.35.0"
   },

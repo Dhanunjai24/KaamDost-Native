@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassSearch from '../../../shared/components/glass/GlassSearch';
 import GlassButton from '../../../shared/components/glass/GlassButton';
+import { useResponsive } from '../utils/responsive';
 import { t } from '../../../shared/i18n';
 
 export default function HeroBanner({
@@ -12,6 +13,7 @@ export default function HeroBanner({
   onPressVoiceSearch
 }) {
   const { theme, shadows } = useTheme();
+  const { isSmallScreen, isTablet } = useResponsive();
 
   return (
     <View
@@ -19,7 +21,9 @@ export default function HeroBanner({
         styles.bannerCard,
         {
           backgroundColor: theme.glassSurfaceStrong,
-          borderColor: theme.borderStrong
+          borderColor: theme.borderStrong,
+          padding: isSmallScreen ? 14 : isTablet ? 24 : 18,
+          marginHorizontal: isSmallScreen ? 12 : 16
         },
         shadows.medium
       ]}
@@ -43,11 +47,28 @@ export default function HeroBanner({
       </View>
 
       {/* Main Tagline */}
-      <Text style={[styles.heading, { color: theme.textPrimary }]}>
+      <Text
+        style={[
+          styles.heading,
+          {
+            color: theme.textPrimary,
+            fontSize: isSmallScreen ? 18 : isTablet ? 24 : 20,
+            lineHeight: isSmallScreen ? 24 : isTablet ? 32 : 26
+          }
+        ]}
+      >
         Book Verified Skilled Workers in{' '}
         <Text style={{ color: theme.accentPrimary }}>60 Seconds</Text>
       </Text>
-      <Text style={[styles.subheading, { color: theme.textSecondary }]}>
+      <Text
+        style={[
+          styles.subheading,
+          {
+            color: theme.textSecondary,
+            fontSize: isSmallScreen ? 12 : 13
+          }
+        ]}
+      >
         Masons, Electricians, Plumbers & Labourers at government-standard daily rates.
       </Text>
 

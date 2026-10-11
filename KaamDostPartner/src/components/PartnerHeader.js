@@ -4,10 +4,10 @@ import { useTheme } from '../../../shared/theme/ThemeContext';
 import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
 
 export default function PartnerHeader({
-  partnerName = 'RAJU KUMAR',
-  rating = '4.9',
+  partnerName = 'PARTNER',
+  rating = '--',
   isOnline = true,
-  onToggleDuty,
+  unreadCount = 0,
   onOpenNotifications,
   onOpenEarnings
 }) {
@@ -60,28 +60,35 @@ export default function PartnerHeader({
           </View>
         </View>
 
-        {/* Right Controls: Duty Switch, Theme Palette & Telugu Badge */}
+        {/* Right Controls: Notifications Bell, Theme Palette & Telugu Badge */}
         <View style={styles.rightControls}>
-          {/* Duty Switch Pill */}
+          {/* Notifications Bell */}
           <TouchableOpacity
             style={[
-              styles.dutySwitchTrack,
+              styles.langPill,
               {
-                backgroundColor: isOnline ? '#22C55E' : (theme.isDark ? '#334155' : '#CBD5E1')
+                backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : theme.glassSurface,
+                borderColor: theme.border,
+                position: 'relative',
+                paddingHorizontal: 9
               }
             ]}
-            onPress={onToggleDuty}
-            activeOpacity={0.85}
+            onPress={onOpenNotifications}
+            activeOpacity={0.75}
           >
-            <View
-              style={[
-                styles.dutySwitchThumb,
-                {
-                  alignSelf: isOnline ? 'flex-end' : 'flex-start',
-                  backgroundColor: theme.accentPrimary || '#FF6B00'
-                }
-              ]}
-            />
+            <Text style={{ fontSize: 13 }}>🔔</Text>
+            {unreadCount > 0 && (
+              <View
+                style={[
+                  styles.badge,
+                  { backgroundColor: theme.accentPrimary || '#EF4444' }
+                ]}
+              >
+                <Text style={styles.badgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           {/* Theme Switcher Button */}
@@ -115,16 +122,6 @@ export default function PartnerHeader({
             <Text style={[styles.langText, { color: theme.textPrimary }]}>{currentLang}</Text>
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Duty Status Subtitle */}
-      <View style={styles.dutyStatusRow}>
-        <Text style={[styles.dutyLabel, { color: theme.textSecondary }]}>
-          Duty:{' '}
-          <Text style={{ color: isOnline ? '#22C55E' : (theme.isDark ? '#94A3B8' : '#64748B'), fontWeight: '800' }}>
-            {isOnline ? 'ACTIVE 🟢' : 'OFFLINE ⚪'}
-          </Text>
-        </Text>
       </View>
 
       <ThemeSwitcherModal
@@ -202,19 +199,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8
   },
-  dutySwitchTrack: {
-    width: 50,
-    height: 28,
-    borderRadius: 14,
-    padding: 3,
-    justifyContent: 'center'
-  },
-  dutySwitchThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    elevation: 2
-  },
   langPill: {
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -225,12 +209,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600'
   },
-  dutyStatusRow: {
-    marginTop: 6,
-    paddingLeft: 62
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3
   },
-  dutyLabel: {
-    fontSize: 11,
-    fontWeight: '600'
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800'
   }
 });

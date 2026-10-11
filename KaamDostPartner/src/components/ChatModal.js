@@ -1,25 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, TextInput, FlatList, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Modal, TouchableOpacity, TextInput, FlatList, StyleSheet, Alert } from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import realtimeService from '../../../shared/services/realtimeService';
 
-export default function ChatModal({ visible, partnerName = 'Ramesh Reddy', onClose }) {
-  const [messages, setMessages] = useState([
-    { id: '1', text: 'Namaste! I am on my way to your location.', sender: 'partner', time: '10:14 AM' },
-    { id: '2', text: 'Great, please call when you reach the main gate.', sender: 'user', time: '10:15 AM' },
-    { id: '3', text: 'Sure sir, I will be there in 10 minutes.', sender: 'partner', time: '10:16 AM' }
-  ]);
+export default function ChatModal({ visible, bookingId = null, partnerName = 'Customer', onClose }) {
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+
+  useEffect(() => {
+    if (!visible) return;
+
+    // Listen for incoming customer messages in real-time
+    const unsub = realtimeService.on('chat_message', (msg) => {
+      if (msg && (msg.sender === 'customer' || msg.sender === 'user')) {
+        setMessages((prev) => [...prev, {
+          id: msg.id || String(Date.now()),
+          text: msg.text,
+          sender: 'partner', // from partner's POV, customer is other party
+          time: msg.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }]);
+      }
+    });
+
+    return () => unsub();
+  }, [visible, bookingId]);
 
   const sendMessage = () => {
     if (!input.trim()) return;
+    const text = input.trim();
     const newMsg = {
       id: String(Date.now()),
-      text: input.trim(),
-      sender: 'user',
+      text,
+      sender: 'user', // me (the worker)
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setMessages(prev => [...prev, newMsg]);
     setInput('');
+
+    // Transmit to customer via live websocket
+    realtimeService.sendChatMessage(bookingId, text, 'worker', 'Partner');
+  };
+
+  const handleCall = () => {
+    Alert.alert(
+      'In-App Voice Call',
+      'Calling customer online...',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Call Now',
+          onPress: () => {
+            realtimeService.initiateCall(bookingId, 'Partner', 'worker');
+            Alert.alert('Calling...', 'Connecting high-definition WebRTC voice session to customer.');
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -36,9 +72,9 @@ export default function ChatModal({ visible, partnerName = 'Ramesh Reddy', onClo
           </TouchableOpacity>
           <View style={styles.headerInfo}>
             <Text style={styles.title}>{partnerName}</Text>
-            <Text style={styles.status}>● Online</Text>
+            <Text style={styles.status}>🟢 Online</Text>
           </View>
-          <TouchableOpacity style={styles.callBtn}>
+          <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
             <Text style={styles.callIcon}>📞</Text>
           </TouchableOpacity>
         </View>
@@ -59,6 +95,11 @@ export default function ChatModal({ visible, partnerName = 'Ramesh Reddy', onClo
               </View>
             );
           }}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyText}>Direct in-app live chat active with customer</Text>
+            </View>
+          }
         />
 
         {/* Input Bar */}
@@ -67,7 +108,7 @@ export default function ChatModal({ visible, partnerName = 'Ramesh Reddy', onClo
             style={styles.textInput}
             value={input}
             onChangeText={setInput}
-            placeholder="Type a message..."
+            placeholder="Type a message to customer..."
             placeholderTextColor={COLORS.textMuted}
           />
           <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
@@ -107,91 +148,97 @@ const styles = StyleSheet.create({
     flex: 1
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
-    color: COLORS.textPrimary
+    color: COLORS.secondary
   },
   status: {
-    fontSize: 11,
-    color: COLORS.onlineGreen,
+    fontSize: 12,
+    color: '#10B981',
     fontWeight: '600'
   },
   callBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center'
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#EEF2FF'
   },
   callIcon: {
-    fontSize: 16
+    fontSize: 18
   },
   list: {
     padding: 16,
-    gap: 10
+    flexGrow: 1
+  },
+  emptyWrap: {
+    alignItems: 'center',
+    marginTop: 40
+  },
+  emptyText: {
+    color: COLORS.textMuted,
+    fontSize: 13
   },
   bubble: {
-    maxWidth: '75%',
+    maxWidth: '80%',
     padding: 12,
-    borderRadius: 14
+    borderRadius: 16,
+    marginBottom: 10
   },
   bubbleUser: {
-    backgroundColor: COLORS.primary,
     alignSelf: 'flex-end',
-    borderBottomRightRadius: 2
+    backgroundColor: COLORS.primary,
+    borderBottomRightRadius: 4
   },
   bubblePartner: {
-    backgroundColor: COLORS.surface,
     alignSelf: 'flex-start',
-    borderBottomLeftRadius: 2,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 4,
     borderWidth: 1,
     borderColor: COLORS.borderLight
   },
   msgText: {
-    fontSize: 13,
-    lineHeight: 18
+    fontSize: 14,
+    lineHeight: 20
   },
   msgTextUser: {
-    color: COLORS.textWhite
+    color: '#FFF'
   },
   msgTextPartner: {
-    color: COLORS.textPrimary
+    color: COLORS.secondary
   },
   timeText: {
-    fontSize: 9,
-    color: COLORS.textMuted,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.7)',
     alignSelf: 'flex-end',
     marginTop: 4
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 12,
     backgroundColor: COLORS.surface,
-    padding: 10,
     borderTopWidth: 1,
     borderTopColor: COLORS.borderLight
   },
   textInput: {
     flex: 1,
     backgroundColor: COLORS.background,
-    borderRadius: 20,
+    borderRadius: 24,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    fontSize: 13,
-    color: COLORS.textPrimary,
-    marginRight: 8
+    paddingVertical: 10,
+    fontSize: 14,
+    color: COLORS.secondary
   },
   sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    marginLeft: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center'
   },
   sendIcon: {
-    color: COLORS.textWhite,
+    color: '#FFF',
     fontSize: 16
   }
 });

@@ -4,13 +4,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import HeroBanner from '../components/HeroBanner';
 import ServiceGrid from '../components/ServiceGrid';
-import ActiveBookingCard from '../components/ActiveBookingCard';
+import GlassBookingCard from '../../../shared/components/glass/GlassBookingCard';
 import BookingModal from '../components/BookingModal';
 import LanguageSelectModal from '../components/LanguageSelectModal';
 import NotificationsModal from '../components/NotificationsModal';
+import { useNotifications } from '../../../shared/services/notificationService';
 import HelpModal from '../components/HelpModal';
 import LegalPolicyModal from '../components/LegalPolicyModal';
+import VoiceSearchModal from '../components/VoiceSearchModal';
+import WalletModal from '../components/WalletModal';
+import SelectTradeModal from '../components/SelectTradeModal';
+import EditAddressModal from '../components/EditAddressModal';
 import { useTheme } from '../../../shared/theme/ThemeContext';
+import { useResponsive } from '../utils/responsive';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
 import GlassFloatingBottomNav from '../../../shared/components/glass/GlassFloatingBottomNav';
@@ -20,21 +26,37 @@ export default function CustomerHomeScreen({
   customer,
   activeBooking,
   onOpenFindWorkers,
+  onOpenBookings,
   onOpenTracking,
   onOpenDashboard,
   onOpenSupport,
-  onBookingCreated
+  onBookingCreated,
+  onUpdateCustomer
 }) {
   const { theme, shadows } = useTheme();
-  const [city, setCity] = useState(customer?.address?.city || 'Sangareddy');
+  const { insets, isSmallScreen } = useResponsive();
+  const [city, setCity] = useState(customer?.address?.city || 'Telangana');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showSelectTradeModal, setShowSelectTradeModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const customerId = customer?.id || customer?.customerId || 'cust_demo';
+  const {
+    notifications,
+    unreadCount,
+    refresh: refreshNotifications,
+    markAsRead,
+    markAllAsRead
+  } = useNotifications({ userId: customerId, role: 'customer' });
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [showEditAddressModal, setShowEditAddressModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [, setLangTicker] = useState(0);
 
   const handleSelectTrade = (trade) => {
     setSelectedTrade(trade);
@@ -51,14 +73,18 @@ export default function CustomerHomeScreen({
       <StatusBar barStyle="dark-content" backgroundColor={theme.backgroundPrimary} />
 
       <GlassBackground>
-        {/* Top Header with Theme Switcher, Language & Profile */}
+        {/* Top Header with Address Pill & Wallet Button */}
         <Header
+          customer={customer}
           city={city}
-          onSelectCity={() => setShowBookingModal(true)}
+          walletBalance={customer?.walletBalance || 0}
+          onSelectCity={() => setShowEditAddressModal(true)}
+          onEditAddress={() => setShowEditAddressModal(true)}
+          onOpenWallet={() => setShowWalletModal(true)}
           onOpenLanguage={() => setShowLanguageModal(true)}
           onOpenNotifications={() => setShowNotificationsModal(true)}
           onOpenProfile={onOpenDashboard}
-          unreadCount={2}
+          unreadCount={unreadCount}
         />
 
         <ScrollView
@@ -77,25 +103,22 @@ export default function CustomerHomeScreen({
           <HeroBanner
             searchQuery={searchQuery}
             onChangeSearch={setSearchQuery}
-            onPressBookNow={() => {
-              setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
-              setShowBookingModal(true);
-            }}
-            onPressVoiceSearch={onOpenFindWorkers}
+            onPressBookNow={() => setShowSelectTradeModal(true)}
+            onPressVoiceSearch={() => setShowVoiceModal(true)}
           />
 
           {/* Active Booking Glass Card */}
-          <ActiveBookingCard
+          <GlassBookingCard
             booking={activeBooking}
             onTrackBooking={onOpenTracking}
-            onNewBooking={() => {
-              setSelectedTrade({ id: 'masonry', name: 'Mason', dailyRate: 950 });
-              setShowBookingModal(true);
-            }}
+            onNewBooking={() => setShowSelectTradeModal(true)}
           />
 
-          {/* 13 Telangana Service Categories in Light Glass Design */}
-          <ServiceGrid onSelectTrade={handleSelectTrade} />
+          {/* Telangana Service Categories in Light Glass Design */}
+          <ServiceGrid
+            onSelectTrade={handleSelectTrade}
+            onViewAllTrades={() => onOpenFindWorkers && onOpenFindWorkers('all')}
+          />
 
           {/* Banner: Telangana Labour Welfare Guarantee */}
           <View style={styles.bannerContainer}>
@@ -180,23 +203,53 @@ export default function CustomerHomeScreen({
             </TouchableOpacity>
           </View>
 
-          <View style={{ height: 90 }} />
+          <View style={{ height: 84 + (insets.bottom || 16) }} />
         </ScrollView>
 
-        {/* Floating Capsule Bottom Navigation Bar Matching Screenshot */}
+        {/* Floating Capsule Bottom Navigation Bar with Glowing Flash Book Button */}
         <GlassFloatingBottomNav
           activeId="home"
           onSelect={(id) => {
-            if (id === 'jobs' || id === 'workers') onOpenFindWorkers();
-            else if (id === 'wallet') onOpenTracking();
-            else if (id === 'profile') onOpenDashboard();
+            if (id === 'book') {
+              setShowSelectTradeModal(true);
+            } else if (id === 'jobs' || id === 'workers' || id === 'works' || id === 'trades') {
+              onOpenFindWorkers && onOpenFindWorkers('all');
+            } else if (id === 'bookings' || id === 'orders' || id === 'history') {
+              onOpenBookings ? onOpenBookings() : onOpenTracking();
+            } else if (id === 'wallet') {
+              setShowWalletModal(true);
+            } else if (id === 'profile') {
+              onOpenDashboard();
+            }
           }}
         />
 
         {/* Modals */}
+        <SelectTradeModal
+          visible={showSelectTradeModal}
+          onClose={() => setShowSelectTradeModal(false)}
+          onSelectTrade={(trade) => {
+            setSelectedTrade(trade);
+            setShowBookingModal(true);
+          }}
+        />
+
+        <WalletModal
+          visible={showWalletModal}
+          customer={customer}
+          onClose={() => setShowWalletModal(false)}
+          onUpdateCustomer={onUpdateCustomer}
+          onOpenDashboard={onOpenDashboard}
+        />
+
         <BookingModal
           visible={showBookingModal}
           trade={selectedTrade}
+          customer={customer}
+          onChangeTrade={() => {
+            setShowBookingModal(false);
+            setShowSelectTradeModal(true);
+          }}
           onClose={() => setShowBookingModal(false)}
           onConfirmBooking={(booking) => {
             if (onBookingCreated) onBookingCreated(booking);
@@ -206,11 +259,15 @@ export default function CustomerHomeScreen({
         <LanguageSelectModal
           visible={showLanguageModal}
           onClose={() => setShowLanguageModal(false)}
+          onSelect={() => setLangTicker(t => t + 1)}
         />
 
         <NotificationsModal
           visible={showNotificationsModal}
+          notifications={notifications}
           onClose={() => setShowNotificationsModal(false)}
+          onMarkAllRead={markAllAsRead}
+          onMarkRead={markAsRead}
         />
 
         <HelpModal
@@ -221,6 +278,28 @@ export default function CustomerHomeScreen({
         <LegalPolicyModal
           visible={showLegalModal}
           onClose={() => setShowLegalModal(false)}
+        />
+
+        <VoiceSearchModal
+          visible={showVoiceModal}
+          onClose={() => setShowVoiceModal(false)}
+          onSelectResult={(tradeId, tradeName, query) => {
+            setShowVoiceModal(false);
+            if (onOpenFindWorkers) {
+              onOpenFindWorkers(tradeId, query);
+            }
+          }}
+        />
+
+        {/* Change or Edit Address Modal */}
+        <EditAddressModal
+          visible={showEditAddressModal}
+          customer={customer}
+          onClose={() => setShowEditAddressModal(false)}
+          onUpdateCustomer={(updated) => {
+            if (onUpdateCustomer) onUpdateCustomer(updated);
+            if (updated?.address?.city) setCity(updated.address.city);
+          }}
         />
       </GlassBackground>
     </SafeAreaView>

@@ -5,13 +5,47 @@ import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { t } from '../../../shared/i18n';
 
 export default function AccountCompleteScreen({ customer, onProceedHome }) {
+  const isMobileDone = !!customer?.phone;
+  const isNameDone = !!customer?.name && customer.name !== 'Customer';
+  const isAadhaarDone = !!(customer?.aadhaarVerified || customer?.maskedAadhaar);
+  const isAddressDone = !!(customer?.address?.city || customer?.address?.street);
+  const isSelfieDone = !!(customer?.hasLiveSelfie || customer?.isAdult || customer?.selfieUri);
+
   const checklist = [
-    { title: 'Mobile Number Verified', desc: '+91 ' + (customer?.phone || '9876543210'), status: 'Completed', icon: '📱' },
-    { title: 'Full Name Registered', desc: customer?.name || 'Ravi Kumar', status: 'Completed', icon: '👤' },
-    { title: 'Aadhaar Identity Verified', desc: customer?.maskedAadhaar || 'XXXX-XXXX-2345', status: 'Completed', icon: '🛡️' },
-    { title: 'Service Address Saved', desc: 'Sangareddy, Telangana', status: 'Completed', icon: '📍' },
-    { title: 'Live Selfie Matched', desc: '18+ Adult Status Confirmed', status: 'Completed', icon: '📸' }
+    {
+      title: 'Mobile Number Verified',
+      desc: isMobileDone ? '+91 ' + customer.phone : 'Pending verification',
+      status: isMobileDone ? 'Completed' : 'Pending',
+      icon: '📱'
+    },
+    {
+      title: 'Full Name Registered',
+      desc: isNameDone ? customer.name : 'Pending registration',
+      status: isNameDone ? 'Completed' : 'Pending',
+      icon: '👤'
+    },
+    {
+      title: 'Aadhaar Identity Verified',
+      desc: isAadhaarDone ? (customer.maskedAadhaar || 'Verified ✓') : 'Pending verification',
+      status: isAadhaarDone ? 'Completed' : 'Pending',
+      icon: '🛡️'
+    },
+    {
+      title: 'Service Address Saved',
+      desc: isAddressDone ? `${customer.address.city || 'Telangana'}, Telangana` : 'Pending address',
+      status: isAddressDone ? 'Completed' : 'Pending',
+      icon: '📍'
+    },
+    {
+      title: 'Live Selfie Matched',
+      desc: isSelfieDone ? '18+ Adult Status Confirmed' : 'Pending selfie verification',
+      status: isSelfieDone ? 'Completed' : 'Pending',
+      icon: '📸'
+    }
   ];
+
+  const completedCount = [isMobileDone, isNameDone, isAadhaarDone, isAddressDone, isSelfieDone].filter(Boolean).length;
+  const percentComplete = Math.round((completedCount / 5) * 100);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -22,7 +56,7 @@ export default function AccountCompleteScreen({ customer, onProceedHome }) {
           <View style={styles.iconCircle}>
             <Text style={styles.trophy}>🎉</Text>
           </View>
-          <Text style={styles.title}>Account Setup 100% Complete!</Text>
+          <Text style={styles.title}>Account Setup {percentComplete}% Complete!</Text>
           <Text style={styles.subtitle}>
             Welcome to KaamDost. You are now verified to instantly book skilled labour across Telangana.
           </Text>
@@ -31,11 +65,11 @@ export default function AccountCompleteScreen({ customer, onProceedHome }) {
         {/* Progress Bar (100%) */}
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
-            <Text style={styles.progressLabel}>5 of 5 Verified</Text>
+            <Text style={styles.progressLabel}>{completedCount} of 5 Verified</Text>
             <Text style={styles.progressPercent}>100%</Text>
           </View>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '100%' }]} />
+            <View style={[styles.progressFill, { width: `${percentComplete}%` }]} />
           </View>
         </View>
 

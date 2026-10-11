@@ -1,7 +1,7 @@
 # PROJECT_RULES.md — GSD Canonical Rules
 
 > **Single Source of Truth** for the Get Shit Done methodology.
-> 
+>
 > Model-agnostic. All adapters and extensions reference this file.
 
 ---
@@ -10,13 +10,13 @@
 
 **SPEC → PLAN → EXECUTE → VERIFY → COMMIT**
 
-1. **SPEC**: Define requirements in `.gsd/SPEC.md` until status is `FINALIZED`
-2. **PLAN**: Decompose into phases in `.gsd/ROADMAP.md`, then detailed plans
+1. **SPEC**: Define requirements in [.gsd/SPEC.md](.gsd/SPEC.md) until status is `FINALIZED`
+2. **PLAN**: Decompose into phases in [.gsd/ROADMAP.md](.gsd/ROADMAP.md), then detailed plans
 3. **EXECUTE**: Implement with atomic commits per task
 4. **VERIFY**: Prove completion with empirical evidence
 5. **COMMIT**: One task = one commit, message format: `type(scope): description`
 
-**Planning Lock**: No implementation code until SPEC.md contains "Status: FINALIZED".
+**Planning Lock**: No implementation code until [SPEC.md](.gsd/SPEC.md) contains "Status: FINALIZED".
 
 ---
 
@@ -77,7 +77,7 @@ context. The orchestrator reads compact results only.
 - Where subagents are unavailable, say so out loud and degrade to one plan per session —
   never claim delegation that did not happen
 
-Full protocol: `.agents/skills/subagent-delegation/SKILL.md`
+Full protocol: [.agents/skills/subagent-delegation/SKILL.md](.agents/skills/subagent-delegation/SKILL.md)
 
 ---
 
@@ -100,7 +100,7 @@ plan it as such.
 1. All tasks in wave verified
 2. State snapshot created
 3. Commit all wave work
-4. Update STATE.md with position
+4. Update [STATE.md](.gsd/STATE.md) with position
 
 ---
 
@@ -149,7 +149,8 @@ At the end of each wave or significant work block, create a state snapshot:
 - Duplicating canonical rules in adapters
 
 **Adapter Pattern:**
-```
+
+```text
 adapters/
 ├── CLAUDE.md    # Optional Claude enhancements
 ├── GEMINI.md    # Optional Gemini enhancements
@@ -157,18 +158,20 @@ adapters/
 ```
 
 Each adapter must begin with:
-> "Everything in this file is optional. For canonical rules, see PROJECT_RULES.md."
+> "Everything in this file is optional. For canonical rules, see [PROJECT_RULES.md](PROJECT_RULES.md)."
 
 ---
 
 ## Commit Conventions
 
 **Format:**
-```
+
+```text
 type(scope): description
 ```
 
 **Types:**
+
 | Type | Usage |
 |------|-------|
 | `feat` | New feature |
@@ -209,7 +212,7 @@ reported as done, the worktree is discarded, and the change is gone.
 
 ## Repository Structure
 
-```
+```text
 PROJECT_RULES.md          # ← This file (canonical rules)
 GSD-STYLE.md              # Style and conventions
 
@@ -251,7 +254,7 @@ scripts/                  # Utility scripts
 - Fresh context for each plan execution — enforced by one `gsd-executor` subagent per plan,
   not by hoping the orchestrator stays tidy
 - After 3 debugging failures → state dump → fresh session
-- STATE.md = memory across sessions
+- [STATE.md](.gsd/STATE.md) = memory across sessions
 
 ---
 
@@ -279,7 +282,7 @@ scripts/                  # Utility scripts
 ### Compression Protocol
 
 After understanding a file:
-1. Create summary in STATE.md or task notes
+1. Create summary in [STATE.md](.gsd/STATE.md) or task notes
 2. Reference summary instead of re-reading
 3. Only reload specific sections if needed
 
@@ -300,10 +303,10 @@ After understanding a file:
 
 ## Quick Reference
 
-```
-Before coding    → SPEC.md must be FINALIZED
+```text
+Before coding    → [SPEC.md](.gsd/SPEC.md) must be FINALIZED
 Before file read → Search first, then targeted read
-After each task  → Commit + update STATE.md
+After each task  → Commit + update [STATE.md](.gsd/STATE.md)
 After each wave  → State snapshot
 After 3 failures → State dump + fresh session
 Before "Done"    → Empirical proof captured

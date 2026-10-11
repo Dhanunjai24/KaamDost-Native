@@ -25,6 +25,7 @@
   "author": "KaamDost Team",
   "license": "MIT",
   "dependencies": {
+    "connect": "3.6.6",
     "react-native-screens": "3.35.0"
   }
 }

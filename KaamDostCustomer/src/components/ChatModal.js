@@ -1,14 +1,42 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, TextInput, FlatList, StyleSheet } from 'react-native';
-import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Modal, TouchableOpacity, TextInput, FlatList, StyleSheet, Linking, Alert } from 'react-native';
+import { useTheme } from '../../../shared/theme/ThemeContext';
+import socketService from '../services/socketService';
 
-export default function ChatModal({ visible, partnerName = 'Ramesh Reddy', onClose }) {
-  const [messages, setMessages] = useState([
-    { id: '1', text: 'Namaste! I am on my way to your location.', sender: 'partner', time: '10:14 AM' },
-    { id: '2', text: 'Great, please call when you reach the main gate.', sender: 'user', time: '10:15 AM' },
-    { id: '3', text: 'Sure sir, I will be there in 10 minutes.', sender: 'partner', time: '10:16 AM' }
-  ]);
+export default function ChatModal({
+  visible,
+  partnerName = 'Partner',
+  partnerPhone = '',
+  bookingId = 'BK-LIVE',
+  onClose
+}) {
+  const { theme, shadows } = useTheme();
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+
+  // Initial welcome message from partner and live socket listener
+  useEffect(() => {
+    if (!visible) return;
+
+    if (messages.length === 0) {
+      setMessages([
+        {
+          id: 'init_1',
+          text: `Namaste! I am ${partnerName}, your assigned KaamDost partner. I am en route to your location.`,
+          sender: 'partner',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    }
+
+    const unsubscribe = socketService.onChatMessage((incomingMsg) => {
+      setMessages(prev => [...prev, incomingMsg]);
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [visible, partnerName]);
 
   const sendMessage = () => {
     if (!input.trim()) return;
@@ -19,7 +47,13 @@ export default function ChatModal({ visible, partnerName = 'Ramesh Reddy', onClo
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setMessages(prev => [...prev, newMsg]);
+    socketService.sendChatMessage(bookingId, newMsg);
     setInput('');
+  };
+
+  const handleCallPartner = () => {
+    socketService.initiateOnlineCall(bookingId, 'Customer');
+    Alert.alert('In-App Online Call 📞', 'Calling partner online via real-time VoIP audio session.');
   };
 
   return (
@@ -28,17 +62,30 @@ export default function ChatModal({ visible, partnerName = 'Ramesh Reddy', onClo
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.backgroundPrimary }]}>
         {/* Chat Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.backBtn}>
-            <Text style={styles.backText}>←</Text>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: theme.glassSurfaceStrong,
+              borderBottomColor: theme.border
+            },
+            shadows.small
+          ]}
+        >
+          <TouchableOpacity onPress={onClose} style={styles.backBtn} activeOpacity={0.7}>
+            <Text style={[styles.backText, { color: theme.textPrimary }]}>←</Text>
           </TouchableOpacity>
           <View style={styles.headerInfo}>
-            <Text style={styles.title}>{partnerName}</Text>
-            <Text style={styles.status}>● Online</Text>
+            <Text style={[styles.title, { color: theme.textPrimary }]}>{partnerName}</Text>
+            <Text style={[styles.status, { color: theme.success }]}>● Active on Live Duty</Text>
           </View>
-          <TouchableOpacity style={styles.callBtn}>
+          <TouchableOpacity
+            style={[styles.callBtn, { backgroundColor: theme.primaryLight }]}
+            onPress={handleCallPartner}
+            activeOpacity={0.7}
+          >
             <Text style={styles.callIcon}>📞</Text>
           </TouchableOpacity>
         </View>
@@ -48,29 +95,71 @@ export default function ChatModal({ visible, partnerName = 'Ramesh Reddy', onClo
           data={messages}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
             const isMe = item.sender === 'user';
             return (
-              <View style={[styles.bubble, isMe ? styles.bubbleUser : styles.bubblePartner]}>
-                <Text style={[styles.msgText, isMe ? styles.msgTextUser : styles.msgTextPartner]}>
+              <View
+                style={[
+                  styles.bubble,
+                  isMe
+                    ? [styles.bubbleUser, { backgroundColor: theme.accentPrimary }]
+                    : [styles.bubblePartner, { backgroundColor: theme.glassSurfaceStrong, borderColor: theme.borderLight }]
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.msgText,
+                    isMe
+                      ? { color: '#FFFFFF' }
+                      : { color: theme.textPrimary }
+                  ]}
+                >
                   {item.text}
                 </Text>
-                <Text style={styles.timeText}>{item.time}</Text>
+                <Text
+                  style={[
+                    styles.timeText,
+                    { color: isMe ? 'rgba(255,255,255,0.7)' : theme.textMuted }
+                  ]}
+                >
+                  {item.time}
+                </Text>
               </View>
             );
           }}
         />
 
         {/* Input Bar */}
-        <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.inputContainer,
+            {
+              backgroundColor: theme.glassSurfaceStrong,
+              borderTopColor: theme.borderLight
+            }
+          ]}
+        >
           <TextInput
-            style={styles.textInput}
+            style={[
+              styles.textInput,
+              {
+                backgroundColor: theme.backgroundSecondary,
+                borderColor: theme.border,
+                color: theme.textPrimary
+              }
+            ]}
             value={input}
             onChangeText={setInput}
-            placeholder="Type a message..."
-            placeholderTextColor={COLORS.textMuted}
+            placeholder="Type a message (e.g., landmark, gate code)..."
+            placeholderTextColor={theme.textMuted}
+            onSubmitEditing={sendMessage}
           />
-          <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
+          <TouchableOpacity
+            style={[styles.sendBtn, { backgroundColor: theme.accentPrimary }]}
+            onPress={sendMessage}
+            activeOpacity={0.8}
+          >
             <Text style={styles.sendIcon}>➤</Text>
           </TouchableOpacity>
         </View>
@@ -81,46 +170,40 @@ export default function ChatModal({ visible, partnerName = 'Ramesh Reddy', onClo
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: COLORS.background
+    flex: 1
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     paddingTop: 16,
     paddingBottom: 14,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
-    ...SHADOWS.small
+    borderBottomWidth: 1.2
   },
   backBtn: {
-    paddingRight: 12
+    paddingRight: 14,
+    paddingVertical: 4
   },
   backText: {
     fontSize: 22,
-    color: COLORS.secondary,
-    fontWeight: '700'
+    fontWeight: '800'
   },
   headerInfo: {
     flex: 1
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary
+    fontWeight: '800'
   },
   status: {
     fontSize: 11,
-    color: COLORS.onlineGreen,
-    fontWeight: '600'
+    fontWeight: '700',
+    marginTop: 2
   },
   callBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primaryLight,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -129,69 +212,59 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
-    gap: 10
+    paddingBottom: 30,
+    gap: 12
   },
   bubble: {
-    maxWidth: '75%',
+    maxWidth: '78%',
     padding: 12,
-    borderRadius: 14
+    borderRadius: 16
   },
   bubbleUser: {
-    backgroundColor: COLORS.primary,
     alignSelf: 'flex-end',
-    borderBottomRightRadius: 2
+    borderBottomRightRadius: 4
   },
   bubblePartner: {
-    backgroundColor: COLORS.surface,
     alignSelf: 'flex-start',
-    borderBottomLeftRadius: 2,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight
+    borderBottomLeftRadius: 4,
+    borderWidth: 1.2
   },
   msgText: {
     fontSize: 13,
-    lineHeight: 18
-  },
-  msgTextUser: {
-    color: COLORS.textWhite
-  },
-  msgTextPartner: {
-    color: COLORS.textPrimary
+    lineHeight: 18,
+    fontWeight: '500'
   },
   timeText: {
     fontSize: 9,
-    color: COLORS.textMuted,
     alignSelf: 'flex-end',
-    marginTop: 4
+    marginTop: 4,
+    fontWeight: '600'
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 10,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight
+    padding: 12,
+    borderTopWidth: 1.2
   },
   textInput: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: 20,
+    borderRadius: 22,
+    borderWidth: 1,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     fontSize: 13,
-    color: COLORS.textPrimary,
-    marginRight: 8
+    marginRight: 10
   },
   sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.primary,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center'
   },
   sendIcon: {
-    color: COLORS.textWhite,
-    fontSize: 16
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginLeft: 2
   }
 });

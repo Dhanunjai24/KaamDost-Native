@@ -3,7 +3,7 @@ import { View, Text, Modal, TouchableOpacity, TextInput, StyleSheet } from 'reac
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { t } from '../../../shared/i18n';
 
-export default function RatingTipModal({ visible, workerName = 'Ramesh Reddy', onClose, onSubmit }) {
+export default function RatingTipModal({ visible, workerName = 'Partner', onClose, onSubmit }) {
   const [rating, setRating] = useState(5);
   const [tip, setTip] = useState(50);
   const [selectedTags, setSelectedTags] = useState(['Punctual', 'Skilled Work']);

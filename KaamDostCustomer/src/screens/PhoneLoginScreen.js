@@ -1,16 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
 import GlassButton from '../../../shared/components/glass/GlassButton';
+import { useResponsive } from '../utils/responsive';
 import { t } from '../../../shared/i18n';
 import api from '../../../shared/api/client';
+import authService from '../services/authService';
 
 export default function PhoneLoginScreen({ onLoginSuccess, onGoToRegister, onSwitchRole }) {
   const { theme, shadows } = useTheme();
-  const [phone, setPhone] = useState('9876543210');
+  const { isSmallScreen, isTablet } = useResponsive();
+  const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(30);
@@ -33,10 +47,17 @@ export default function PhoneLoginScreen({ onLoginSuccess, onGoToRegister, onSwi
     setErrorMsg('');
     setLoading(true);
     try {
-      await api.sendCustomerOtp(phone);
+      await authService.sendOtp(phone, (autoVerifiedUser) => {
+        // Android Google Play Services auto-retrieved SMS code!
+        onLoginSuccess({
+          id: autoVerifiedUser?.uid || 'cust_' + Date.now(),
+          phone,
+          isVerified: true
+        });
+      });
       setOtpSent(true);
       setCountdown(30);
-      setOtp('123456'); // Auto-fill development OTP for convenient testing
+      setOtp('123456'); // Pre-fill development OTP for instantaneous test login
     } catch (e) {
       setErrorMsg(e.message || 'Error sending OTP');
     } finally {
@@ -52,8 +73,18 @@ export default function PhoneLoginScreen({ onLoginSuccess, onGoToRegister, onSwi
     setErrorMsg('');
     setLoading(true);
     try {
-      const res = await api.verifyCustomerOtp(phone, otp);
-      onLoginSuccess(res.user || res.customer || { phone, id: 'cust_101' });
+      const res = await authService.verifyOtp(phone, otp);
+      if (res && res.isAlreadyVerified && (res.user || res.customer)) {
+        // Customer was already verified previously -> DIRECT LOGIN TO HOME!
+        onLoginSuccess(res.user || res.customer);
+      } else {
+        // Customer MUST BE VERIFIED at the beginning (Step 3: Register -> Address -> Aadhaar)!
+        if (onGoToRegister) {
+          onGoToRegister({ phone });
+        } else {
+          onLoginSuccess({ phone, id: 'cust_' + Date.now() });
+        }
+      }
     } catch (e) {
       setErrorMsg(e.message || 'Verification failed');
     } finally {
@@ -66,21 +97,33 @@ export default function PhoneLoginScreen({ onLoginSuccess, onGoToRegister, onSwi
       <StatusBar barStyle="dark-content" backgroundColor={theme.backgroundPrimary} />
 
       <GlassBackground>
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[styles.brandTitle, { color: theme.textPrimary }]}>
-              Kaam<Text style={{ color: theme.accentPrimary }}>Dost</Text>
-            </Text>
-            <Text style={[styles.title, { color: theme.textPrimary }]}>
-              {t('loginTitle')}
-            </Text>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              {otpSent
-                ? `${t('enterOtpPrompt')} +91 ${phone}`
-                : t('loginSubtitle')}
-            </Text>
-          </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingHorizontal: isSmallScreen ? 14 : isTablet ? 36 : 20 }
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.container}>
+              {/* Header */}
+              <View style={styles.header}>
+                <Text style={[styles.brandTitle, { color: theme.textPrimary }]}>
+                  Kaam<Text style={{ color: theme.accentPrimary }}>Dost</Text>
+                </Text>
+                <Text style={[styles.title, { color: theme.textPrimary }]}>
+                  {t('loginTitle')}
+                </Text>
+                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                  {otpSent
+                    ? `${t('enterOtpPrompt')} +91 ${phone}`
+                    : t('loginSubtitle')}
+                </Text>
+              </View>
 
           {/* Frosted Glass Input Card */}
           <GlassCard style={styles.card} variant="strong">
@@ -216,8 +259,10 @@ export default function PhoneLoginScreen({ onLoginSuccess, onGoToRegister, onSwi
             </TouchableOpacity>
           </View>
         </View>
-      </GlassBackground>
-    </SafeAreaView>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  </GlassBackground>
+</SafeAreaView>
   );
 }
 
@@ -225,9 +270,13 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 20
+  },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
     justifyContent: 'center'
   },
   header: {
@@ -253,7 +302,10 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 24,
     padding: 22,
-    borderWidth: 1.2
+    borderWidth: 1.2,
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center'
   },
   inputLabel: {
     fontSize: 13,

@@ -3,13 +3,13 @@ import { View, Text, Modal, TouchableOpacity, FlatList, StyleSheet } from 'react
 import { COLORS } from '../../../shared/theme/theme';
 import { t } from '../../../shared/i18n';
 
-const MOCK_NOTIFICATIONS = [
-  { id: '1', title: 'Partner Dispatched', desc: 'Ramesh Reddy (Mason) is arriving at your location.', time: '5m ago', icon: '🚚', unread: true },
-  { id: '2', title: 'Welcome Bonus Credited', desc: '₹100 introductory discount added to your wallet.', time: '1h ago', icon: '🎁', unread: true },
-  { id: '3', title: 'KYC Verified 100%', desc: 'Your Aadhaar and selfie verification was approved.', time: '1d ago', icon: '🛡️', unread: false }
-];
-
-export default function NotificationsModal({ visible, onClose }) {
+export default function NotificationsModal({
+  visible,
+  notifications = [],
+  onClose,
+  onMarkAllRead,
+  onMarkRead
+}) {
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
@@ -18,30 +18,49 @@ export default function NotificationsModal({ visible, onClose }) {
             <Text style={styles.backText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.title}>{t('notifications')}</Text>
-          <TouchableOpacity style={styles.clearBtn}>
+          <TouchableOpacity
+            style={styles.clearBtn}
+            onPress={onMarkAllRead}
+            activeOpacity={0.7}
+          >
             <Text style={styles.clearText}>Mark Read</Text>
           </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={MOCK_NOTIFICATIONS}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <View style={[styles.item, item.unread && styles.itemUnread]}>
-              <View style={styles.iconCircle}>
-                <Text style={styles.iconText}>{item.icon}</Text>
-              </View>
-              <View style={styles.infoCol}>
-                <View style={styles.titleRow}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
-                  <Text style={styles.timeText}>{item.time}</Text>
-                </View>
-                <Text style={styles.descText}>{item.desc}</Text>
-              </View>
-            </View>
-          )}
-        />
+        {notifications.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>🔔</Text>
+            <Text style={styles.emptyTitle}>No Notifications</Text>
+            <Text style={styles.emptySub}>You will be notified here when new service alerts or updates arrive.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={notifications}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.list}
+            renderItem={({ item }) => {
+              const isUnread = item.unread !== undefined ? item.unread : !item.read;
+              return (
+                <TouchableOpacity
+                  style={[styles.item, isUnread && styles.itemUnread]}
+                  onPress={() => onMarkRead && onMarkRead(item.id)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.iconCircle}>
+                    <Text style={styles.iconText}>{item.icon || '📌'}</Text>
+                  </View>
+                  <View style={styles.infoCol}>
+                    <View style={styles.titleRow}>
+                      <Text style={styles.itemTitle}>{item.title}</Text>
+                      <Text style={styles.timeText}>{item.time || ''}</Text>
+                    </View>
+                    <Text style={styles.descText}>{item.desc || item.body || ''}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        )}
       </View>
     </Modal>
   );
@@ -131,5 +150,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     lineHeight: 16
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 16
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 8
+  },
+  emptySub: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: 18
   }
 });

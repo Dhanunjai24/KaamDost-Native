@@ -1,18 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChatModal from '../components/ChatModal';
 import PaymentModal from '../components/PaymentModal';
 import RatingTipModal from '../components/RatingTipModal';
+import GlassFloatingBottomNav from '../../../shared/components/glass/GlassFloatingBottomNav';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { STATUS_LABELS } from '../../../shared/constants/states';
 import { t } from '../../../shared/i18n';
+import socketService from '../services/socketService';
 
-export default function TrackingScreen({ booking, onBack, onCompleteBooking, onCancelBooking }) {
+export default function TrackingScreen({
+  booking,
+  onBack,
+  onOpenHome,
+  onOpenFindWorkers,
+  onOpenBookings,
+  onOpenTracking,
+  onOpenDashboard,
+  onCompleteBooking,
+  onCancelBooking
+}) {
   const [showChat, setShowChat] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(booking?.status || 'ARRIVING');
+  const [liveEta, setLiveEta] = useState(booking?.estimatedArrival || '12 mins');
+  const [liveDistance, setLiveDistance] = useState('1.4');
+
+  // Sync live tracking & worker telemetry
+  useEffect(() => {
+    if (!booking?.id) return;
+    const unsub = socketService.subscribeToWorkerLocation(booking.id, (data) => {
+      if (data.etaText) setLiveEta(data.etaText);
+      if (data.distanceKm) setLiveDistance(data.distanceKm);
+      if (data.status === 'ARRIVED' && currentStatus === 'ARRIVING') {
+        setCurrentStatus('ARRIVED');
+      }
+    });
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [booking?.id, currentStatus]);
 
   if (!booking) {
     return (
@@ -25,6 +54,17 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
             <Text style={styles.backHomeText}>← Back to Home</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Floating Capsule Bottom Navigation Bar */}
+        <GlassFloatingBottomNav
+          activeId="bookings"
+          onSelect={(id) => {
+            if (id === 'home') (onOpenHome ? onOpenHome() : onBack());
+            else if (id === 'jobs' || id === 'works' || id === 'trades' || id === 'workers') (onOpenFindWorkers ? onOpenFindWorkers() : null);
+            else if (id === 'bookings' || id === 'orders' || id === 'history') (onOpenBookings ? onOpenBookings() : null);
+            else if (id === 'profile') (onOpenDashboard ? onOpenDashboard() : null);
+          }}
+        />
       </SafeAreaView>
     );
   }
@@ -106,7 +146,7 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
           </View>
           <View style={styles.etaBar}>
             <Text style={styles.etaText}>
-              ETA: <Text style={styles.etaBold}>{booking.estimatedArrival || '12 mins'}</Text> (1.4 km away)
+              ETA: <Text style={styles.etaBold}>{liveEta}</Text> ({liveDistance} km away)
             </Text>
           </View>
         </View>
@@ -138,7 +178,7 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
             <Text style={styles.otpSub}>Share this 4-digit code with worker to begin work</Text>
           </View>
           <View style={styles.otpBadge}>
-            <Text style={styles.otpDigits}>{booking.startOtp || '4829'}</Text>
+            <Text style={styles.otpDigits}>{booking.startOtp || '----'}</Text>
           </View>
         </View>
 
@@ -148,9 +188,9 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
             <Text style={styles.workerEmoji}>👷</Text>
           </View>
           <View style={styles.workerInfo}>
-            <Text style={styles.workerName}>{booking.workerName || 'Ramesh Reddy'}</Text>
-            <Text style={styles.workerTrade}>{booking.tradeName || 'Mason'}</Text>
-            <Text style={styles.workerRating}>⭐ {booking.workerRating || '4.9'} • 140+ Jobs Completed</Text>
+            <Text style={styles.workerName}>{booking.workerName || 'Assigned Partner'}</Text>
+            <Text style={styles.workerTrade}>{booking.tradeName || 'Specialist'}</Text>
+            <Text style={styles.workerRating}>{booking.workerRating ? `⭐ ${booking.workerRating}` : '⭐ Verified Partner'}</Text>
           </View>
           <View style={styles.workerActions}>
             <TouchableOpacity style={styles.actionBtn} onPress={() => setShowChat(true)}>
@@ -158,7 +198,7 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtn}
-              onPress={() => Alert.alert('Call Partner', `Dialing +91 ${booking.workerPhone || '9848012345'}`)}
+              onPress={() => Alert.alert('Call Partner', booking.workerPhone ? `Dialing +91 ${booking.workerPhone}` : 'Partner contact details will appear once en route')}
             >
               <Text style={styles.actionIcon}>📞</Text>
             </TouchableOpacity>
@@ -170,20 +210,20 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
           <Text style={styles.cardHeading}>Booking Summary</Text>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Booking ID</Text>
-            <Text style={styles.detailVal}>{booking.id || 'BK-8492'}</Text>
+            <Text style={styles.detailVal}>{booking.id || ('BK-' + String(booking.trade || '').slice(0, 4).toUpperCase())}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Location</Text>
-            <Text style={styles.detailVal}>{booking.address || 'Sangareddy, Telangana'}</Text>
+            <Text style={styles.detailVal}>{booking.address || 'Service Location'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Daily Rate</Text>
-            <Text style={styles.detailVal}>₹{booking.dailyRate || 950} / day</Text>
+            <Text style={styles.detailVal}>₹{booking.dailyRate || 0} / day</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.detailRow}>
             <Text style={styles.totalLabel}>Total Payable</Text>
-            <Text style={styles.totalVal}>₹{booking.totalAmount || 1045}</Text>
+            <Text style={styles.totalVal}>₹{booking.totalAmount || 0}</Text>
           </View>
         </View>
 
@@ -200,12 +240,27 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
             </Text>
           </TouchableOpacity>
         </View>
+
+        <View style={{ height: 90 }} />
       </ScrollView>
+
+      {/* Floating Capsule Bottom Navigation Bar */}
+      <GlassFloatingBottomNav
+        activeId="bookings"
+        onSelect={(id) => {
+          if (id === 'home') (onOpenHome ? onOpenHome() : onBack());
+          else if (id === 'jobs' || id === 'works' || id === 'trades' || id === 'workers') (onOpenFindWorkers ? onOpenFindWorkers() : null);
+          else if (id === 'bookings' || id === 'orders' || id === 'history') (onOpenBookings ? onOpenBookings() : null);
+          else if (id === 'profile') (onOpenDashboard ? onOpenDashboard() : null);
+        }}
+      />
 
       {/* Modals */}
       <ChatModal
         visible={showChat}
-        partnerName={booking.workerName || 'Ramesh Reddy'}
+        partnerName={booking.workerName || 'Partner'}
+        partnerPhone={booking.workerPhone || ''}
+        bookingId={booking.id || 'BK-LIVE'}
         onClose={() => setShowChat(false)}
       />
 
@@ -221,7 +276,7 @@ export default function TrackingScreen({ booking, onBack, onCompleteBooking, onC
 
       <RatingTipModal
         visible={showRating}
-        workerName={booking.workerName || 'Ramesh Reddy'}
+        workerName={booking.workerName || 'Partner'}
         onClose={() => {
           setShowRating(false);
           if (onCompleteBooking) onCompleteBooking(booking);
@@ -272,7 +327,8 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   content: {
-    padding: 16
+    padding: 16,
+    paddingBottom: 90
   },
   mapCard: {
     height: 140,

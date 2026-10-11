@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, StatusBar, BackHandler } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider } from '../shared/theme/ThemeContext';
 import LanguageSelectScreen from './src/screens/LanguageSelectScreen';
 import PhoneLoginScreen from './src/screens/PhoneLoginScreen';
@@ -13,46 +14,109 @@ import CustomerHomeScreen from './src/screens/CustomerHomeScreen';
 import FindWorkersScreen from './src/screens/FindWorkersScreen';
 import TrackingScreen from './src/screens/TrackingScreen';
 import CustomerDashboardScreen from './src/screens/CustomerDashboardScreen';
+import CustomerBookingsScreen from './src/screens/CustomerBookingsScreen';
 import CustomerSupportScreen from './src/screens/CustomerSupportScreen';
+import api from '../shared/api/client';
+import { initLanguage } from '../shared/i18n';
+import socketService from './src/services/socketService';
+import realtimeService from '../shared/services/realtimeService';
 
 enableScreens();
 
 export default function App({ onSwitchToPartner }) {
   // Screen routing: language -> login -> register -> address -> aadhaar -> accountComplete -> home
-  const [currentScreen, setCurrentScreen] = useState('home');
-  const [customer, setCustomer] = useState({
-    id: 'cust_101',
-    name: 'Ravi Kumar',
-    phone: '9876543210',
-    maskedAadhaar: 'XXXX-XXXX-2345',
-    address: {
-      city: 'Sangareddy',
-      street: 'Near Old Bus Stand Road',
-      pincode: '502001'
-    }
-  });
+  const [currentScreen, setCurrentScreen] = useState('language');
+  const [customer, setCustomer] = useState(null);
+  const [activeBooking, setActiveBooking] = useState(null);
+  const [initialTradeFilter, setInitialTradeFilter] = useState('all');
+  const [initialSearchQuery, setInitialSearchQuery] = useState('');
 
-  const [activeBooking, setActiveBooking] = useState({
-    id: 'BK-8492',
-    trade: 'masonry',
-    tradeName: 'Mason',
-    status: 'ARRIVING',
-    workerName: 'Ramesh Reddy',
-    workerPhone: '9848012345',
-    workerRating: 4.9,
-    startOtp: '4829',
-    estimatedArrival: '12 mins',
-    dailyRate: 950,
-    totalAmount: 1045,
-    address: 'Plot 42, Near Municipal Office, Sangareddy'
-  });
+  // Load existing session if previously logged in
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        await initLanguage();
+        const savedLang = await AsyncStorage.getItem('@kaamdost_language');
+
+        const stored = await AsyncStorage.getItem('@kaamdost_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.id || parsed.phone) && parsed.isVerified) {
+            setCustomer(parsed);
+            socketService.connect(parsed.id || parsed.phone);
+            setCurrentScreen('home');
+          } else if (parsed && parsed.phone && !parsed.isVerified) {
+            setCustomer(parsed);
+            setCurrentScreen('register');
+          } else if (savedLang) {
+            setCurrentScreen('login');
+          }
+        } else if (savedLang) {
+          setCurrentScreen('login');
+        }
+
+        // Clean out any legacy default bookings from storage
+        const storedHistory = await AsyncStorage.getItem('@kaamdost_booking_history');
+        if (storedHistory) {
+          const parsedHistory = JSON.parse(storedHistory);
+          if (Array.isArray(parsedHistory)) {
+            const cleanHistory = parsedHistory.filter(b => b.id !== 'BK-7821' && b.id !== 'BK-5409');
+            await AsyncStorage.setItem('@kaamdost_booking_history', JSON.stringify(cleanHistory)).catch(() => {});
+          }
+        }
+      } catch (e) {
+        // Fall back to login screen
+      }
+    };
+    loadSession();
+
+    // Listen for partner acceptance via real-time gateway
+    const unsubAccepted = realtimeService.on('booking_accepted', (data) => {
+      if (data && data.worker) {
+        setActiveBooking((prev) => prev ? {
+          ...prev,
+          workerName: data.worker.name || prev.workerName,
+          workerPhone: data.worker.phone || prev.workerPhone,
+          workerRating: data.worker.rating || prev.workerRating,
+          status: 'ASSIGNED'
+        } : prev);
+      }
+    });
+
+    const unsubStatus = realtimeService.on('job_status_updated', (data) => {
+      if (data && data.status) {
+        setActiveBooking((prev) => prev ? { ...prev, status: data.status } : prev);
+      }
+    });
+
+    return () => {
+      if (unsubAccepted) unsubAccepted();
+      if (unsubStatus) unsubStatus();
+    };
+  }, []);
 
   const handleBookingCreated = (newBooking) => {
     setActiveBooking(newBooking);
+    socketService.connect(customer?.id || 'cust_live', newBooking?.id);
+    realtimeService.bookOrder(newBooking);
     setCurrentScreen('tracking');
   };
 
-  const handleCompleteBooking = () => {
+  const handleCompleteBooking = async (completedBooking) => {
+    if (completedBooking) {
+      try {
+        const stored = await AsyncStorage.getItem('@kaamdost_booking_history');
+        const list = stored ? JSON.parse(stored) : [];
+        const newHistoryItem = {
+          id: completedBooking.id || ('BK-' + Math.floor(1000 + Math.random() * 9000)),
+          tradeName: completedBooking.tradeName || 'Specialist',
+          worker: completedBooking.workerName || 'Partner',
+          date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+          amount: completedBooking.totalAmount || 1045
+        };
+        await AsyncStorage.setItem('@kaamdost_booking_history', JSON.stringify([newHistoryItem, ...list]));
+      } catch (e) {}
+    }
     setActiveBooking(null);
     setCurrentScreen('home');
   };
@@ -65,11 +129,35 @@ export default function App({ onSwitchToPartner }) {
   // Native Android hardware back button handler
   useEffect(() => {
     const onBackPress = () => {
-      if (currentScreen !== 'home' && currentScreen !== 'login') {
-        setCurrentScreen('home');
-        return true;
+      switch (currentScreen) {
+        case 'home':
+          return false; // Exit app
+        case 'login':
+          setCurrentScreen('language');
+          return true;
+        case 'register':
+          setCurrentScreen('login');
+          return true;
+        case 'address':
+          setCurrentScreen('register');
+          return true;
+        case 'aadhaar':
+          setCurrentScreen('address');
+          return true;
+        case 'accountComplete':
+          setCurrentScreen('home');
+          return true;
+        case 'findWorkers':
+        case 'bookings':
+        case 'tracking':
+        case 'dashboard':
+        case 'support':
+          setCurrentScreen('home');
+          return true;
+        case 'language':
+        default:
+          return false;
       }
-      return false;
     };
 
     const backSubscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
@@ -90,11 +178,13 @@ export default function App({ onSwitchToPartner }) {
       {currentScreen === 'login' && (
         <PhoneLoginScreen
           onLoginSuccess={(user) => {
-            setCustomer(prev => ({ ...prev, ...user }));
+            setCustomer(user);
+            socketService.connect(user.id || user.phone);
+            AsyncStorage.setItem('@kaamdost_user', JSON.stringify(user)).catch(() => {});
             setCurrentScreen('home');
           }}
           onGoToRegister={(data) => {
-            setCustomer(prev => ({ ...prev, ...data }));
+            setCustomer(prev => ({ ...(prev || {}), ...data }));
             setCurrentScreen('register');
           }}
           onSwitchRole={onSwitchToPartner}
@@ -104,9 +194,10 @@ export default function App({ onSwitchToPartner }) {
       {/* Step 3: Basic Profile Registration */}
       {currentScreen === 'register' && (
         <CustomerRegisterScreen
-          phone={customer.phone}
+          phone={customer?.phone}
+          customer={customer}
           onContinue={(data) => {
-            setCustomer(prev => ({ ...prev, ...data }));
+            setCustomer(prev => ({ ...(prev || {}), ...data }));
             setCurrentScreen('address');
           }}
         />
@@ -136,7 +227,27 @@ export default function App({ onSwitchToPartner }) {
       {currentScreen === 'accountComplete' && (
         <AccountCompleteScreen
           customer={customer}
-          onProceedHome={() => setCurrentScreen('home')}
+          onProceedHome={async () => {
+            if (customer) {
+              const fullVerifiedCustomer = {
+                ...customer,
+                isVerified: true,
+                isKycComplete: true,
+                aadhaarVerified: true
+              };
+              setCustomer(fullVerifiedCustomer);
+              await AsyncStorage.setItem('@kaamdost_user', JSON.stringify(fullVerifiedCustomer)).catch(() => {});
+              try {
+                const regData = await AsyncStorage.getItem('@kaamdost_registered_customers');
+                const regMap = regData ? JSON.parse(regData) : {};
+                if (fullVerifiedCustomer.phone) {
+                  regMap[fullVerifiedCustomer.phone] = fullVerifiedCustomer;
+                  await AsyncStorage.setItem('@kaamdost_registered_customers', JSON.stringify(regMap));
+                }
+              } catch (e) {}
+            }
+            setCurrentScreen('home');
+          }}
         />
       )}
 
@@ -145,17 +256,33 @@ export default function App({ onSwitchToPartner }) {
         <CustomerHomeScreen
           customer={customer}
           activeBooking={activeBooking}
-          onOpenFindWorkers={() => setCurrentScreen('findWorkers')}
+          onOpenFindWorkers={(tradeId, query) => {
+            if (tradeId) setInitialTradeFilter(tradeId);
+            else setInitialTradeFilter('all');
+            if (query) setInitialSearchQuery(query);
+            else setInitialSearchQuery('');
+            setCurrentScreen('findWorkers');
+          }}
+          onOpenBookings={() => setCurrentScreen('bookings')}
           onOpenTracking={() => setCurrentScreen('tracking')}
           onOpenDashboard={() => setCurrentScreen('dashboard')}
           onOpenSupport={() => setCurrentScreen('support')}
           onBookingCreated={handleBookingCreated}
+          onUpdateCustomer={(updated) => setCustomer(updated)}
         />
       )}
 
       {currentScreen === 'findWorkers' && (
         <FindWorkersScreen
+          initialTradeFilter={initialTradeFilter}
+          initialSearchQuery={initialSearchQuery}
+          customer={customer}
           onBack={() => setCurrentScreen('home')}
+          onOpenHome={() => setCurrentScreen('home')}
+          onOpenFindWorkers={() => setCurrentScreen('findWorkers')}
+          onOpenBookings={() => setCurrentScreen('bookings')}
+          onOpenTracking={() => setCurrentScreen('tracking')}
+          onOpenDashboard={() => setCurrentScreen('dashboard')}
           onBookingCreated={handleBookingCreated}
         />
       )}
@@ -164,8 +291,33 @@ export default function App({ onSwitchToPartner }) {
         <TrackingScreen
           booking={activeBooking}
           onBack={() => setCurrentScreen('home')}
+          onOpenHome={() => setCurrentScreen('home')}
+          onOpenFindWorkers={() => setCurrentScreen('findWorkers')}
+          onOpenBookings={() => setCurrentScreen('bookings')}
+          onOpenTracking={() => setCurrentScreen('tracking')}
+          onOpenDashboard={() => setCurrentScreen('dashboard')}
           onCompleteBooking={handleCompleteBooking}
           onCancelBooking={handleCancelBooking}
+        />
+      )}
+
+      {/* Bookings & History Screen */}
+      {currentScreen === 'bookings' && (
+        <CustomerBookingsScreen
+          customer={customer}
+          activeBooking={activeBooking}
+          onBack={() => setCurrentScreen('home')}
+          onOpenHome={() => setCurrentScreen('home')}
+          onOpenFindWorkers={(tradeId, query) => {
+            if (tradeId) setInitialTradeFilter(tradeId);
+            else setInitialTradeFilter('all');
+            if (query) setInitialSearchQuery(query);
+            else setInitialSearchQuery('');
+            setCurrentScreen('findWorkers');
+          }}
+          onOpenTracking={() => setCurrentScreen('tracking')}
+          onOpenDashboard={() => setCurrentScreen('dashboard')}
+          onBookingCreated={handleBookingCreated}
         />
       )}
 
@@ -173,8 +325,45 @@ export default function App({ onSwitchToPartner }) {
         <CustomerDashboardScreen
           customer={customer}
           onBack={() => setCurrentScreen('home')}
-          onLogout={() => setCurrentScreen('language')}
-          onRestartOnboarding={() => setCurrentScreen('language')}
+          onOpenHome={() => setCurrentScreen('home')}
+          onOpenFindWorkers={() => setCurrentScreen('findWorkers')}
+          onOpenBookings={() => setCurrentScreen('bookings')}
+          onOpenTracking={() => setCurrentScreen('tracking')}
+          onOpenDashboard={() => setCurrentScreen('dashboard')}
+          onLogout={async () => {
+            try {
+              await AsyncStorage.removeItem('@kaamdost_user');
+              await AsyncStorage.removeItem('@kaamdost_auth_token');
+            } catch (e) {}
+            socketService.disconnect();
+            setCustomer(null);
+            setActiveBooking(null);
+            setCurrentScreen('login');
+          }}
+          onDeleteAccount={async () => {
+            try {
+              if (customer?.phone) {
+                await api.deleteAccount(customer.phone).catch(() => {});
+              }
+              await AsyncStorage.removeItem('@kaamdost_user');
+              await AsyncStorage.removeItem('@kaamdost_auth_token');
+              await AsyncStorage.removeItem('@kaamdost_language');
+            } catch (e) {}
+            socketService.disconnect();
+            setCustomer(null);
+            setActiveBooking(null);
+            setCurrentScreen('language');
+          }}
+          onRestartOnboarding={async () => {
+            try {
+              await AsyncStorage.removeItem('@kaamdost_user');
+              await AsyncStorage.removeItem('@kaamdost_auth_token');
+            } catch (e) {}
+            socketService.disconnect();
+            setCustomer(null);
+            setActiveBooking(null);
+            setCurrentScreen('language');
+          }}
           onSelectPastBooking={() => setCurrentScreen('support')}
         />
       )}

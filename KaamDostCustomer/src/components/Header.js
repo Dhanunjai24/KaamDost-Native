@@ -2,18 +2,59 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
+import { useResponsive } from '../utils/responsive';
 import { t } from '../../../shared/i18n';
 
 export default function Header({
-  city = 'Sangareddy',
+  customer,
+  city = 'Telangana',
+  walletBalance = 0,
   onSelectCity,
+  onEditAddress,
+  onOpenWallet,
   onOpenLanguage,
   onOpenNotifications,
   onOpenProfile,
-  unreadCount = 2
+  unreadCount = 0
 }) {
   const { theme, shadows } = useTheme();
+  const { isSmallScreen, fontSize } = useResponsive();
   const [showThemeModal, setShowThemeModal] = useState(false);
+
+  // Format real customer address & choose icon
+  const addr = customer?.address;
+  let addressTypeIcon = '📍';
+  let displayAddress = 'Add Address';
+
+  if (addr) {
+    if (typeof addr === 'string') {
+      displayAddress = addr;
+    } else {
+      const type = addr.addressType || addr.type;
+      if (type === 'Home') addressTypeIcon = '🏠';
+      else if (type === 'Work') addressTypeIcon = '💼';
+      else if (type === 'Site') addressTypeIcon = '🏗️';
+      else addressTypeIcon = '📍';
+
+      const streetOrArea = addr.street || addr.houseNo || addr.landmark;
+      const cityOrMandal = addr.city;
+      const pincode = addr.pincode;
+
+      if (streetOrArea && cityOrMandal) {
+        displayAddress = `${streetOrArea}, ${cityOrMandal}`;
+      } else if (streetOrArea) {
+        displayAddress = streetOrArea;
+      } else if (cityOrMandal) {
+        displayAddress = pincode ? `${cityOrMandal}, ${pincode}` : cityOrMandal;
+      } else if (pincode) {
+        displayAddress = `Pin: ${pincode}`;
+      } else {
+        displayAddress = type ? `${type} Address` : 'My Address';
+      }
+    }
+  } else if (city && city !== 'Telangana') {
+    displayAddress = city;
+  }
 
   return (
     <View
@@ -27,65 +68,82 @@ export default function Header({
       ]}
     >
       <View style={styles.topRow}>
-        {/* Brand and Location */}
-        <View style={styles.brandCol}>
-          <Text style={[styles.brandTitle, { color: theme.textPrimary }]}>
-            Kaam<Text style={{ color: theme.accentPrimary }}>Dost</Text>
-          </Text>
+        {/* Left Side: Profile Button + Brand and Location */}
+        <View style={styles.leftGroup}>
           <TouchableOpacity
             style={[
-              styles.locationPill,
+              styles.avatarBtn,
               {
-                backgroundColor: theme.primaryLight,
-                borderColor: theme.border,
-                borderWidth: 1
+                backgroundColor: theme.buttonPrimary,
+                marginRight: 10
               }
             ]}
-            onPress={onSelectCity}
+            onPress={onOpenProfile}
             activeOpacity={0.7}
           >
-            <Text style={styles.locationPin}>📍</Text>
-            <Text
-              style={[styles.locationText, { color: theme.textPrimary }]}
-              numberOfLines={1}
-            >
-              {city}, Telangana
-            </Text>
-            <Text style={[styles.chevron, { color: theme.textSecondary }]}>▾</Text>
+            <Text style={styles.avatarText}>👤</Text>
           </TouchableOpacity>
+
+          <View style={styles.brandCol}>
+            <Text
+              style={[
+                styles.brandTitle,
+                { color: theme.textPrimary, fontSize: isSmallScreen ? 19 : 22 }
+              ]}
+            >
+              Kaam<Text style={{ color: theme.accentPrimary }}>Dost</Text>
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.locationPill,
+                {
+                  backgroundColor: theme.primaryLight,
+                  borderColor: theme.border,
+                  borderWidth: 1
+                }
+              ]}
+              onPress={onEditAddress || onSelectCity}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.locationPin}>{addressTypeIcon}</Text>
+              <Text
+                style={[
+                  styles.locationText,
+                  {
+                    color: theme.textPrimary,
+                    maxWidth: isSmallScreen ? 110 : 155,
+                    fontSize: isSmallScreen ? 11 : 12
+                  }
+                ]}
+                numberOfLines={1}
+              >
+                {displayAddress}
+              </Text>
+              <Text style={[styles.chevron, { color: theme.textSecondary }]}>▾</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Action icons: Theme Switcher, Language, Notification, Profile */}
+        {/* Action icons: Wallet Button at Top Navigator, Theme Switcher, Language, Notification */}
         <View style={styles.actionsRow}>
-          {/* Theme Palette Switcher Button */}
+          {/* Wallet Button at Top Navigator */}
           <TouchableOpacity
             style={[
-              styles.iconBtn,
+              styles.walletBtn,
               {
-                backgroundColor: 'transparent',
+                backgroundColor: theme.primaryLight,
                 borderColor: theme.border
               }
             ]}
-            onPress={() => setShowThemeModal(true)}
+            onPress={onOpenWallet}
             activeOpacity={0.7}
           >
-            <Text style={styles.iconText}>🎨</Text>
+            <Text style={styles.walletIcon}>👛</Text>
+            <Text style={[styles.walletAmount, { color: theme.textPrimary }]}>
+              ₹{walletBalance}
+            </Text>
           </TouchableOpacity>
 
-          {/* Language Selector */}
-          <TouchableOpacity
-            style={[
-              styles.iconBtn,
-              {
-                backgroundColor: 'transparent',
-                borderColor: theme.border
-              }
-            ]}
-            onPress={onOpenLanguage}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.iconText}>🌐</Text>
-          </TouchableOpacity>
 
           {/* Notifications */}
           <TouchableOpacity
@@ -105,20 +163,6 @@ export default function Header({
                 <Text style={styles.badgeText}>{unreadCount}</Text>
               </View>
             )}
-          </TouchableOpacity>
-
-          {/* User Profile */}
-          <TouchableOpacity
-            style={[
-              styles.avatarBtn,
-              {
-                backgroundColor: theme.buttonPrimary
-              }
-            ]}
-            onPress={onOpenProfile}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.avatarText}>👤</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -143,6 +187,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between'
+  },
+  leftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8
   },
   brandCol: {
     flex: 1
@@ -216,5 +266,21 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 16
+  },
+  walletBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 4
+  },
+  walletIcon: {
+    fontSize: 13
+  },
+  walletAmount: {
+    fontSize: 12,
+    fontWeight: '800'
   }
 });

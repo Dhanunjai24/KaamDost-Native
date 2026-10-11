@@ -3,13 +3,7 @@ import { View, Text, Modal, TouchableOpacity, FlatList, StyleSheet } from 'react
 import { COLORS } from '../../../shared/theme/theme';
 import { t } from '../../../shared/i18n';
 
-const MOCK_NOTIFICATIONS = [
-  { id: '1', title: 'Partner Dispatched', desc: 'Ramesh Reddy (Mason) is arriving at your location.', time: '5m ago', icon: '🚚', unread: true },
-  { id: '2', title: 'Welcome Bonus Credited', desc: '₹100 introductory discount added to your wallet.', time: '1h ago', icon: '🎁', unread: true },
-  { id: '3', title: 'KYC Verified 100%', desc: 'Your Aadhaar and selfie verification was approved.', time: '1d ago', icon: '🛡️', unread: false }
-];
-
-export default function NotificationsModal({ visible, onClose }) {
+export default function NotificationsModal({ visible, onClose, notifications = [], onMarkAllRead, onMarkRead }) {
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
@@ -24,13 +18,20 @@ export default function NotificationsModal({ visible, onClose }) {
         </View>
 
         <FlatList
-          data={MOCK_NOTIFICATIONS}
+          data={notifications}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>🔔</Text>
+              <Text style={styles.emptyTitle}>No Notifications</Text>
+              <Text style={styles.emptySub}>You have no new alerts or notifications at this time.</Text>
+            </View>
+          }
           renderItem={({ item }) => (
             <View style={[styles.item, item.unread && styles.itemUnread]}>
               <View style={styles.iconCircle}>
-                <Text style={styles.iconText}>{item.icon}</Text>
+                <Text style={styles.iconText}>{item.icon || '🔔'}</Text>
               </View>
               <View style={styles.infoCol}>
                 <View style={styles.titleRow}>
@@ -131,5 +132,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     lineHeight: 16
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 24
+  },
+  emptyIcon: {
+    fontSize: 44,
+    marginBottom: 12
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 6
+  },
+  emptySub: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18
   }
 });

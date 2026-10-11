@@ -4,10 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { t } from '../../../shared/i18n';
 
-export default function CustomerRegisterScreen({ phone = '9876543210', onContinue }) {
-  const [fullName, setFullName] = useState('Ravi Kumar');
-  const [email, setEmail] = useState('ravi.kumar@example.com');
-  const [referralCode, setReferralCode] = useState('');
+export default function CustomerRegisterScreen({ phone = '', customer = null, onContinue }) {
+  const activePhone = phone || customer?.phone || '';
+  const [fullName, setFullName] = useState(customer?.name && customer.name !== 'Customer' ? customer.name : '');
+  const [email, setEmail] = useState(customer?.email || '');
+  const [referralCode, setReferralCode] = useState(customer?.referralCode || '');
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleNext = () => {
@@ -15,12 +16,22 @@ export default function CustomerRegisterScreen({ phone = '9876543210', onContinu
       setErrorMsg('Please enter your full name');
       return;
     }
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setErrorMsg('Please enter your email address');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setErrorMsg('Please enter a valid email address');
+      return;
+    }
     setErrorMsg('');
     onContinue({
       name: fullName.trim(),
-      email: email.trim(),
+      email: cleanEmail,
       referralCode: referralCode.trim(),
-      phone
+      phone: activePhone
     });
   };
 
@@ -43,7 +54,7 @@ export default function CustomerRegisterScreen({ phone = '9876543210', onContinu
 
         <View style={styles.card}>
           <View style={styles.verifiedRow}>
-            <Text style={styles.verifiedText}>Verified Mobile: +91 {phone}</Text>
+            <Text style={styles.verifiedText}>Verified Mobile: +91 {activePhone || "••••••••••"}</Text>
             <Text style={styles.verifiedBadge}>Verified ✓</Text>
           </View>
 
@@ -51,14 +62,14 @@ export default function CustomerRegisterScreen({ phone = '9876543210', onContinu
             <Text style={styles.label}>{t('fullName')} *</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Ravi Kumar"
+              placeholder="Enter your name"
               value={fullName}
               onChangeText={setFullName}
             />
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>{t('email')} (Optional)</Text>
+            <Text style={styles.label}>{t('email')} *</Text>
             <TextInput
               style={styles.input}
               placeholder="e.g. ravi@example.com"

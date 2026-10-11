@@ -18,7 +18,7 @@ export default function PaymentModal({ visible, amount = 1045, onClose, onSucces
         timestamp: new Date().toISOString()
       });
       onClose();
-    }, 1500);
+    }, 250);
   };
 
   return (

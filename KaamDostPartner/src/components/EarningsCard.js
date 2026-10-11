@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 
 export default function EarningsCard({
-  todayEarnings = 1850,
+  todayEarnings = 0,
   onRequestPayout
 }) {
   const { theme } = useTheme();
@@ -61,14 +61,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1
   },
   amount: {
-    color: '#FF6B00',
+    color: '#0B2341',
     fontSize: 48,
     fontWeight: '900',
     letterSpacing: -0.5,
     marginVertical: 8
   },
   upiBtn: {
-    backgroundColor: '#FF6B00',
+    backgroundColor: '#0B2341',
     width: '100%',
     height: 50,
     borderRadius: 14,

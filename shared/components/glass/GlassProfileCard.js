@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 
 export default function GlassProfileCard({
-  name = 'Ravi Kumar',
-  phone = '9876543210',
-  city = 'Sangareddy',
-  isVerified = true,
+  name = 'User',
+  phone = '',
+  city = '',
+  isVerified = false,
   avatarEmoji = '👤',
   onPressEdit,
   style

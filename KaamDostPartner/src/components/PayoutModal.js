@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 
-export default function PayoutModal({ visible, balance = 3850, onClose, onSuccess }) {
-  const [upiId, setUpiId] = useState('ramesh.reddy@sbi');
-  const [amount, setAmount] = useState(String(balance));
+export default function PayoutModal({ visible, balance = 0, onClose, onSuccess }) {
+  const [upiId, setUpiId] = useState('');
+  const [amount, setAmount] = useState(balance > 0 ? String(balance) : '');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleWithdraw = () => {

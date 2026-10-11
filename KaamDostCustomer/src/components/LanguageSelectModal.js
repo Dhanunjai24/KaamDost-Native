@@ -1,13 +1,17 @@
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LANGUAGES, setLanguage, getLanguage, t } from '../../../shared/i18n';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 
 export default function LanguageSelectModal({ visible, onClose, onSelect }) {
   const currentLang = getLanguage();
 
-  const handleChoose = (code) => {
+  const handleChoose = async (code) => {
     setLanguage(code);
+    try {
+      await AsyncStorage.setItem('@kaamdost_language', code);
+    } catch (e) {}
     if (onSelect) onSelect(code);
     onClose();
   };
@@ -27,7 +31,7 @@ export default function LanguageSelectModal({ visible, onClose, onSelect }) {
             <Text style={styles.subtitle}>Choose your preferred language for KaamDost</Text>
           </View>
 
-          <View style={styles.list}>
+          <ScrollView style={styles.scrollList} contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
             {LANGUAGES.map((lang) => {
               const isSelected = currentLang === lang.code;
               return (
@@ -50,7 +54,7 @@ export default function LanguageSelectModal({ visible, onClose, onSelect }) {
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
 
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
             <Text style={styles.closeBtnText}>{t('cancel')}</Text>
@@ -72,7 +76,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
-    maxHeight: '80%'
+    maxHeight: '85%'
   },
   handle: {
     width: 40,
@@ -95,9 +99,13 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 2
   },
+  scrollList: {
+    maxHeight: 380,
+    marginBottom: 16
+  },
   list: {
     gap: 8,
-    marginBottom: 16
+    paddingBottom: 8
   },
   langItem: {
     flexDirection: 'row',

@@ -8,15 +8,10 @@ import GlassButton from '../../../shared/components/glass/GlassButton';
 
 export default function PartnerEarningsScreen({ onBack }) {
   const { theme, shadows } = useTheme();
-  const [balance, setBalance] = useState(3850);
+  const [balance, setBalance] = useState(0);
   const [showPayout, setShowPayout] = useState(false);
 
-  const ledger = [
-    { id: 'TX-101', title: 'Masonry Work (Ravi Kumar)', date: 'Today, 2:30 PM', amount: '+₹950', type: 'credit', status: 'Settled' },
-    { id: 'TX-102', title: 'Floor Repair & Plastering', date: 'Today, 11:15 AM', amount: '+₹950', type: 'credit', status: 'Settled' },
-    { id: 'TX-103', title: 'Instant UPI Payout to SBI', date: 'Yesterday', amount: '-₹1,900', type: 'debit', status: 'Success' },
-    { id: 'TX-104', title: 'Customer Appreciation Tip', date: 'Yesterday', amount: '+₹100', type: 'credit', status: 'Settled' }
-  ];
+  const ledger = [];
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundPrimary }]}>
@@ -72,17 +67,17 @@ export default function PartnerEarningsScreen({ onBack }) {
             </Text>
             <View style={styles.summaryRow}>
               <View style={styles.sumItem}>
-                <Text style={[styles.sumVal, { color: theme.textPrimary }]}>₹6,750</Text>
+                <Text style={[styles.sumVal, { color: theme.textPrimary }]}>₹0</Text>
                 <Text style={[styles.sumLbl, { color: theme.textSecondary }]}>Total Earned</Text>
               </View>
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
               <View style={styles.sumItem}>
-                <Text style={[styles.sumVal, { color: theme.textPrimary }]}>7</Text>
+                <Text style={[styles.sumVal, { color: theme.textPrimary }]}>0</Text>
                 <Text style={[styles.sumLbl, { color: theme.textSecondary }]}>Jobs Done</Text>
               </View>
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
               <View style={styles.sumItem}>
-                <Text style={[styles.sumVal, { color: theme.textPrimary }]}>₹250</Text>
+                <Text style={[styles.sumVal, { color: theme.textPrimary }]}>₹0</Text>
                 <Text style={[styles.sumLbl, { color: theme.textSecondary }]}>Tips Received</Text>
               </View>
             </View>
@@ -93,55 +88,61 @@ export default function PartnerEarningsScreen({ onBack }) {
             <Text style={[styles.ledgerHeading, { color: theme.textPrimary }]}>
               Recent Ledger Transactions
             </Text>
-            {ledger.map((tx) => (
-              <View
-                key={tx.id}
-                style={[styles.txRow, { borderBottomColor: theme.borderLight }]}
-              >
-                <View
-                  style={[
-                    styles.txIconBox,
-                    {
-                      backgroundColor: tx.type === 'credit' ? theme.successLight : theme.primaryLight,
-                      borderColor: theme.border,
-                      borderWidth: 1
-                    }
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.txIconText,
-                      { color: tx.type === 'credit' ? theme.success : theme.textPrimary }
-                    ]}
-                  >
-                    {tx.type === 'credit' ? '↓' : '↑'}
-                  </Text>
-                </View>
-
-                <View style={styles.txInfo}>
-                  <Text style={[styles.txTitle, { color: theme.textPrimary }]}>
-                    {tx.title}
-                  </Text>
-                  <Text style={[styles.txDate, { color: theme.textSecondary }]}>
-                    {tx.date} • {tx.id}
-                  </Text>
-                </View>
-
-                <View style={styles.txRight}>
-                  <Text
-                    style={[
-                      styles.txAmount,
-                      { color: tx.type === 'credit' ? theme.success : theme.textPrimary }
-                    ]}
-                  >
-                    {tx.amount}
-                  </Text>
-                  <Text style={[styles.txStatus, { color: theme.success }]}>
-                    {tx.status} ✓
-                  </Text>
-                </View>
+            {ledger.length === 0 ? (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>No transactions recorded yet.</Text>
               </View>
-            ))}
+            ) : (
+              ledger.map((tx) => (
+                <View
+                  key={tx.id}
+                  style={[styles.txRow, { borderBottomColor: theme.borderLight }]}
+                >
+                  <View
+                    style={[
+                      styles.txIconBox,
+                      {
+                        backgroundColor: tx.type === 'credit' ? theme.successLight : theme.primaryLight,
+                        borderColor: theme.border,
+                        borderWidth: 1
+                      }
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.txIconText,
+                        { color: tx.type === 'credit' ? theme.success : theme.textPrimary }
+                      ]}
+                    >
+                      {tx.type === 'credit' ? '↓' : '↑'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.txInfo}>
+                    <Text style={[styles.txTitle, { color: theme.textPrimary }]}>
+                      {tx.title}
+                    </Text>
+                    <Text style={[styles.txDate, { color: theme.textSecondary }]}>
+                      {tx.date} • {tx.id}
+                    </Text>
+                  </View>
+
+                  <View style={styles.txRight}>
+                    <Text
+                      style={[
+                        styles.txAmount,
+                        { color: tx.type === 'credit' ? theme.success : theme.textPrimary }
+                      ]}
+                    >
+                      {tx.amount}
+                    </Text>
+                    <Text style={[styles.txStatus, { color: theme.success }]}>
+                      {tx.status} ✓
+                    </Text>
+                  </View>
+                </View>
+              ))
+            )}
           </GlassCard>
         </ScrollView>
 

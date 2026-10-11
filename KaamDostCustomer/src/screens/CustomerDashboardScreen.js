@@ -1,24 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
 import GlassButton from '../../../shared/components/glass/GlassButton';
 import GlassProfileCard from '../../../shared/components/glass/GlassProfileCard';
 import GlassPaymentCard from '../../../shared/components/glass/GlassPaymentCard';
+import GlassFloatingBottomNav from '../../../shared/components/glass/GlassFloatingBottomNav';
 import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
 import { t } from '../../../shared/i18n';
 
-export default function CustomerDashboardScreen({ customer, onBack, onLogout, onRestartOnboarding, onSelectPastBooking }) {
+export default function CustomerDashboardScreen({
+  customer,
+  onBack,
+  onOpenHome,
+  onOpenFindWorkers,
+  onOpenBookings,
+  onOpenTracking,
+  onOpenDashboard,
+  onLogout,
+  onDeleteAccount,
+  onRestartOnboarding,
+  onSelectPastBooking
+}) {
   const { theme, themeId, switchTheme, shadows } = useTheme();
   const [showThemeModal, setShowThemeModal] = useState(false);
+  const [pastBookings, setPastBookings] = useState([]);
 
-  const pastBookings = [
-    { id: 'BK-1001', trade: 'plumbing', tradeName: 'Plumber', worker: 'Venkat Rao', date: 'Yesterday', amount: 849, status: 'COMPLETED' },
-    { id: 'BK-1002', trade: 'electrical', tradeName: 'Electrician', worker: 'K. Shiva Kumar', date: '22 Sep 2026', amount: 899, status: 'COMPLETED' },
-    { id: 'BK-1003', trade: 'masonry', tradeName: 'Mason', worker: 'Ramesh Reddy', date: '15 Sep 2026', amount: 1045, status: 'COMPLETED' }
-  ];
+  const handleDeleteAccountPress = () => {
+    Alert.alert(
+      'Permanently Delete Account?',
+      `Are you sure you want to permanently delete your account (${customer?.phone || ''})? All your profile information, addresses, and history will be erased immediately. This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Permanently',
+          style: 'destructive',
+          onPress: () => {
+            if (onDeleteAccount) onDeleteAccount();
+            else if (onLogout) onLogout();
+          }
+        }
+      ]
+    );
+  };
+
+  useEffect(() => {
+    const loadBookings = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('@kaamdost_booking_history');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const cleanList = parsed.filter(b => b.id !== 'BK-7821' && b.id !== 'BK-5409');
+            setPastBookings(cleanList);
+            if (cleanList.length !== parsed.length) {
+              await AsyncStorage.setItem('@kaamdost_booking_history', JSON.stringify(cleanList)).catch(() => {});
+            }
+            return;
+          }
+        }
+        setPastBookings([]);
+      } catch (e) {
+        setPastBookings([]);
+      }
+    };
+    loadBookings();
+  }, []);
 
   const themesSummary = [
     { id: 'light_navy', name: 'Light + Navy Blue', subtitle: 'Default • Cool white & Royal navy', bg: '#F4F8FC', primary: '#0B2341' },
@@ -60,16 +110,16 @@ export default function CustomerDashboardScreen({ customer, onBack, onLogout, on
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Profile Header Glass Card */}
           <GlassProfileCard
-            name={customer?.name || 'Ravi Kumar'}
-            phone={customer?.phone || '9876543210'}
-            city={customer?.address?.city || 'Sangareddy'}
-            isVerified={true}
+            name={customer?.name || 'Guest User'}
+            phone={customer?.phone || 'Not logged in'}
+            city={customer?.address?.city || ''}
+            isVerified={!!customer?.isVerified}
           />
 
           {/* Wallet Balance Glass Card */}
           <GlassPaymentCard
-            balance={100}
-            bonusAmount={100}
+            balance={customer?.walletBalance || 0}
+            bonusAmount={0}
             onAddMoney={() => Alert.alert('Add Funds', 'Instant UPI top-up enabled via secure gateway.')}
           />
 
@@ -168,10 +218,12 @@ export default function CustomerDashboardScreen({ customer, onBack, onLogout, on
               </View>
               <View style={styles.addressInfo}>
                 <Text style={[styles.addressType, { color: theme.textPrimary }]}>
-                  Home (Default Delivery Point)
+                  {customer?.address?.addressType || 'Service Address'}
                 </Text>
                 <Text style={[styles.addressText, { color: theme.textSecondary }]}>
-                  Plot 42, Near Old Bus Stand Road, Sangareddy, Telangana - 502001
+                  {customer?.address
+                    ? [customer.address.houseNo, customer.address.street, customer.address.landmark, customer.address.city, customer.address.pincode].filter(Boolean).join(', ')
+                    : 'No address added yet'}
                 </Text>
               </View>
             </View>
@@ -182,41 +234,47 @@ export default function CustomerDashboardScreen({ customer, onBack, onLogout, on
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
               Past Bookings History
             </Text>
-            {pastBookings.map((b) => (
-              <TouchableOpacity
-                key={b.id}
-                style={[styles.bookingItem, { borderBottomColor: theme.borderLight }]}
-                onPress={() => onSelectPastBooking && onSelectPastBooking(b)}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.bookingIcon,
-                    { backgroundColor: theme.primaryLight, borderColor: theme.border, borderWidth: 1 }
-                  ]}
+            {pastBookings.length === 0 ? (
+              <View style={{ paddingVertical: 14, alignItems: 'center' }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>No past bookings found.</Text>
+              </View>
+            ) : (
+              pastBookings.map((b) => (
+                <TouchableOpacity
+                  key={b.id}
+                  style={[styles.bookingItem, { borderBottomColor: theme.borderLight }]}
+                  onPress={() => onSelectPastBooking && onSelectPastBooking(b)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.bIconEmoji}>🛠️</Text>
-                </View>
-                <View style={styles.bookingInfo}>
-                  <Text style={[styles.bookingTrade, { color: theme.textPrimary }]}>
-                    {b.tradeName} • {b.worker}
-                  </Text>
-                  <Text style={[styles.bookingDate, { color: theme.textSecondary }]}>
-                    {b.date} • {b.id}
-                  </Text>
-                </View>
-                <View style={styles.bookingRight}>
-                  <Text style={[styles.bookingAmount, { color: theme.textPrimary }]}>
-                    ₹{b.amount}
-                  </Text>
-                  <View style={[styles.statusTag, { backgroundColor: theme.successLight }]}>
-                    <Text style={[styles.statusText, { color: theme.success }]}>
-                      Completed ✓
+                  <View
+                    style={[
+                      styles.bookingIcon,
+                      { backgroundColor: theme.primaryLight, borderColor: theme.border, borderWidth: 1 }
+                    ]}
+                  >
+                    <Text style={styles.bIconEmoji}>🛠️</Text>
+                  </View>
+                  <View style={styles.bookingInfo}>
+                    <Text style={[styles.bookingTrade, { color: theme.textPrimary }]}>
+                      {b.tradeName} • {b.worker}
+                    </Text>
+                    <Text style={[styles.bookingDate, { color: theme.textSecondary }]}>
+                      {b.date} • {b.id}
                     </Text>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+                  <View style={styles.bookingRight}>
+                    <Text style={[styles.bookingAmount, { color: theme.textPrimary }]}>
+                      ₹{b.amount}
+                    </Text>
+                    <View style={[styles.statusTag, { backgroundColor: theme.successLight }]}>
+                      <Text style={[styles.statusText, { color: theme.success }]}>
+                        Completed ✓
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
           </GlassCard>
 
           {/* Logout Button */}
@@ -227,13 +285,43 @@ export default function CustomerDashboardScreen({ customer, onBack, onLogout, on
             size="md"
             style={{
               marginTop: 10,
-              marginBottom: 34,
-              borderColor: theme.danger,
-              backgroundColor: theme.dangerLight
+              marginBottom: 12,
+              borderColor: theme.border,
+              backgroundColor: 'transparent'
             }}
-            textStyle={{ color: theme.danger }}
+            textStyle={{ color: theme.textSecondary }}
           />
+
+          {/* Delete Account Button */}
+          <TouchableOpacity
+            style={{
+              paddingVertical: 14,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 34
+            }}
+            onPress={handleDeleteAccountPress}
+            activeOpacity={0.7}
+          >
+            <Text style={{ color: '#DC2626', fontSize: 13, fontWeight: '700' }}>
+              🗑️ Delete My Account Permanently
+            </Text>
+          </TouchableOpacity>
+
+          <View style={{ height: 90 }} />
         </ScrollView>
+
+        {/* Floating Capsule Bottom Navigation Bar */}
+        <GlassFloatingBottomNav
+          activeId="profile"
+          onSelect={(id) => {
+            if (id === 'book') (onOpenFindWorkers ? onOpenFindWorkers() : onOpenHome());
+            else if (id === 'home') (onOpenHome ? onOpenHome() : onBack());
+            else if (id === 'jobs' || id === 'works' || id === 'trades' || id === 'workers') (onOpenFindWorkers ? onOpenFindWorkers() : null);
+            else if (id === 'bookings' || id === 'orders' || id === 'history') (onOpenBookings ? onOpenBookings() : null);
+            else if (id === 'wallet') (onOpenBookings ? onOpenBookings() : null);
+          }}
+        />
 
         <ThemeSwitcherModal
           visible={showThemeModal}
@@ -281,7 +369,8 @@ const styles = StyleSheet.create({
     fontSize: 16
   },
   content: {
-    padding: 16
+    padding: 16,
+    paddingBottom: 90
   },
   themeSectionCard: {
     marginVertical: 6,

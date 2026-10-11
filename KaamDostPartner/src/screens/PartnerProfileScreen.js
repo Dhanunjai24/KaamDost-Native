@@ -14,13 +14,6 @@ export default function PartnerProfileScreen({ partner, onBack, onLogout, onRest
 
   const themesSummary = [
     {
-      id: 'slate_orange',
-      name: 'Dark Slate + Saffron Orange',
-      subtitle: 'Partner Hero • High-visibility outdoor contrast',
-      bg: '#0B1320',
-      primary: '#FF6B00'
-    },
-    {
       id: 'light_navy',
       name: 'Light + Navy Blue',
       subtitle: 'Cool white & Royal navy typography',
@@ -71,7 +64,7 @@ export default function PartnerProfileScreen({ partner, onBack, onLogout, onRest
             <View style={[styles.avatar, { borderColor: theme.accentPrimary }]}>
               <Text style={styles.avatarEmoji}>👷</Text>
             </View>
-            <Text style={[styles.name, { color: theme.textPrimary }]}>{partner?.name || 'Ramesh Reddy'}</Text>
+            <Text style={[styles.name, { color: theme.textPrimary }]}>{partner?.name || 'Partner'}</Text>
             <Text style={[styles.trade, { color: theme.accentPrimary }]}>{partner?.tradeName || 'Mason / Civil Work'}</Text>
 
             <View style={styles.badgeRow}>

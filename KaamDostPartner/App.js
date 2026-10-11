@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, StatusBar, BackHandler } from 'react-native';
+import { View, StyleSheet, StatusBar, BackHandler, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
+
+LogBox.ignoreAllLogs();
 import { ThemeProvider } from '../shared/theme/ThemeContext';
 import PartnerLanguageScreen from './src/screens/PartnerLanguageScreen';
 import PartnerLoginScreen from './src/screens/PartnerLoginScreen';
@@ -18,18 +20,9 @@ enableScreens();
 
 export default function App({ onSwitchToCustomer }) {
   // Screen routing: language -> login -> register -> address -> kyc -> accountComplete -> dashboard
-  const [currentScreen, setCurrentScreen] = useState('dashboard');
-  const [partner, setPartner] = useState({
-    id: 'w_101',
-    name: 'Ramesh Reddy',
-    phone: '9848012345',
-    trade: 'masonry',
-    tradeName: 'Mason / Civil Work',
-    dailyRate: 950,
-    city: 'Sangareddy',
-    experienceYears: 8,
-    isVerified: true
-  });
+  const [currentScreen, setCurrentScreen] = useState('language');
+  const [partnerLang, setPartnerLang] = useState('te');
+  const [partner, setPartner] = useState(null);
 
   // Native Android hardware back button handler
   useEffect(() => {
@@ -47,19 +40,23 @@ export default function App({ onSwitchToCustomer }) {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider initialTheme="slate_orange" storageKey="@kaamdost_partner_theme_id">
-        <StatusBar barStyle="light-content" backgroundColor="#0B1320" />
+      <ThemeProvider initialTheme="light_navy" storageKey="@kaamdost_partner_theme_id">
+        <StatusBar barStyle="dark-content" backgroundColor="#F4F8FC" />
         <View style={styles.container}>
         {/* Step 1: Language Selection */}
         {currentScreen === 'language' && (
           <PartnerLanguageScreen
-            onContinue={(lang) => setCurrentScreen('login')}
+            onContinue={(lang) => {
+            setPartnerLang(lang || 'te');
+            setCurrentScreen('login');
+          }}
           />
         )}
 
         {/* Step 2: Mobile Login + OTP */}
         {currentScreen === 'login' && (
           <PartnerLoginScreen
+            lang={partnerLang}
             onLoginSuccess={(p) => {
               setPartner(prev => ({ ...prev, ...p }));
               setCurrentScreen('dashboard');
@@ -75,7 +72,8 @@ export default function App({ onSwitchToCustomer }) {
         {/* Step 3: Trade & Profile Registration */}
         {currentScreen === 'register' && (
           <PartnerRegisterScreen
-            phone={partner.phone}
+            lang={partnerLang}
+            phone={partner?.phone || ''}
             onContinue={(p) => {
               setPartner(prev => ({ ...prev, ...p }));
               setCurrentScreen('address');
@@ -87,6 +85,7 @@ export default function App({ onSwitchToCustomer }) {
         {/* Step 4: Service Base Address & Radius */}
         {currentScreen === 'address' && (
           <PartnerAddressScreen
+            lang={partnerLang}
             partnerData={partner}
             onContinue={(addr) => {
               setPartner(prev => ({ ...prev, address: addr }));
@@ -99,6 +98,7 @@ export default function App({ onSwitchToCustomer }) {
         {/* Step 5: Aadhaar e-KYC & Live Selfie */}
         {currentScreen === 'kyc' && (
           <PartnerKycScreen
+            lang={partnerLang}
             partnerData={partner}
             onKycApproved={(p) => {
               setPartner(prev => ({ ...prev, ...p }));
@@ -111,8 +111,12 @@ export default function App({ onSwitchToCustomer }) {
         {/* Step 6: 6-Point Onboarding Checklist Complete */}
         {currentScreen === 'accountComplete' && (
           <PartnerAccountCompleteScreen
+            lang={partnerLang}
             partner={partner}
-            onProceedDashboard={() => setCurrentScreen('dashboard')}
+            onProceedDashboard={() => {
+              setPartner(prev => ({ ...prev, registered: true }));
+              setCurrentScreen('dashboard');
+            }}
           />
         )}
 
@@ -152,6 +156,6 @@ export default function App({ onSwitchToCustomer }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B1320'
+    backgroundColor: '#F4F8FC'
   }
 });
