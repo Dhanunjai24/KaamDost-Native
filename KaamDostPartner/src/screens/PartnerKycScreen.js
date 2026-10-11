@@ -151,22 +151,39 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
     );
   };
 
-  const handleSelfieCamera = async () => {
+  const handleTakeLiveSelfie = async () => {
     try {
       const hasPermission = await requestCameraPermission();
       if (!hasPermission) {
         Alert.alert(
           isTe ? 'కెమెరా అనుమతి అవసరం' : 'Camera Permission Needed',
-          isTe ? 'లైవ్ సెల్ఫీ వెరిఫికేషన్ కోసం ఫ్రంట్ కెమెరా అనుమతి తప్పనిసరి.' : 'Live selfie verification requires camera access.'
+          isTe ? 'లైవ్ AI ఫేస్ రికగ్నిషన్ కోసం కెమెరా అనుమతి తప్పనిసరి.' : 'Camera access is required for AI Live Face Recognition.'
         );
         return;
       }
 
+      // 1. Primary: Real-time native AI Face Auto-Capture (Google ML Kit with Anti-Shake & Anti-Blur)
+      if (NativeModules.FaceRecognitionModule && NativeModules.FaceRecognitionModule.startFaceCapture) {
+        try {
+          const result = await NativeModules.FaceRecognitionModule.startFaceCapture();
+          if (result && result.success && result.uri) {
+            setSelfieUri(result.uri);
+            setErrorMsg('');
+            return;
+          } else if (result && result.error === 'Cancelled') {
+            return;
+          }
+        } catch (nativeErr) {
+          console.warn('Native FaceRecognitionModule error:', nativeErr);
+        }
+      }
+
+      // 2. Fallback camera if native activity cannot launch
       launchCamera(
         {
           mediaType: 'photo',
           cameraType: 'front',
-          quality: 0.85,
+          quality: 0.9,
           maxWidth: 1280,
           maxHeight: 1280,
           saveToPhotos: false
@@ -176,7 +193,7 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
           if (res.errorCode) {
             Alert.alert(
               isTe ? 'కెమెరా లోపం' : 'Camera Error',
-              res.errorMessage || (isTe ? 'సెల్ఫీ తీయడం విఫలమైంది' : 'Failed to capture selfie')
+              res.errorMessage || (isTe ? 'సెల్ఫీ తీయడం విఫలమైంది' : 'Failed to capture live selfie')
             );
             return;
           }
@@ -187,63 +204,12 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
         }
       );
     } catch (err) {
-      console.warn('handleSelfieCamera error:', err);
+      console.warn('handleTakeLiveSelfie error:', err);
       Alert.alert(
         isTe ? 'లోపం' : 'Error',
-        isTe ? 'సెల్ఫీ కెమెరా తెరవడం విఫలమైంది.' : 'Could not open camera for selfie.'
+        isTe ? 'లైవ్ ఫేస్ రికగ్నిషన్ ప్రారంభించడం విఫలమైంది.' : 'Could not launch live face recognition.'
       );
     }
-  };
-
-  const handleSelfieGallery = () => {
-    try {
-      launchImageLibrary(
-        {
-          mediaType: 'photo',
-          quality: 0.85,
-          maxWidth: 1280,
-          maxHeight: 1280
-        },
-        (res) => {
-          if (res.didCancel) return;
-          if (res.errorCode) {
-            Alert.alert(
-              isTe ? 'గ్యాలరీ లోపం' : 'Gallery Error',
-              res.errorMessage || (isTe ? 'ఫోటో ఎంచుకోవడం విఫలమైంది' : 'Failed to select photo')
-            );
-            return;
-          }
-          if (res.assets && res.assets[0]?.uri) {
-            setSelfieUri(res.assets[0].uri);
-            setErrorMsg('');
-          }
-        }
-      );
-    } catch (err) {
-      console.warn('handleSelfieGallery error:', err);
-      Alert.alert(
-        isTe ? 'లోపం' : 'Error',
-        isTe ? 'గ్యాలరీ తెరవడం విఫలమైంది.' : 'Could not open gallery.'
-      );
-    }
-  };
-
-  const handleTakeLiveSelfie = () => {
-    Alert.alert(
-      isTe ? 'లైవ్ సెల్ఫీ వెరిఫికేషన్' : 'Live Selfie Verification',
-      isTe ? 'దయచేసి ఒక ఎంపికను ఎంచుకోండి:' : 'Please choose an option to upload your photo:',
-      [
-        {
-          text: isTe ? '📷 ఫ్రంట్ కెమెరాతో సెల్ఫీ తీయండి' : '📷 Take Selfie (Camera)',
-          onPress: handleSelfieCamera
-        },
-        {
-          text: isTe ? '🖼️ గ్యాలరీ నుండి ఎంచుకోండి' : '🖼️ Choose from Gallery',
-          onPress: handleSelfieGallery
-        },
-        { text: isTe ? 'రద్దు' : 'Cancel', style: 'cancel' }
-      ]
-    );
   };
 
   const handleSubmitKyc = async () => {
@@ -393,21 +359,21 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
             </View>
           </GlassCard>
 
-          {/* 2. Profile Photo / Selfie */}
+          {/* 2. Live Face Recognition Auto-Capture (Same as Customer App) */}
           <GlassCard style={styles.card}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>{isTe ? '2. ప్రొఫైల్ ఫోటో / సెల్ఫీ' : '2. Profile Photo / Selfie'}</Text>
+              <Text style={styles.sectionTitle}>{isTe ? '2. లైవ్ ఫేస్ రికగ్నిషన్' : '2. Live Face Recognition'}</Text>
               <View style={styles.liveBadge}>
-                <Text style={styles.liveBadgeText}>{isTe ? 'కెమెరా / గ్యాలరీ' : 'CAMERA / GALLERY'}</Text>
+                <Text style={styles.liveBadgeText}>{isTe ? '✨ AI ఆటో-క్యాప్చర్' : '✨ AI AUTO-CAPTURE'}</Text>
               </View>
             </View>
             <Text style={styles.sectionDesc}>
               {isTe
-                ? 'మీ ప్రొఫైల్ మరియు ధృవీకరణ కోసం మీ ఫోటోను కెమెరాతో తీయండి లేదా గ్యాలరీ నుండి ఎంచుకోండి.'
-                : 'Take a clear photo of yourself or choose from your gallery for your partner profile.'}
+                ? 'ముఖాన్ని ఓవల్ ఫ్రేమ్‌లో ఉంచండి. AI స్వయంచాలకంగా మీ ముఖాన్ని గుర్తించి, బటన్లు నొక్కకుండానే ఫోటోను ఆటో-క్యాప్చర్ చేస్తుంది.'
+                : 'Align your face in the oval frame. AI will automatically detect your face, verify liveness, and auto-capture the picture without pressing any buttons.'}
             </Text>
 
-            {/* Photo Preview Container */}
+            {/* Oval Face Scanner */}
             <TouchableOpacity
               style={styles.selfieOval}
               onPress={handleTakeLiveSelfie}
@@ -416,36 +382,28 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
               {selfieUri ? (
                 <Image source={{ uri: selfieUri }} style={styles.selfieImage} resizeMode="cover" />
               ) : (
-                <Text style={styles.selfieEmoji}>📸</Text>
+                <Text style={styles.selfieEmoji}>👤</Text>
               )}
               <View style={[styles.selfieBadge, !selfieUri && styles.selfieBadgePending]}>
                 <Text style={styles.selfieBadgeText}>
                   {selfieUri
-                    ? (isTe ? 'ఫోటో ఎంపిక చేయబడింది ✓' : 'Photo Selected ✓')
-                    : (isTe ? 'ఫోటో అప్‌లోడ్ చేయండి *' : 'Upload Photo *')}
+                    ? (isTe ? 'ముఖం ధృవీకరించబడింది ✓' : 'Face Verified & Captured ✓')
+                    : (isTe ? 'ఫేస్ స్కానర్ ప్రారంభించండి *' : 'Start Face Scanner *')}
                 </Text>
               </View>
             </TouchableOpacity>
 
-            {/* Action Buttons Row */}
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-              <TouchableOpacity
-                style={[styles.docBtn, { flex: 1, backgroundColor: '#0B2341' }]}
-                onPress={handleSelfieCamera}
-              >
-                <Text style={[styles.docBtnText, { color: '#FFF' }]}>
-                  {isTe ? '📷 కెమెరా' : '📷 Take Photo'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.docBtn, { flex: 1, backgroundColor: '#E2E8F0' }]}
-                onPress={handleSelfieGallery}
-              >
-                <Text style={[styles.docBtnText, { color: '#0F172A' }]}>
-                  {isTe ? '🖼️ గ్యాలరీ' : '🖼️ Gallery'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            {/* Start / Retake Button */}
+            <TouchableOpacity
+              style={styles.retakeBtn}
+              onPress={handleTakeLiveSelfie}
+            >
+              <Text style={styles.retakeText}>
+                {selfieUri
+                  ? (isTe ? 'మళ్లీ స్కాన్ చేయండి (ఆటో-క్యాప్చర్)' : 'Retake Face Scan (Auto-Capture)')
+                  : (isTe ? 'AI ఫేస్ రికగ్నిషన్ ప్రారంభించండి (ఆటో-ఫోటో) *' : 'Start AI Face Recognition (Auto-Picture) *')}
+              </Text>
+            </TouchableOpacity>
           </GlassCard>
 
           {/* 3. Payout Banking Details */}

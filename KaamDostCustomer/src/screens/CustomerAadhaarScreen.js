@@ -121,60 +121,55 @@ export default function CustomerAadhaarScreen({ onContinue }) {
   };
 
   const handleTakeLiveSelfie = async () => {
-    Alert.alert(
-      'Profile Photo / Selfie',
-      'Please choose an option to upload your verification photo:',
-      [
-        {
-          text: '📷 Take Photo (Camera)',
-          onPress: async () => {
-            const hasPermission = await requestCameraPermission();
-            if (!hasPermission) {
-              Alert.alert('Camera Permission Needed', 'Camera access is required to take a verification photo.');
-              return;
-            }
-            launchCamera(
-              {
-                mediaType: 'photo',
-                cameraType: 'front',
-                quality: 0.85,
-                saveToPhotos: false
-              },
-              (res) => {
-                if (res.didCancel) return;
-                if (res.errorCode) {
-                  Alert.alert('Camera Error', res.errorMessage || 'Unable to open camera.');
-                  return;
-                }
-                if (res.assets && res.assets[0]?.uri) {
-                  setSelfieUri(res.assets[0].uri);
-                  setErrorMsg('');
-                }
-              }
-            );
-          }
-        },
-        {
-          text: '🖼️ Choose from Gallery',
-          onPress: () => {
-            launchImageLibrary(
-              { mediaType: 'photo', quality: 0.85, maxWidth: 1280, maxHeight: 1280 },
-              (res) => {
-                if (res.didCancel) return;
-                if (res.errorCode) {
-                  Alert.alert('Gallery Error', res.errorMessage || 'Unable to open gallery.');
-                  return;
-                }
-                if (res.assets && res.assets[0]?.uri) {
-                  setSelfieUri(res.assets[0].uri);
-                  setErrorMsg('');
-                }
-              }
-            );
-          }
-        },
-        { text: 'Cancel', style: 'cancel' }
-      ]
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      Alert.alert(
+        'Camera Permission Needed',
+        'Live selfie verification strictly requires front camera access. Manual/gallery upload is not permitted for security.'
+      );
+      return;
+    }
+
+    if (NativeModules.FaceRecognitionModule && NativeModules.FaceRecognitionModule.startFaceCapture) {
+      try {
+        const result = await NativeModules.FaceRecognitionModule.startFaceCapture();
+        if (result && result.success && result.uri) {
+          setSelfieUri(result.uri);
+          setErrorMsg('');
+          return;
+        } else if (result && result.error && result.error !== 'Cancelled') {
+          Alert.alert('Face Recognition Notice', result.error);
+          return;
+        } else if (result && result.error === 'Cancelled') {
+          return; // User dismissed scanner
+        }
+      } catch (err) {
+        console.warn('Native FaceRecognition error:', err);
+      }
+    }
+
+    // Direct front camera fallback
+    launchCamera(
+      {
+        mediaType: 'photo',
+        cameraType: 'front',
+        quality: 0.85,
+        saveToPhotos: false
+      },
+      (res) => {
+        if (res.didCancel) return;
+        if (res.errorCode) {
+          Alert.alert(
+            'Camera Error',
+            res.errorMessage || 'Unable to open camera for live selfie. Direct camera capture is required.'
+          );
+          return;
+        }
+        if (res.assets && res.assets[0]?.uri) {
+          setSelfieUri(res.assets[0].uri);
+          setErrorMsg('');
+        }
+      }
     );
   };
 

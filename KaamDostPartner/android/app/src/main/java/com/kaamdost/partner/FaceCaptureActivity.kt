@@ -47,7 +47,7 @@ class FaceCaptureActivity : AppCompatActivity() {
 
     // Anti-shake & stability tracking
     private var steadyFramesCount = 0
-    private val requiredSteadyFrames = 12 // ~0.8s - 1.0s of continuous zero-shake & sharp frames
+    private val requiredSteadyFrames = 15 // ~1.0s of continuous zero-shake & sharp frames
     private var prevCenterX: Float? = null
     private var prevCenterY: Float? = null
     private var prevFaceWidth: Float? = null
@@ -404,14 +404,14 @@ class FaceCaptureActivity : AppCompatActivity() {
         }
 
         // 2. Anti-Blur Sharpness Check
-        if (sharpnessScore < 8.5) {
+        if (sharpnessScore < 9.0) {
             steadyFramesCount = 0
             mainHandler.post {
                 overlayView.statusColor = Color.parseColor("#F59E0B") // Amber
                 overlayView.progressPercent = 0f
                 statusText.text = "Image Blurry — Hold Steady"
                 statusText.setTextColor(Color.parseColor("#F59E0B"))
-                hintText.text = "Ensure good lighting and avoid camera shake."
+                hintText.text = "Ensure good lighting and hold phone completely still. No blur allowed."
             }
             return
         }
