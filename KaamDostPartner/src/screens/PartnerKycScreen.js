@@ -393,21 +393,21 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
             </View>
           </GlassCard>
 
-          {/* 2. Live Face Recognition Auto-Capture (Same as Customer App) */}
+          {/* 2. Profile Photo / Selfie */}
           <GlassCard style={styles.card}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>{isTe ? '2. లైవ్ ఫేస్ రికగ్నిషన్' : '2. Live Face Recognition'}</Text>
+              <Text style={styles.sectionTitle}>{isTe ? '2. ప్రొఫైల్ ఫోటో / సెల్ఫీ' : '2. Profile Photo / Selfie'}</Text>
               <View style={styles.liveBadge}>
-                <Text style={styles.liveBadgeText}>{isTe ? '✨ AI ఆటో-క్యాప్చర్' : '✨ AI AUTO-CAPTURE'}</Text>
+                <Text style={styles.liveBadgeText}>{isTe ? 'కెమెరా / గ్యాలరీ' : 'CAMERA / GALLERY'}</Text>
               </View>
             </View>
             <Text style={styles.sectionDesc}>
               {isTe
-                ? 'ముఖాన్ని ఓవల్ ఫ్రేమ్‌లో ఉంచండి. AI స్వయంచాలకంగా మీ ముఖాన్ని గుర్తించి, బటన్లు నొక్కకుండానే ఫోటోను ఆటో-క్యాప్చర్ చేస్తుంది.'
-                : 'Align your face in the oval frame. AI will automatically detect your face, verify liveness, and auto-capture the picture without pressing any buttons.'}
+                ? 'మీ ప్రొఫైల్ మరియు ధృవీకరణ కోసం మీ ఫోటోను కెమెరాతో తీయండి లేదా గ్యాలరీ నుండి ఎంచుకోండి.'
+                : 'Take a clear photo of yourself or choose from your gallery for your partner profile.'}
             </Text>
 
-            {/* Oval Face Scanner */}
+            {/* Photo Preview Container */}
             <TouchableOpacity
               style={styles.selfieOval}
               onPress={handleTakeLiveSelfie}
@@ -416,28 +416,36 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
               {selfieUri ? (
                 <Image source={{ uri: selfieUri }} style={styles.selfieImage} resizeMode="cover" />
               ) : (
-                <Text style={styles.selfieEmoji}>👤</Text>
+                <Text style={styles.selfieEmoji}>📸</Text>
               )}
               <View style={[styles.selfieBadge, !selfieUri && styles.selfieBadgePending]}>
                 <Text style={styles.selfieBadgeText}>
                   {selfieUri
-                    ? (isTe ? 'ముఖం ధృవీకరించబడింది ✓' : 'Face Verified & Captured ✓')
-                    : (isTe ? 'ఫేస్ స్కానర్ ప్రారంభించండి *' : 'Start Face Scanner *')}
+                    ? (isTe ? 'ఫోటో ఎంపిక చేయబడింది ✓' : 'Photo Selected ✓')
+                    : (isTe ? 'ఫోటో అప్‌లోడ్ చేయండి *' : 'Upload Photo *')}
                 </Text>
               </View>
             </TouchableOpacity>
 
-            {/* Start / Retake Button */}
-            <TouchableOpacity
-              style={styles.retakeBtn}
-              onPress={handleTakeLiveSelfie}
-            >
-              <Text style={styles.retakeText}>
-                {selfieUri
-                  ? (isTe ? 'మళ్లీ స్కాన్ చేయండి (ఆటో-క్యాప్చర్)' : 'Retake Face Scan (Auto-Capture)')
-                  : (isTe ? 'AI ఫేస్ రికగ్నిషన్ ప్రారంభించండి (ఆటో-ఫోటో) *' : 'Start AI Face Recognition (Auto-Picture) *')}
-              </Text>
-            </TouchableOpacity>
+            {/* Action Buttons Row */}
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+              <TouchableOpacity
+                style={[styles.docBtn, { flex: 1, backgroundColor: '#0B2341' }]}
+                onPress={handleSelfieCamera}
+              >
+                <Text style={[styles.docBtnText, { color: '#FFF' }]}>
+                  {isTe ? '📷 కెమెరా' : '📷 Take Photo'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.docBtn, { flex: 1, backgroundColor: '#E2E8F0' }]}
+                onPress={handleSelfieGallery}
+              >
+                <Text style={[styles.docBtnText, { color: '#0F172A' }]}>
+                  {isTe ? '🖼️ గ్యాలరీ' : '🖼️ Gallery'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </GlassCard>
 
           {/* 3. Payout Banking Details */}
