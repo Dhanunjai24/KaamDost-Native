@@ -304,7 +304,6 @@ onOpenSos={() => setShowSosModal(true)}
             visible={showAdminModal}
             onClose={() => setShowAdminModal(false)}
           />
-        />
       </GlassBackground>
     </SafeAreaView>
   );
