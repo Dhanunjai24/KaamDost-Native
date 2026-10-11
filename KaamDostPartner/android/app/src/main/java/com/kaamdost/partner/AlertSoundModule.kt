@@ -1,11 +1,11 @@
 package com.kaamdost.partner
 
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.Ringtone
-import android.media.RingtoneManager
-import android.net.Uri
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -14,7 +14,10 @@ import com.facebook.react.bridge.*
 class AlertSoundModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
-    private var currentRingtone: Ringtone? = null
+    private var toneGenerator: ToneGenerator? = null
+    private var isBeeping = false
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var beepRunnable: Runnable? = null
 
     override fun getName(): String = "AlertSoundModule"
 
@@ -22,37 +25,69 @@ class AlertSoundModule(private val reactContext: ReactApplicationContext) :
     fun playJobAlert(promise: Promise? = null) {
         try {
             stopJobAlert()
+            isBeeping = true
 
-            val notificationUri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-
-            val ringtone = RingtoneManager.getRingtone(reactContext, notificationUri)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                ringtone.audioAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_REQUEST)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
+            // Initialize built-in app ToneGenerator on STREAM_ALARM at 100% volume
+            toneGenerator = try {
+                ToneGenerator(AudioManager.STREAM_ALARM, 100)
+            } catch (e: Exception) {
+                try {
+                    ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100)
+                } catch (e2: Exception) {
+                    ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                }
             }
-            ringtone.play()
-            currentRingtone = ringtone
 
+            // Start repeating "beep-beep ... beep-beep" alarm sequence
+            startBeepSequence()
+
+            // Trigger synchronized urgent vibration
             triggerVibration()
+
             promise?.resolve(true)
         } catch (e: Exception) {
             promise?.reject("E_ALERT_SOUND", e.message)
         }
     }
 
+    private fun startBeepSequence() {
+        beepRunnable = object : Runnable {
+            override fun run() {
+                if (!isBeeping) return
+
+                try {
+                    // First Beep (high crisp alert tone ~160ms)
+                    toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP2, 160)
+
+                    // Second Beep after 220ms (double-beep alarm)
+                    mainHandler.postDelayed({
+                        if (!isBeeping) return@postDelayed
+                        toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP2, 180)
+                    }, 220)
+
+                    // Repeat sequence every 850ms ("beep-beep ... beep-beep ...")
+                    mainHandler.postDelayed(this, 850)
+                } catch (e: Exception) {
+                    // Ignore transient audio focus errors
+                }
+            }
+        }
+        beepRunnable?.let { mainHandler.post(it) }
+    }
+
     @ReactMethod
     fun stopJobAlert(promise: Promise? = null) {
         try {
-            currentRingtone?.let {
-                if (it.isPlaying) {
-                    it.stop()
-                }
-            }
-            currentRingtone = null
+            isBeeping = false
+            beepRunnable?.let { mainHandler.removeCallbacks(it) }
+            beepRunnable = null
+
+            try {
+                toneGenerator?.stopTone()
+                toneGenerator?.release()
+            } catch (_: Exception) {}
+            toneGenerator = null
+
             stopVibration()
             promise?.resolve(true)
         } catch (e: Exception) {
@@ -62,18 +97,20 @@ class AlertSoundModule(private val reactContext: ReactApplicationContext) :
 
     private fun triggerVibration() {
         try {
-            val pattern = longArrayOf(0, 600, 250, 600, 250, 1000)
+            // Pulse vibration synchronized with the double beep:
+            // 0ms delay, 180ms vibrate, 80ms pause, 180ms vibrate, 410ms pause (repeats until stopped)
+            val pattern = longArrayOf(0, 180, 80, 180, 410)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vibratorManager = reactContext.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                vibratorManager?.defaultVibrator?.vibrate(VibrationEffect.createWaveform(pattern, -1))
+                vibratorManager?.defaultVibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
             } else {
                 @Suppress("DEPRECATION")
                 val vibrator = reactContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator?.vibrate(VibrationEffect.createWaveform(pattern, -1))
+                    vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
                 } else {
                     @Suppress("DEPRECATION")
-                    vibrator?.vibrate(pattern, -1)
+                    vibrator?.vibrate(pattern, 0)
                 }
             }
         } catch (_: Exception) {}
@@ -90,5 +127,10 @@ class AlertSoundModule(private val reactContext: ReactApplicationContext) :
                 vibrator?.cancel()
             }
         } catch (_: Exception) {}
+    }
+
+    override fun onCatalystInstanceDestroy() {
+        super.onCatalystInstanceDestroy()
+        stopJobAlert()
     }
 }
