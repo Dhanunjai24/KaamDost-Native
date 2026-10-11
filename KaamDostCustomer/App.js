@@ -162,6 +162,15 @@ export default function App({ onSwitchToPartner }) {
       bookingId: newBooking?.id
     });
     realtimeService.bookOrder(newBooking);
+    if (api && api.createBooking) {
+      api.createBooking({
+        ...newBooking,
+        serviceId: newBooking.trade || 'masonry',
+        customerPhone: customer?.phone || '9848012345',
+        customerName: customer?.name || 'Customer',
+        address: newBooking.address || 'Sangareddy, Telangana'
+      }).catch(() => {});
+    }
     setCurrentScreen('tracking');
   };
 

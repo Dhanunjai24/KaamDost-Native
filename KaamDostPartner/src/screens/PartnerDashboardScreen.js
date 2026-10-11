@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, RefreshControl, StyleSheet, StatusBar, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, StyleSheet, StatusBar, Alert, TouchableOpacity, AppState } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PartnerHeader from '../components/PartnerHeader';
 import EarningsCard from '../components/EarningsCard';
@@ -74,9 +74,21 @@ const [showThemeModal, setShowThemeModal] = useState(false);
         Alert.alert('Booking Cancelled', 'The customer cancelled this booking request.');
       });
 
+      const appStateSub = AppState.addEventListener('change', (nextState) => {
+        if (nextState === 'active' && isOnline) {
+          console.log('[PartnerDashboard] App became active; ensuring real-time connection...');
+          realtimeService.connect({
+            userId: partnerId,
+            role: 'worker',
+            trade: partner?.trade || 'all'
+          });
+        }
+      });
+
       return () => {
         unsubAlert();
         unsubCancel();
+        if (appStateSub && appStateSub.remove) appStateSub.remove();
       };
     } else {
       realtimeService.disconnect();

@@ -34,6 +34,7 @@ class RealtimeService {
     this.heartbeatTimer = null;
     this.reconnectTimer = null;
     this.reconnectAttempts = 0;
+    this.pendingQueue = [];
   }
 
   getGatewayUrl() {
@@ -44,7 +45,9 @@ class RealtimeService {
       const formatted = _SOCKET_URL.replace(/^http/, 'ws');
       return formatted.endsWith('/realtime') ? formatted : `${formatted}/realtime`;
     }
-    const host = '127.0.0.1';
+    // Dynamic fallback: 127.0.0.1 (via ADB reverse) or 10.140.249.64 (direct Wi-Fi LAN IP)
+    const hosts = ['127.0.0.1', '10.140.249.64'];
+    const host = hosts[this.reconnectAttempts % hosts.length];
     return `ws://${host}:3000/realtime`;
   }
 
@@ -71,6 +74,14 @@ class RealtimeService {
         this.startHeartbeat();
         this.register(this.userId, this.role, this.trade, this.activeBookingId);
         this.emitLocal('connection_status', { isConnected: true });
+
+        // Drain and flush pending messages
+        while (this.pendingQueue.length > 0) {
+          const queued = this.pendingQueue.shift();
+          try {
+            this.ws.send(JSON.stringify(queued));
+          } catch (e) {}
+        }
       };
 
       this.ws.onmessage = (event) => {
@@ -140,7 +151,14 @@ class RealtimeService {
     if (this.ws && this.ws.readyState === 1) {
       try {
         this.ws.send(JSON.stringify(data));
-      } catch (e) {}
+      } catch (e) {
+        this.pendingQueue.push(data);
+      }
+    } else {
+      this.pendingQueue.push(data);
+      if (!this.ws || this.ws.readyState === 3) {
+        this.connect({ userId: this.userId, role: this.role, trade: this.trade, bookingId: this.activeBookingId });
+      }
     }
   }
 
