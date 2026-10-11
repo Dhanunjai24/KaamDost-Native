@@ -5,9 +5,13 @@ const fs = require('fs');
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(__dirname, '..');
 
-const nodeModulesRoot = fs.existsSync(path.resolve(projectRoot, 'node_modules/react'))
-  ? path.resolve(projectRoot, 'node_modules')
-  : path.resolve(monorepoRoot, 'node_modules');
+const resolveNodeModule = (moduleName) => {
+  const localPath = path.resolve(projectRoot, 'node_modules', moduleName);
+  if (fs.existsSync(localPath)) return localPath;
+  const rootPath = path.resolve(monorepoRoot, 'node_modules', moduleName);
+  if (fs.existsSync(rootPath)) return rootPath;
+  return localPath;
+};
 
 const config = {
   watchFolders: [monorepoRoot],
@@ -16,33 +20,9 @@ const config = {
       path.resolve(projectRoot, 'node_modules'),
       path.resolve(monorepoRoot, 'node_modules'),
     ],
-    extraNodeModules: {
-      'react': path.resolve(nodeModulesRoot, 'react'),
-      'react-native': path.resolve(nodeModulesRoot, 'react-native'),
-    },
-    resolveRequest: (context, moduleName, platform) => {
-      const isProjectDep =
-        moduleName === 'react' ||
-        moduleName.startsWith('react/') ||
-        moduleName === 'react-native' ||
-        moduleName.startsWith('react-native/') ||
-        moduleName === '@react-native-async-storage/async-storage' ||
-        moduleName.startsWith('@react-native-async-storage/') ||
-        moduleName === 'react-native-safe-area-context' ||
-        moduleName.startsWith('react-native-safe-area-context/') ||
-        moduleName === 'react-native-screens' ||
-        moduleName.startsWith('react-native-screens/');
-
-      if (isProjectDep) {
-        return context.resolveRequest(
-          context,
-          path.resolve(nodeModulesRoot, moduleName),
-          platform
-        );
-      }
-      return context.resolveRequest(context, moduleName, platform);
-    },
-    // Block Android Gradle build cache & outputs from file watching
+    extraNodeModules: new Proxy({}, {
+      get: (target, name) => resolveNodeModule(name),
+    }),
     blockList: [
       /.*[/\\]android[/\\]\.gradle[/\\].*/,
       /.*[/\\]android[/\\]build[/\\].*/,

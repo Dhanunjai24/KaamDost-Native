@@ -37,12 +37,12 @@ class RealtimeService {
   }
 
   getGatewayUrl() {
-    if (_SOCKET_URL) {
-      const formatted = _SOCKET_URL.replace(/^http/, 'ws');
-      return formatted.endsWith('/realtime') ? formatted : `${formatted}/realtime`;
-    }
     if (_APP_ENV === 'production') {
       return 'wss://kaamdost.onrender.com/realtime';
+    }
+    if (_SOCKET_URL && !_SOCKET_URL.includes('localhost')) {
+      const formatted = _SOCKET_URL.replace(/^http/, 'ws');
+      return formatted.endsWith('/realtime') ? formatted : `${formatted}/realtime`;
     }
     const host = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
     return `ws://${host}:3000/realtime`;

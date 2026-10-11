@@ -24,9 +24,10 @@
     "labour-marketplace"
   ],
   "author": "KaamDost Team",
-"license": "MIT",
+  "license": "MIT",
   "dependencies": {
     "connect": "3.6.6",
-    "react-native-screens": "3.35.0"
+    "react-native-screens": "3.35.0",
+    "react-native-webview": "^14.0.1"
   }
 }

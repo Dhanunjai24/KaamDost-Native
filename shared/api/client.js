@@ -16,7 +16,6 @@ const LOCAL_HOST = 'http://127.0.0.1:3000';
 // APP_ENV resolved from environment above
 
 export const getBaseUrl = () => {
-  if (_API_BASE_URL && _API_BASE_URL.startsWith('http')) return _API_BASE_URL;
   if (_APP_ENV === 'production') {
     return PRODUCTION_SERVER;
   }
