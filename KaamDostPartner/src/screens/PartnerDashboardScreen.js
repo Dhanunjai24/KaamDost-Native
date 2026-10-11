@@ -15,6 +15,7 @@ import GlassCard from '../../../shared/components/glass/GlassCard';
 import GlassButton from '../../../shared/components/glass/GlassButton';
 import GlassFloatingBottomNav from '../../../shared/components/glass/GlassFloatingBottomNav';
 import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
+import GlassAlertDialog from '../../../shared/components/glass/GlassAlertDialog';
 import { useNotifications } from '../../../shared/services/notificationService';
 import realtimeService from '../../../shared/services/realtimeService';
 
@@ -51,6 +52,37 @@ const [showThemeModal, setShowThemeModal] = useState(false);
   const [activeJob, setActiveJob] = useState(null);
   const [incomingJobRequest, setIncomingJobRequest] = useState(null);
   const [showJobModal, setShowJobModal] = useState(false);
+  const [alertDialog, setAlertDialog] = useState({
+    visible: false,
+    type: 'info',
+    icon: null,
+    title: '',
+    message: '',
+    primaryText: 'OK',
+    secondaryText: null,
+    onPrimary: null,
+    onSecondary: null
+  });
+
+  const showGlassAlert = (title, message, options = {}) => {
+    setAlertDialog({
+      visible: true,
+      type: options.type || 'info',
+      icon: options.icon || null,
+      title,
+      message,
+      primaryText: options.primaryText || 'OK',
+      secondaryText: options.secondaryText || null,
+      onPrimary: () => {
+        setAlertDialog(prev => ({ ...prev, visible: false }));
+        if (options.onPrimary) options.onPrimary();
+      },
+      onSecondary: () => {
+        setAlertDialog(prev => ({ ...prev, visible: false }));
+        if (options.onSecondary) options.onSecondary();
+      }
+    });
+  };
 
   // Sync with realtime gateway when partner is online
   useEffect(() => {
@@ -71,7 +103,7 @@ const [showThemeModal, setShowThemeModal] = useState(false);
         setShowJobModal(false);
         setIncomingJobRequest(null);
         setActiveJob(null);
-        Alert.alert('Booking Cancelled', 'The customer cancelled this booking request.');
+        showGlassAlert('Booking Cancelled', 'The customer cancelled this booking request.', { type: 'danger', icon: '⚠️', primaryText: 'Understood' });
       });
 
       const appStateSub = AppState.addEventListener('change', (nextState) => {
@@ -130,11 +162,12 @@ const [showThemeModal, setShowThemeModal] = useState(false);
   const handleToggleDuty = () => {
     const nextState = !isOnline;
     setIsOnline(nextState);
-    Alert.alert(
+    showGlassAlert(
       nextState ? 'Duty Activated 🟢' : 'Duty Deactivated ⚪',
       nextState
         ? 'You are now online to receive task alerts in Sangareddy.'
-        : 'You are offline. No new job alerts will be received.'
+        : 'You are offline. No new job alerts will be received.',
+      { type: nextState ? 'success' : 'info', icon: nextState ? '🟢' : '⚪', primaryText: 'Got It' }
     );
   };
 
@@ -168,7 +201,7 @@ const [showThemeModal, setShowThemeModal] = useState(false);
     };
     setActiveJob(active);
     setIncomingJobRequest(null);
-    Alert.alert('Job Accepted! 🚀', `Dispatched to ${job.address || 'Customer Location'}. Please proceed to the site.`);
+    showGlassAlert('Job Accepted! 🚀', `Dispatched to ${job.address || 'Customer Location'}. Please proceed to the site.`, { type: 'success', icon: '🚀', primaryText: 'Proceed to Site →' });
   };
 
   // Periodic simulated GPS location telemetry while arriving
@@ -211,7 +244,7 @@ const [showThemeModal, setShowThemeModal] = useState(false);
       setTodayEarnings(prev => prev + earned);
       setWalletBalance(prev => prev + earned);
       setCompletedJobsCount(prev => prev + 1);
-      Alert.alert('Payment Received! 💰', `₹${earned} credited to your earnings.`);
+      showGlassAlert('Payment Received! 💰', `₹${earned} credited to your earnings.`, { type: 'success', icon: '💰', primaryText: 'View Wallet' });
     } else {
       setActiveJob(prev => prev ? { ...prev, status: newStatus } : null);
     }
@@ -432,7 +465,7 @@ onOpenEarnings={() => setActiveTab('wallet')}
                             address: j.location
                           });
                           setActiveTab('home');
-                          Alert.alert('Task Accepted!', `Accepted ${j.tradeName}. Returning to Home.`);
+                          showGlassAlert('Task Accepted!', `Accepted ${j.tradeName}. Returning to Home.`, { type: 'success', icon: '✓', primaryText: 'View Job' });
                         }}
                         activeOpacity={0.8}
                       >
@@ -713,6 +746,18 @@ onOpenEarnings={() => setActiveTab('wallet')}
 <ThemeSwitcherModal
           visible={showThemeModal}
           onClose={() => setShowThemeModal(false)}
+        />
+        <GlassAlertDialog
+          visible={alertDialog.visible}
+          type={alertDialog.type}
+          icon={alertDialog.icon}
+          title={alertDialog.title}
+          message={alertDialog.message}
+          primaryText={alertDialog.primaryText}
+          secondaryText={alertDialog.secondaryText}
+          onPrimary={alertDialog.onPrimary}
+          onSecondary={alertDialog.onSecondary}
+          onClose={() => setAlertDialog(prev => ({ ...prev, visible: false }))}
         />
         {/* 24/7 Safety SOS Modal */}
         <SosModal

@@ -7,6 +7,7 @@ import RatingTipModal from '../components/RatingTipModal';
 import GlassFloatingBottomNav from '../../../shared/components/glass/GlassFloatingBottomNav';
 import LeafletMapView from '../../../shared/components/gps/LeafletMapView';
 import SosModal from '../../../shared/components/sos/SosModal';
+import GlassAlertDialog from '../../../shared/components/glass/GlassAlertDialog';
 import VoicePlayer from '../../../shared/components/voice/VoicePlayer';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { STATUS_LABELS } from '../../../shared/constants/states';
@@ -34,6 +35,8 @@ export default function TrackingScreen({
   const [liveEta, setLiveEta] = useState(booking?.estimatedArrival || '12 mins');
   const [liveDistance, setLiveDistance] = useState('1.4');
   const [workerCoords, setWorkerCoords] = useState({ lat: 17.6275, lng: 78.0890 });
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [callModalVisible, setCallModalVisible] = useState(false);
 
   useEffect(() => {
     if (booking) {
@@ -200,18 +203,7 @@ export default function TrackingScreen({
           <TouchableOpacity style={styles.sosHeaderBtn} onPress={() => setShowSos(true)}>
             <Text style={styles.sosHeaderText}>🚨 SOS</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              Alert.alert(
-                'Cancel Booking',
-                'Are you sure you want to cancel this booking? Free cancellation applies.',
-                [
-                  { text: 'No', style: 'cancel' },
-                  { text: 'Yes, Cancel', style: 'destructive', onPress: () => onCancelBooking && onCancelBooking(liveBooking?.id || booking?.id) }
-                ]
-              );
-            }}
-          >
+          <TouchableOpacity onPress={() => setCancelModalVisible(true)}>
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -355,7 +347,7 @@ export default function TrackingScreen({
                 onPress={() => {
                   const phone = liveBooking?.workerPhone || '9848012345';
                   Linking.openURL(`tel:${phone}`).catch(() => {
-                    Alert.alert('Call Partner', `Partner Contact: +91 ${phone}`);
+                    setCallModalVisible(true);
                   });
                 }}
               >

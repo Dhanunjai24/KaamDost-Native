@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassButton from '../../../shared/components/glass/GlassButton';
+import { GlassAlertDialog } from '../../../shared/components/glass';
 
 export default function WalletModal({
   visible,
@@ -15,6 +16,28 @@ export default function WalletModal({
   const currentBalance = customer?.walletBalance || 0;
   const [selectedTopUp, setSelectedTopUp] = useState(500);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [alertDialog, setAlertDialog] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+    primaryText: 'OK',
+    onPrimaryPress: null
+  });
+
+  const showGlassAlert = (title, message, type = 'info', onPrimaryPress = null) => {
+    setAlertDialog({
+      visible: true,
+      title,
+      message,
+      type,
+      primaryText: 'Great!',
+      onPrimaryPress: () => {
+        setAlertDialog(prev => ({ ...prev, visible: false }));
+        if (onPrimaryPress) onPrimaryPress();
+      }
+    });
+  };
 
   const topUpAmounts = [200, 500, 1000, 2000];
 
@@ -35,11 +58,14 @@ export default function WalletModal({
         onUpdateCustomer(updatedCust);
       }
       setIsProcessing(false);
-      Alert.alert(
+      showGlassAlert(
         'Top-Up Successful! 🎉',
-        `₹${selectedTopUp} has been added to your KaamDost Wallet via instant UPI. Current Balance: ₹${newBalance}`
+        `₹${selectedTopUp} has been added to your KaamDost Wallet via instant UPI. Current Balance: ₹${newBalance}`,
+        'success',
+        () => {
+          onClose();
+        }
       );
-      onClose();
     }, 400);
   };
 
@@ -166,6 +192,7 @@ export default function WalletModal({
             </Text>
           </TouchableOpacity>
         </Pressable>
+        <GlassAlertDialog {...alertDialog} />
       </Pressable>
     </Modal>
   );

@@ -1,24 +1,48 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
+import { GlassAlertDialog } from '../../../shared/components/glass';
 
 export default function PayoutModal({ visible, balance = 0, onClose, onSuccess }) {
   const [upiId, setUpiId] = useState('');
   const [amount, setAmount] = useState(balance > 0 ? String(balance) : '');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [alertDialog, setAlertDialog] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+    primaryText: 'OK',
+    onPrimaryPress: null
+  });
+
+  const showGlassAlert = (title, message, type = 'info', onPrimaryPress = null) => {
+    setAlertDialog({
+      visible: true,
+      title,
+      message,
+      type,
+      primaryText: 'Understood',
+      onPrimaryPress: () => {
+        setAlertDialog(prev => ({ ...prev, visible: false }));
+        if (onPrimaryPress) onPrimaryPress();
+      }
+    });
+  };
 
   const handleWithdraw = () => {
     const val = Number(amount);
     if (!val || val <= 0 || val > balance) {
-      Alert.alert('Invalid Amount', `Please enter an amount between ₹100 and ₹${balance}`);
+      showGlassAlert('Invalid Amount', `Please enter an amount between ₹100 and ₹${balance}`, 'warning');
       return;
     }
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      Alert.alert('Payout Successful!', `₹${val} transferred to UPI ID: ${upiId} within 30 seconds.`);
-      if (onSuccess) onSuccess(val);
-      onClose();
+      showGlassAlert('Payout Successful! 💰', `₹${val} transferred to UPI ID: ${upiId || 'Primary UPI'} within 30 seconds.`, 'success', () => {
+        if (onSuccess) onSuccess(val);
+        onClose();
+      });
     }, 1200);
   };
 
@@ -74,6 +98,7 @@ export default function PayoutModal({ visible, balance = 0, onClose, onSuccess }
             </TouchableOpacity>
           </View>
         </View>
+        <GlassAlertDialog {...alertDialog} />
       </View>
     </Modal>
   );

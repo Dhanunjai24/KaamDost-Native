@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { useTheme } from '../../../shared/theme/ThemeContext';
+import { GlassAlertDialog } from '../../../shared/components/glass';
 
 export default function ActiveJobCard({
   job,
@@ -10,6 +11,28 @@ export default function ActiveJobCard({
   const { theme } = useTheme();
   const [enteredOtp, setEnteredOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [alertDialog, setAlertDialog] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+    primaryText: 'OK',
+    onPrimaryPress: null
+  });
+
+  const showGlassAlert = (title, message, type = 'info', onPrimaryPress = null) => {
+    setAlertDialog({
+      visible: true,
+      title,
+      message,
+      type,
+      primaryText: 'Understood',
+      onPrimaryPress: () => {
+        setAlertDialog(prev => ({ ...prev, visible: false }));
+        if (onPrimaryPress) onPrimaryPress();
+      }
+    });
+  };
 
   if (!job) {
     return (
@@ -48,14 +71,15 @@ export default function ActiveJobCard({
 
   const handleStartWork = () => {
     if (!enteredOtp || enteredOtp.length !== 4) {
-      Alert.alert('Invalid OTP', 'Please enter the 4-digit start OTP provided by the customer.');
+      showGlassAlert('Invalid OTP', 'Please enter the 4-digit start OTP provided by the customer.', 'warning');
       return;
     }
     setIsVerifying(true);
     setTimeout(() => {
       setIsVerifying(false);
-      Alert.alert('OTP Verified!', 'Work started successfully.');
-      if (onStatusChange) onStatusChange('STARTED');
+      showGlassAlert('OTP Verified! 🚀', 'Work started successfully.', 'success', () => {
+        if (onStatusChange) onStatusChange('STARTED');
+      });
     }, 800);
   };
 
@@ -124,6 +148,7 @@ export default function ActiveJobCard({
           )}
         </View>
       </View>
+      <GlassAlertDialog {...alertDialog} />
     </View>
   );
 }

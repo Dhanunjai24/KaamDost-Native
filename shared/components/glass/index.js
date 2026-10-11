@@ -19,5 +19,6 @@ export { default as GlassStatusBadge } from './GlassStatusBadge';
 export { default as GlassSkeleton } from './GlassSkeleton';
 export { default as GlassToast } from './GlassToast';
 export { default as ThemeSwitcherModal } from './ThemeSwitcherModal';
+export { default as GlassAlertDialog } from './GlassAlertDialog';
 
 export { default as GlassFloatingBottomNav } from './GlassFloatingBottomNav';
