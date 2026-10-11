@@ -5,9 +5,9 @@ import PartnerHeader from '../components/PartnerHeader';
 import EarningsCard from '../components/EarningsCard';
 import ActiveJobCard from '../components/ActiveJobCard';
 import PayoutModal from '../components/PayoutModal';
-import NotificationsModal from '../components/NotificationsModal';
 import ChatModal from '../components/ChatModal';
 import JobRequestModal from '../components/JobRequestModal';
+import SosModal from '../../../shared/components/sos/SosModal';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
@@ -43,8 +43,9 @@ export default function PartnerDashboardScreen({
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [showThemeModal, setShowThemeModal] = useState(false);
+const [showThemeModal, setShowThemeModal] = useState(false);
   const [jobFilter, setJobFilter] = useState('ALL');
+  const [showSosModal, setShowSosModal] = useState(false);
 
   const [activeJob, setActiveJob] = useState(null);
   const [incomingJobRequest, setIncomingJobRequest] = useState(null);
@@ -184,7 +185,8 @@ export default function PartnerDashboardScreen({
           isOnline={isOnline}
           unreadCount={unreadCount}
           onOpenNotifications={() => setShowNotifications(true)}
-          onOpenEarnings={() => setActiveTab('wallet')}
+onOpenEarnings={() => setActiveTab('wallet')}
+          onOpenSos={() => setShowSosModal(true)}
         />
 
         <ScrollView
@@ -618,9 +620,15 @@ export default function PartnerDashboardScreen({
           onClose={() => setShowChat(false)}
         />
 
-        <ThemeSwitcherModal
+<ThemeSwitcherModal
           visible={showThemeModal}
           onClose={() => setShowThemeModal(false)}
+        />
+        {/* 24/7 Safety SOS Modal */}
+        <SosModal
+          visible={showSosModal}
+          onClose={() => setShowSosModal(false)}
+          userRole="worker"
         />
       </GlassBackground>
     </SafeAreaView>

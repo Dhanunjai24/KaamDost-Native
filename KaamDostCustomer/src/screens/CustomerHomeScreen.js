@@ -15,6 +15,8 @@ import VoiceSearchModal from '../components/VoiceSearchModal';
 import WalletModal from '../components/WalletModal';
 import SelectTradeModal from '../components/SelectTradeModal';
 import EditAddressModal from '../components/EditAddressModal';
+import SosModal from '../../../shared/components/sos/SosModal';
+import AdminOpsModal from '../../../shared/components/admin/AdminOpsModal';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import { useResponsive } from '../utils/responsive';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
@@ -53,8 +55,10 @@ export default function CustomerHomeScreen({
   } = useNotifications({ userId: customerId, role: 'customer' });
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
-  const [showVoiceModal, setShowVoiceModal] = useState(false);
+const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showEditAddressModal, setShowEditAddressModal] = useState(false);
+  const [showSosModal, setShowSosModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [, setLangTicker] = useState(0);
 
@@ -84,7 +88,9 @@ export default function CustomerHomeScreen({
           onOpenLanguage={() => setShowLanguageModal(true)}
           onOpenNotifications={() => setShowNotificationsModal(true)}
           onOpenProfile={onOpenDashboard}
-          unreadCount={unreadCount}
+onOpenSos={() => setShowSosModal(true)}
+            onOpenAdmin={() => setShowAdminModal(true)}
+            unreadCount={unreadCount}
         />
 
         <ScrollView
@@ -280,26 +286,24 @@ export default function CustomerHomeScreen({
           onClose={() => setShowLegalModal(false)}
         />
 
-        <VoiceSearchModal
-          visible={showVoiceModal}
-          onClose={() => setShowVoiceModal(false)}
-          onSelectResult={(tradeId, tradeName, query) => {
-            setShowVoiceModal(false);
-            if (onOpenFindWorkers) {
-              onOpenFindWorkers(tradeId, query);
-            }
-          }}
-        />
-
-        {/* Change or Edit Address Modal */}
-        <EditAddressModal
-          visible={showEditAddressModal}
-          customer={customer}
-          onClose={() => setShowEditAddressModal(false)}
-          onUpdateCustomer={(updated) => {
-            if (onUpdateCustomer) onUpdateCustomer(updated);
-            if (updated?.address?.city) setCity(updated.address.city);
-          }}
+<VoiceSearchModal
+            visible={showVoiceModal}
+            onClose={() => setShowVoiceModal(false)}
+            onSelectTrade={(trade) => {
+              setShowVoiceModal(false);
+              setSelectedTrade(trade);
+              setShowTradeModal(true);
+            }}
+          />
+          <SosModal
+            visible={showSosModal}
+            onClose={() => setShowSosModal(false)}
+            userRole="customer"
+          />
+          <AdminOpsModal
+            visible={showAdminModal}
+            onClose={() => setShowAdminModal(false)}
+          />
         />
       </GlassBackground>
     </SafeAreaView>

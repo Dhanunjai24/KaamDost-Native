@@ -34,11 +34,11 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
+# Agent configs
+.gemini/
+.agent/
+.agents/
+.gsd/
 NUL
 */NUL
 **/NUL
-
-# GSD
-.gsd/STATE.md
-.gsd/JOURNAL.md
-.gsd/TODO.md

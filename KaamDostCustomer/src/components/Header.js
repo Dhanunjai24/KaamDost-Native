@@ -15,6 +15,8 @@ export default function Header({
   onOpenLanguage,
   onOpenNotifications,
   onOpenProfile,
+onOpenSos,
+  onOpenAdmin,
   unreadCount = 0
 }) {
   const { theme, shadows } = useTheme();
@@ -124,9 +126,26 @@ export default function Header({
           </View>
         </View>
 
-        {/* Action icons: Wallet Button at Top Navigator, Theme Switcher, Language, Notification */}
-        <View style={styles.actionsRow}>
-          {/* Wallet Button at Top Navigator */}
+{/* Action icons: SOS, Admin, Theme Switcher, Language, Notification */}
+          <View style={styles.actionsRow}>
+            {onOpenSos && (
+              <TouchableOpacity
+                style={[styles.iconBtn, { backgroundColor: '#fee2e2', borderColor: '#fca5a5' }]}
+                onPress={onOpenSos}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.iconText}>🚨</Text>
+              </TouchableOpacity>
+            )}
+            {onOpenAdmin && (
+              <TouchableOpacity
+                style={[styles.iconBtn, { backgroundColor: '#f1f5f9', borderColor: '#cbd5e1' }]}
+                onPress={onOpenAdmin}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.iconText}>⚙️</Text>
+              </TouchableOpacity>
+            )}
           <TouchableOpacity
             style={[
               styles.walletBtn,

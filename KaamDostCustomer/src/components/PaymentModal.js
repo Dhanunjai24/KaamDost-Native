@@ -2,23 +2,24 @@ import React, { useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { t } from '../../../shared/i18n';
+import RazorpayCheckoutModal from '../../../shared/components/payment/RazorpayCheckoutModal';
 
 export default function PaymentModal({ visible, amount = 1045, onClose, onSuccess }) {
   const [method, setMethod] = useState('upi');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showRazorpay, setShowRazorpay] = useState(false);
 
   const handlePay = () => {
-    setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      onSuccess({
-        paymentId: 'PAY-' + Math.floor(Math.random() * 89999 + 10000),
-        amount,
-        method,
-        timestamp: new Date().toISOString()
-      });
-      onClose();
-    }, 250);
+if (method === 'cash') {
+        setIsProcessing(true);
+        setTimeout(() => {
+          setIsProcessing(false);
+          if (onPaymentSuccess) onPaymentSuccess({ method: 'cash', amount });
+          onClose();
+        }, 300);
+      } else {
+        setShowRazorpay(true);
+      }
   };
 
   return (
@@ -104,6 +105,13 @@ export default function PaymentModal({ visible, amount = 1045, onClose, onSucces
           </View>
         </View>
       </View>
+
+      <RazorpayCheckoutModal
+        visible={showRazorpay}
+        amount={amount}
+        onClose={() => setShowRazorpay(false)}
+        onPaymentSuccess={handleRazorpaySuccess}
+      />
     </Modal>
   );
 }
