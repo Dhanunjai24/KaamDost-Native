@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, StatusBar, BackHandler, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 LogBox.ignoreAllLogs();
 import { ThemeProvider } from '../shared/theme/ThemeContext';
@@ -22,6 +23,40 @@ export default function App({ onSwitchToCustomer }) {
   const [currentScreen, setCurrentScreen] = useState('language');
   const [partnerLang, setPartnerLang] = useState('te');
   const [partner, setPartner] = useState(null);
+
+  // Restore existing registered partner session on launch
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('@kaamdost_partner_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const isRegistered = parsed && (parsed.id || parsed.workerId || parsed.phone) && (
+            parsed.registered === true ||
+            parsed.trade ||
+            parsed.tradeName ||
+            parsed.name
+          );
+
+          if (isRegistered) {
+            setPartner(parsed);
+            setCurrentScreen('dashboard');
+            return;
+          }
+        }
+      } catch (e) {}
+    };
+    restoreSession();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('@kaamdost_partner_user');
+    } catch (_) {}
+    setPartner(null);
+    setCurrentScreen('language');
+  };
+
 
   // Native Android hardware back button handler
   useEffect(() => {
@@ -57,7 +92,9 @@ export default function App({ onSwitchToCustomer }) {
           <PartnerLoginScreen
             lang={partnerLang}
             onLoginSuccess={(p) => {
-              setPartner(prev => ({ ...prev, ...p }));
+              const fullPartner = { ...(partner || {}), ...p, registered: true };
+              setPartner(fullPartner);
+              AsyncStorage.setItem('@kaamdost_partner_user', JSON.stringify(fullPartner)).catch(() => {});
               setCurrentScreen('dashboard');
             }}
             onGoToRegister={(data) => {
@@ -113,7 +150,18 @@ export default function App({ onSwitchToCustomer }) {
             lang={partnerLang}
             partner={partner}
             onProceedDashboard={() => {
-              setPartner(prev => ({ ...prev, registered: true }));
+              const fullPartner = { ...partner, registered: true };
+              setPartner(fullPartner);
+              AsyncStorage.setItem('@kaamdost_partner_user', JSON.stringify(fullPartner)).catch(() => {});
+              try {
+                AsyncStorage.getItem('@kaamdost_registered_partners').then(regStr => {
+                  const map = regStr ? JSON.parse(regStr) : {};
+                  if (fullPartner.phone) {
+                    map[fullPartner.phone] = fullPartner;
+                    AsyncStorage.setItem('@kaamdost_registered_partners', JSON.stringify(map)).catch(() => {});
+                  }
+                });
+              } catch (_) {}
               setCurrentScreen('dashboard');
             }}
           />
@@ -126,7 +174,7 @@ export default function App({ onSwitchToCustomer }) {
             onOpenEarnings={() => setCurrentScreen('earnings')}
             onOpenProfile={() => setCurrentScreen('profile')}
             onOpenSupport={() => setCurrentScreen('support')}
-            onLogout={() => setCurrentScreen('language')}
+            onLogout={handleLogout}
           />
         )}
 
@@ -138,7 +186,7 @@ export default function App({ onSwitchToCustomer }) {
           <PartnerProfileScreen
             partner={partner}
             onBack={() => setCurrentScreen('dashboard')}
-            onLogout={() => setCurrentScreen('language')}
+            onLogout={handleLogout}
             onRestartOnboarding={() => setCurrentScreen('language')}
           />
         )}

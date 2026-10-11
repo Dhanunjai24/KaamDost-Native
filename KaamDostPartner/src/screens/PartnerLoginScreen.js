@@ -5,6 +5,7 @@ import GlassBackground from '../../../shared/components/glass/GlassBackground';
 import GlassCard from '../../../shared/components/glass/GlassCard';
 import GlassButton from '../../../shared/components/glass/GlassButton';
 import api from '../../../shared/api/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PartnerLoginScreen({ lang = 'te', onLoginSuccess, onGoToRegister, onSwitchToCustomer }) {
   const isTe = lang === 'te';
@@ -43,6 +44,7 @@ export default function PartnerLoginScreen({ lang = 'te', onLoginSuccess, onGoTo
   };
 
   const handleVerifyOtp = async () => {
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
     if (otp.length !== 6) {
       setErrorMsg(isTe ? 'దయచేసి 6 అంకెల ఓటీపీని నమోదు చేయండి' : 'Please enter 6-digit OTP code');
       return;
@@ -50,15 +52,57 @@ export default function PartnerLoginScreen({ lang = 'te', onLoginSuccess, onGoTo
     setErrorMsg('');
     setLoading(true);
     try {
-      const res = await api.verifyWorkerOtp(phone, otp);
-      const isRegistered = !res?.isNewUser && !res?.isNewWorker && res?.user && res?.user?.registered !== false && (res?.user?.trade || res?.user?.tradeName);
+      const res = await api.verifyWorkerOtp(cleanPhone, otp);
 
-      if (!isRegistered && onGoToRegister) {
-        onGoToRegister({ phone, ...(res?.data || {}) });
-      } else if (isRegistered && onLoginSuccess) {
-        onLoginSuccess(res.user || res.data);
-      } else if (onGoToRegister) {
-        onGoToRegister({ phone });
+      // 1. Check if backend returned an existing registered worker
+      let registeredProfile = null;
+      if (!res?.isNewUser && !res?.isNewWorker && (res?.user || res?.data)) {
+        const u = res.user || res.data;
+        if (u.registered !== false && (u.trade || u.tradeName || u.name)) {
+          registeredProfile = { ...u, phone: cleanPhone, registered: true };
+        }
+      }
+
+      // 2. Check local registered partners cache in AsyncStorage
+      if (!registeredProfile) {
+        try {
+          const regData = await AsyncStorage.getItem('@kaamdost_registered_partners');
+          if (regData) {
+            const regMap = JSON.parse(regData);
+            const cached = regMap && (regMap[cleanPhone] || regMap[phone]);
+            if (cached && (cached.trade || cached.tradeName || cached.name)) {
+              registeredProfile = { ...cached, phone: cleanPhone, registered: true };
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 3. Check active partner profile in AsyncStorage
+      if (!registeredProfile) {
+        try {
+          const activeStr = await AsyncStorage.getItem('@kaamdost_partner_user');
+          if (activeStr) {
+            const active = JSON.parse(activeStr);
+            if (active && active.phone === cleanPhone && (active.trade || active.tradeName || active.name)) {
+              registeredProfile = { ...active, registered: true };
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (registeredProfile) {
+        // ALREADY REGISTERED PARTNER -> DIRECT LOGIN TO DASHBOARD!
+        await AsyncStorage.setItem('@kaamdost_partner_user', JSON.stringify(registeredProfile));
+        if (onLoginSuccess) {
+          onLoginSuccess(registeredProfile);
+        }
+      } else {
+        // Brand new partner -> take to onboarding/registration
+        if (onGoToRegister) {
+          onGoToRegister({ phone: cleanPhone, ...(res?.data || {}) });
+        } else if (onLoginSuccess) {
+          onLoginSuccess({ phone: cleanPhone, registered: true });
+        }
       }
     } catch (e) {
       setErrorMsg(e.message || (isTe ? 'ఓటీపీ ధృవీకరణ విఫలమైంది' : 'Verification failed'));
