@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Modal, StyleSheet, TouchableOpacity, Text, SafeAreaView, ActivityIndicator } from 'react-native';
-import { WebView } from 'react-native-webview';
+import WebViewPkg from 'react-native-webview';
+const WebView = WebViewPkg?.WebView || WebViewPkg?.default || WebViewPkg;
 
 export default function RazorpayCheckoutModal({
   visible,

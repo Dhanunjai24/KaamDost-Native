@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, StyleSheet, TouchableOpacity, Linking, Alert, Vibration } from 'react-native';
-import { WebView } from 'react-native-webview';
+
 
 export default function SosModal({ visible, onClose, userRole = 'customer' }) {
   const [isSirenActive, setIsSirenActive] = useState(false);
@@ -80,10 +80,7 @@ export default function SosModal({ visible, onClose, userRole = 'customer' }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        {/* Hidden WebView for Siren Audio Synthesis */}
-        <View style={styles.hiddenAudio}>
-          <WebView source={{ html: sirenHtml }} />
-        </View>
+
 
         <View style={styles.card}>
           <View style={styles.badge}>

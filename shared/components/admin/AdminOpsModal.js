@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Modal, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
-import { WebView } from 'react-native-webview';
+import WebViewPkg from 'react-native-webview';
+const WebView = WebViewPkg?.WebView || WebViewPkg?.default || WebViewPkg;
 import { getBaseUrl } from '../../api/client';
 
 export default function AdminOpsModal({ visible, onClose }) {

@@ -7,6 +7,7 @@ import ActiveJobCard from '../components/ActiveJobCard';
 import PayoutModal from '../components/PayoutModal';
 import ChatModal from '../components/ChatModal';
 import JobRequestModal from '../components/JobRequestModal';
+import NotificationsModal from '../components/NotificationsModal';
 import SosModal from '../../../shared/components/sos/SosModal';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';

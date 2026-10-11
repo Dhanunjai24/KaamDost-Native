@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { WebView } from 'react-native-webview';
+import WebViewPkg from 'react-native-webview';
+const WebView = WebViewPkg?.WebView || WebViewPkg?.default || WebViewPkg;
 
 export default function LeafletMapView({
   customerLocation = { lat: 17.6190, lng: 78.0805, title: 'Customer Site' }, // Default Sangareddy

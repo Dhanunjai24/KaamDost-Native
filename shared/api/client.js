@@ -20,7 +20,7 @@ export const getBaseUrl = () => {
     return PRODUCTION_SERVER;
   }
   if (Platform.OS === 'android') {
-    return LOCAL_ANDROID_EMULATOR;
+    return LOCAL_HOST;
   }
   return LOCAL_HOST;
 };

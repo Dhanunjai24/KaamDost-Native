@@ -44,7 +44,7 @@ class RealtimeService {
       const formatted = _SOCKET_URL.replace(/^http/, 'ws');
       return formatted.endsWith('/realtime') ? formatted : `${formatted}/realtime`;
     }
-    const host = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+    const host = '127.0.0.1';
     return `ws://${host}:3000/realtime`;
   }
 
