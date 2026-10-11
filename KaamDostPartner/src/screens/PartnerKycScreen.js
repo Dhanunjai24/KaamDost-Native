@@ -56,9 +56,6 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
     return true;
   };
 
-  const SAMPLE_AADHAAR_DOC = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80';
-  const SAMPLE_LIVE_SELFIE = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80';
-
   const handleAadhaarCamera = async () => {
     try {
       const hasPermission = await requestCameraPermission();
@@ -70,67 +67,69 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
         return;
       }
 
-      if (NativeModules.ImagePickerManager) {
-        launchCamera(
-          {
-            mediaType: 'photo',
-            cameraType: 'back',
-            quality: 0.85,
-            maxWidth: 1280,
-            maxHeight: 1280,
-            saveToPhotos: false
-          },
-          (res) => {
-            if (res.didCancel) return;
-            if (res.errorCode) {
-              handleAadhaarGallery();
-              return;
-            }
-            if (res.assets && res.assets[0]?.uri) {
-              setAadhaarPhotoUri(res.assets[0].uri);
-              setErrorMsg('');
-            }
+      launchCamera(
+        {
+          mediaType: 'photo',
+          cameraType: 'back',
+          quality: 0.85,
+          maxWidth: 1280,
+          maxHeight: 1280,
+          saveToPhotos: false
+        },
+        (res) => {
+          if (res.didCancel) return;
+          if (res.errorCode) {
+            Alert.alert(
+              isTe ? 'కెమెరా లోపం' : 'Camera Error',
+              res.errorMessage || (isTe ? 'ఫోటో తీయడం విఫలమైంది' : 'Failed to capture photo')
+            );
+            return;
           }
-        );
-      } else {
-        // Fallback: Instant document capture preview
-        setAadhaarPhotoUri(SAMPLE_AADHAAR_DOC);
-        setErrorMsg('');
-      }
+          if (res.assets && res.assets[0]?.uri) {
+            setAadhaarPhotoUri(res.assets[0].uri);
+            setErrorMsg('');
+          }
+        }
+      );
     } catch (err) {
       console.warn('handleAadhaarCamera error:', err);
-      setAadhaarPhotoUri(SAMPLE_AADHAAR_DOC);
-      setErrorMsg('');
+      Alert.alert(
+        isTe ? 'లోపం' : 'Error',
+        isTe ? 'కెమెరా తెరవడం విఫలమైంది.' : 'Could not open camera.'
+      );
     }
   };
 
   const handleAadhaarGallery = () => {
     try {
-      if (NativeModules.ImagePickerManager) {
-        launchImageLibrary(
-          {
-            mediaType: 'photo',
-            quality: 0.85,
-            maxWidth: 1280,
-            maxHeight: 1280
-          },
-          (res) => {
-            if (res.didCancel) return;
-            if (res.assets && res.assets[0]?.uri) {
-              setAadhaarPhotoUri(res.assets[0].uri);
-              setErrorMsg('');
-            }
+      launchImageLibrary(
+        {
+          mediaType: 'photo',
+          quality: 0.85,
+          maxWidth: 1280,
+          maxHeight: 1280
+        },
+        (res) => {
+          if (res.didCancel) return;
+          if (res.errorCode) {
+            Alert.alert(
+              isTe ? 'గ్యాలరీ లోపం' : 'Gallery Error',
+              res.errorMessage || (isTe ? 'ఫోటో ఎంచుకోవడం విఫలమైంది' : 'Failed to select photo')
+            );
+            return;
           }
-        );
-      } else {
-        // Fallback: Instant gallery document select
-        setAadhaarPhotoUri(SAMPLE_AADHAAR_DOC);
-        setErrorMsg('');
-      }
+          if (res.assets && res.assets[0]?.uri) {
+            setAadhaarPhotoUri(res.assets[0].uri);
+            setErrorMsg('');
+          }
+        }
+      );
     } catch (err) {
       console.warn('handleAadhaarGallery error:', err);
-      setAadhaarPhotoUri(SAMPLE_AADHAAR_DOC);
-      setErrorMsg('');
+      Alert.alert(
+        isTe ? 'లోపం' : 'Error',
+        isTe ? 'గ్యాలరీ తెరవడం విఫలమైంది.' : 'Could not open gallery.'
+      );
     }
   };
 
@@ -152,82 +151,99 @@ export default function PartnerKycScreen({ lang = 'te', partnerData, onKycApprov
     );
   };
 
-  const handleTakeLiveSelfie = async () => {
+  const handleSelfieCamera = async () => {
     try {
       const hasPermission = await requestCameraPermission();
       if (!hasPermission) {
         Alert.alert(
           isTe ? 'కెమెరా అనుమతి అవసరం' : 'Camera Permission Needed',
-          isTe ? 'లైవ్ సెల్ఫీ వెరిఫికేషన్ కోసం ఫ్రంట్ కెమెరా అనుమతి తప్పనిసరి.' : 'Live selfie verification strictly requires front camera access.'
+          isTe ? 'లైవ్ సెల్ఫీ వెరిఫికేషన్ కోసం ఫ్రంట్ కెమెరా అనుమతి తప్పనిసరి.' : 'Live selfie verification requires camera access.'
         );
         return;
       }
 
-      if (NativeModules.FaceRecognitionModule && NativeModules.FaceRecognitionModule.startFaceCapture) {
-        try {
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500));
-          const capturePromise = NativeModules.FaceRecognitionModule.startFaceCapture();
-          const result = await Promise.race([capturePromise, timeoutPromise]);
-          if (result && result.success && result.uri) {
-            setSelfieUri(result.uri);
+      launchCamera(
+        {
+          mediaType: 'photo',
+          cameraType: 'front',
+          quality: 0.85,
+          maxWidth: 1280,
+          maxHeight: 1280,
+          saveToPhotos: false
+        },
+        (res) => {
+          if (res.didCancel) return;
+          if (res.errorCode) {
+            Alert.alert(
+              isTe ? 'కెమెరా లోపం' : 'Camera Error',
+              res.errorMessage || (isTe ? 'సెల్ఫీ తీయడం విఫలమైంది' : 'Failed to capture selfie')
+            );
+            return;
+          }
+          if (res.assets && res.assets[0]?.uri) {
+            setSelfieUri(res.assets[0].uri);
             setErrorMsg('');
-            return;
-          } else if (result && result.error === 'Cancelled') {
-            return;
           }
-        } catch (e) {
-          // Native module fallback
         }
-      }
-
-      if (NativeModules.ImagePickerManager) {
-        launchCamera(
-          {
-            mediaType: 'photo',
-            cameraType: 'front',
-            quality: 0.85,
-            maxWidth: 1280,
-            maxHeight: 1280,
-            saveToPhotos: false
-          },
-          (res) => {
-            if (res.didCancel) return;
-            if (res.errorCode) {
-              launchCamera(
-                {
-                  mediaType: 'photo',
-                  quality: 0.85,
-                  saveToPhotos: false
-                },
-                (res2) => {
-                  if (res2.assets && res2.assets[0]?.uri) {
-                    setSelfieUri(res2.assets[0].uri);
-                    setErrorMsg('');
-                  }
-                }
-              );
-              return;
-            }
-            if (res.assets && res.assets[0]?.uri) {
-              setSelfieUri(res.assets[0].uri);
-              setErrorMsg('');
-            }
-          }
-        );
-      } else {
-        // Fallback: Instant live face recognition capture
-        setSelfieUri(SAMPLE_LIVE_SELFIE);
-        setErrorMsg('');
-        Alert.alert(
-          isTe ? '✨ AI ఫేస్ రికగ్నిషన్ ధృవీకరించబడింది' : '✨ AI Face Verification Successful',
-          isTe ? 'లైవ్ ఫేస్ డిటెక్షన్ పూర్తయింది. ముఖం ధృవీకరించబడింది ✓' : 'Live face detected and auto-captured. Identity verified successfully ✓'
-        );
-      }
+      );
     } catch (err) {
-      console.warn('handleTakeLiveSelfie error:', err);
-      setSelfieUri(SAMPLE_LIVE_SELFIE);
-      setErrorMsg('');
+      console.warn('handleSelfieCamera error:', err);
+      Alert.alert(
+        isTe ? 'లోపం' : 'Error',
+        isTe ? 'సెల్ఫీ కెమెరా తెరవడం విఫలమైంది.' : 'Could not open camera for selfie.'
+      );
     }
+  };
+
+  const handleSelfieGallery = () => {
+    try {
+      launchImageLibrary(
+        {
+          mediaType: 'photo',
+          quality: 0.85,
+          maxWidth: 1280,
+          maxHeight: 1280
+        },
+        (res) => {
+          if (res.didCancel) return;
+          if (res.errorCode) {
+            Alert.alert(
+              isTe ? 'గ్యాలరీ లోపం' : 'Gallery Error',
+              res.errorMessage || (isTe ? 'ఫోటో ఎంచుకోవడం విఫలమైంది' : 'Failed to select photo')
+            );
+            return;
+          }
+          if (res.assets && res.assets[0]?.uri) {
+            setSelfieUri(res.assets[0].uri);
+            setErrorMsg('');
+          }
+        }
+      );
+    } catch (err) {
+      console.warn('handleSelfieGallery error:', err);
+      Alert.alert(
+        isTe ? 'లోపం' : 'Error',
+        isTe ? 'గ్యాలరీ తెరవడం విఫలమైంది.' : 'Could not open gallery.'
+      );
+    }
+  };
+
+  const handleTakeLiveSelfie = () => {
+    Alert.alert(
+      isTe ? 'లైవ్ సెల్ఫీ వెరిఫికేషన్' : 'Live Selfie Verification',
+      isTe ? 'దయచేసి ఒక ఎంపికను ఎంచుకోండి:' : 'Please choose an option to upload your photo:',
+      [
+        {
+          text: isTe ? '📷 ఫ్రంట్ కెమెరాతో సెల్ఫీ తీయండి' : '📷 Take Selfie (Camera)',
+          onPress: handleSelfieCamera
+        },
+        {
+          text: isTe ? '🖼️ గ్యాలరీ నుండి ఎంచుకోండి' : '🖼️ Choose from Gallery',
+          onPress: handleSelfieGallery
+        },
+        { text: isTe ? 'రద్దు' : 'Cancel', style: 'cancel' }
+      ]
+    );
   };
 
   const handleSubmitKyc = async () => {

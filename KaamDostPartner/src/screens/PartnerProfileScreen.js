@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import GlassBackground from '../../../shared/components/glass/GlassBackground';
@@ -62,7 +62,15 @@ export default function PartnerProfileScreen({ partner, onBack, onLogout, onRest
           {/* Profile Card */}
           <GlassCard style={styles.profileCard} variant="strong">
             <View style={[styles.avatar, { borderColor: theme.accentPrimary }]}>
-              <Text style={styles.avatarEmoji}>👷</Text>
+              {partner?.selfieUri || partner?.avatar ? (
+                <Image
+                  source={{ uri: partner.selfieUri || partner.avatar }}
+                  style={{ width: '100%', height: '100%', borderRadius: 44 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.avatarEmoji}>👷</Text>
+              )}
             </View>
             <Text style={[styles.name, { color: theme.textPrimary }]}>{partner?.name || 'Partner'}</Text>
             <Text style={[styles.trade, { color: theme.accentPrimary }]}>{partner?.tradeName || 'Mason / Civil Work'}</Text>

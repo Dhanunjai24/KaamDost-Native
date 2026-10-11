@@ -182,6 +182,7 @@ const [showThemeModal, setShowThemeModal] = useState(false);
         {/* Top Header */}
         <PartnerHeader
           partnerName={partner?.name || 'PARTNER'}
+          avatarUri={partner?.selfieUri || partner?.avatar}
           rating={rating}
           isOnline={isOnline}
           unreadCount={unreadCount}

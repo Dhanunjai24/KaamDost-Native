@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useTheme } from '../../../shared/theme/ThemeContext';
 import ThemeSwitcherModal from '../../../shared/components/glass/ThemeSwitcherModal';
 
 export default function PartnerHeader({
   partnerName = 'PARTNER',
+  avatarUri = null,
   rating = '--',
   isOnline = true,
   unreadCount = 0,
@@ -35,8 +36,15 @@ export default function PartnerHeader({
                 }
               ]}
             >
-              {/* Photo representation with worker avatar */}
-              <Text style={styles.avatarEmoji}>👷🏾‍♂️</Text>
+              {avatarUri ? (
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={{ width: '100%', height: '100%', borderRadius: 24 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.avatarEmoji}>👷🏾‍♂️</Text>
+              )}
             </View>
             {/* Duty Active Indicator Dot */}
             <View

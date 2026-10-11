@@ -224,8 +224,8 @@ class ApiService {
         {
           id: 'notif_c1',
           title: 'Worker Dispatched 👷🏾‍♂️',
-          desc: 'Ramesh (Brick & Block Mason) has accepted your booking and is on the way.',
-          body: 'Ramesh (Brick & Block Mason) has accepted your booking and is on the way.',
+          desc: 'Assigned Partner (Brick & Block Mason) has accepted your booking and is on the way.',
+          body: 'Assigned Partner (Brick & Block Mason) has accepted your booking and is on the way.',
           time: '5 mins ago',
           unread: true,
           icon: '🚀',
