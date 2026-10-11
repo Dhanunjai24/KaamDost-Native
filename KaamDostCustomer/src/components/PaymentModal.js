@@ -4,22 +4,30 @@ import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { t } from '../../../shared/i18n';
 import RazorpayCheckoutModal from '../../../shared/components/payment/RazorpayCheckoutModal';
 
-export default function PaymentModal({ visible, amount = 1045, onClose, onSuccess }) {
+export default function PaymentModal({ visible, amount = 1045, onClose, onSuccess, onPaymentSuccess }) {
   const [method, setMethod] = useState('upi');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showRazorpay, setShowRazorpay] = useState(false);
 
+  const handleRazorpaySuccess = (data) => {
+    setShowRazorpay(false);
+    if (onPaymentSuccess) onPaymentSuccess(data);
+    else if (onSuccess) onSuccess(data);
+    onClose();
+  };
+
   const handlePay = () => {
-if (method === 'cash') {
-        setIsProcessing(true);
-        setTimeout(() => {
-          setIsProcessing(false);
-          if (onPaymentSuccess) onPaymentSuccess({ method: 'cash', amount });
-          onClose();
-        }, 300);
-      } else {
-        setShowRazorpay(true);
-      }
+    if (method === 'cash') {
+      setIsProcessing(true);
+      setTimeout(() => {
+        setIsProcessing(false);
+        if (onPaymentSuccess) onPaymentSuccess({ method: 'cash', amount });
+        else if (onSuccess) onSuccess({ method: 'cash', amount });
+        onClose();
+      }, 300);
+    } else {
+      setShowRazorpay(true);
+    }
   };
 
   return (

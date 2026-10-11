@@ -132,16 +132,22 @@ const [showThemeModal, setShowThemeModal] = useState(false);
 
     const workerDetails = {
       id: partnerId,
-      name: partner?.name || 'Assigned Partner',
+      name: partner?.name || partner?.fullName || 'Ramesh Kumar',
       phone: partner?.phone || '9848012345',
       trade: partner?.trade || job.trade || 'masonry',
-      tradeName: job.tradeName || 'Mason / Civil Work',
+      tradeName: job.tradeName || partner?.tradeName || 'Mason / Civil Work',
       rating: rating || '4.9',
       avatar: partner?.avatar || partner?.selfieUri || partner?.photoUri || null,
       dailyRate: job.dailyRate || partner?.dailyRate || 950
     };
 
     realtimeService.acceptBooking(job.id, partnerId, workerDetails);
+    realtimeService.sendLocationUpdate(job.id, {
+      latitude: 17.6275,
+      longitude: 78.0890,
+      etaMinutes: 12,
+      distanceKm: '1.4'
+    });
 
     const active = {
       ...job,
@@ -152,6 +158,26 @@ const [showThemeModal, setShowThemeModal] = useState(false);
     setIncomingJobRequest(null);
     Alert.alert('Job Accepted! 🚀', `Dispatched to ${job.address || 'Customer Location'}. Please proceed to the site.`);
   };
+
+  // Periodic simulated GPS location telemetry while arriving
+  useEffect(() => {
+    if (!activeJob?.id || activeJob?.status !== 'ARRIVING') return;
+    let step = 0;
+    const interval = setInterval(() => {
+      step++;
+      const lat = 17.6275 - (step * 0.0006);
+      const lng = 78.0890 - (step * 0.0006);
+      const eta = Math.max(2, 12 - (step * 2));
+      const dist = Math.max(0.2, (1.4 - (step * 0.2))).toFixed(1);
+      realtimeService.sendLocationUpdate(activeJob.id, {
+        latitude: lat,
+        longitude: lng,
+        etaMinutes: eta,
+        distanceKm: dist
+      });
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [activeJob?.id, activeJob?.status]);
 
   const handleDeclineJobRequest = () => {
     setShowJobModal(false);

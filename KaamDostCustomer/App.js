@@ -105,17 +105,31 @@ export default function App({ onSwitchToPartner }) {
             ...(prev || {}),
             id: (prev && prev.id) || data.bookingId,
             workerId: data.workerId || data.worker.id,
-            workerName: data.worker.name || (prev && prev.workerName) || 'Assigned Partner',
+            workerName: data.worker.name,
             workerPhone: data.worker.phone || (prev && prev.workerPhone) || '9848012345',
-            workerRating: data.worker.rating || (prev && prev.workerRating) || '4.9',
+            workerRating: data.worker.rating || '4.9',
             workerAvatar: data.worker.avatar || data.worker.selfieUri || (prev && prev.workerAvatar) || null,
             workerTrade: data.worker.trade || (prev && prev.workerTrade) || 'masonry',
             tradeName: data.worker.tradeName || (prev && prev.tradeName) || 'Specialist',
-            status: 'ASSIGNED',
+            status: 'ARRIVING',
+            estimatedArrival: data.worker.etaMinutes ? `${data.worker.etaMinutes} mins` : (prev && prev.estimatedArrival) || '12 mins',
             assignedAt: new Date().toISOString()
           };
           AsyncStorage.setItem('@kaamdost_active_booking', JSON.stringify(updated)).catch(() => {});
           return updated;
+        });
+      }
+    });
+
+    const unsubLocation = realtimeService.on('worker_location_update', (data) => {
+      if (data) {
+        setActiveBooking((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            estimatedArrival: data.etaMinutes ? `${data.etaMinutes} mins` : prev.estimatedArrival,
+            workerDistance: data.distanceKm || prev.workerDistance
+          };
         });
       }
     });
@@ -133,6 +147,7 @@ export default function App({ onSwitchToPartner }) {
 
     return () => {
       if (unsubAccepted) unsubAccepted();
+      if (unsubLocation) unsubLocation();
       if (unsubStatus) unsubStatus();
     };
   }, []);

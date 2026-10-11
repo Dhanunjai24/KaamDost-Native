@@ -57,6 +57,8 @@ export default function GlassBookingCard({
     );
   }
 
+  const isSearching = !booking.workerId || booking.status === 'REQUESTED' || booking.status === 'SEARCHING';
+
   return (
     <View
       style={[
@@ -76,44 +78,42 @@ export default function GlassBookingCard({
             {booking.tradeName || 'Skilled Labour'}
           </Text>
         </View>
-        <GlassStatusBadge status={booking.status || 'ARRIVING'} />
+        <GlassStatusBadge
+          status={isSearching ? 'SEARCHING' : (booking.status || 'ARRIVING')}
+          label={isSearching ? '● SEARCHING' : `● ${booking.status || 'ARRIVING'}`}
+          variant={isSearching ? 'warning' : undefined}
+        />
       </View>
 
-      {/* Middle Row: Worker info & Start OTP */}
-      <View style={styles.workerRow}>
-        <View
-          style={[
-            styles.workerAvatar,
-            {
-              backgroundColor: theme.primaryLight,
-              borderColor: theme.border,
-              borderWidth: 1
-            }
-          ]}
-        >
-          {(booking.workerAvatar || booking.avatar || booking.selfieUri) ? (
-            <Image
-              source={{ uri: booking.workerAvatar || booking.avatar || booking.selfieUri }}
-              style={styles.avatarImg}
-            />
-          ) : (
-            <Text style={styles.avatarEmoji}>👷</Text>
-          )}
-        </View>
-
-        <View style={styles.workerDetails}>
-          <Text style={[styles.workerName, { color: theme.textPrimary }]}>
-            {booking.workerName || 'Assigned Partner'}
-          </Text>
-          <Text style={[styles.workerMeta, { color: theme.textSecondary }]}>
-            ⭐ {booking.workerRating || '4.8'} • {booking.estimatedArrival ? `Arriving in ${booking.estimatedArrival}` : 'On the way'}
-          </Text>
-        </View>
-
-        {booking.startOtp ? (
+      {/* Middle Row: Searching Radar OR Worker info & Start OTP */}
+      {isSearching ? (
+        <View style={styles.searchingRow}>
           <View
             style={[
-              styles.otpBox,
+              styles.radarIconBox,
+              {
+                backgroundColor: theme.primaryLight,
+                borderColor: theme.accentPrimary,
+                borderWidth: 1.5
+              }
+            ]}
+          >
+            <Text style={styles.radarEmoji}>📡</Text>
+          </View>
+          <View style={styles.searchingDetails}>
+            <Text style={[styles.searchingTitle, { color: theme.textPrimary }]}>
+              Finding Nearby Specialist...
+            </Text>
+            <Text style={[styles.searchingSub, { color: theme.textSecondary }]}>
+              Request sent to verified partners in Sangareddy. Waiting for worker to accept...
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.workerRow}>
+          <View
+            style={[
+              styles.workerAvatar,
               {
                 backgroundColor: theme.primaryLight,
                 borderColor: theme.border,
@@ -121,13 +121,44 @@ export default function GlassBookingCard({
               }
             ]}
           >
-            <Text style={[styles.otpLabel, { color: theme.textSecondary }]}>START OTP</Text>
-            <Text style={[styles.otpValue, { color: theme.textPrimary }]}>
-              {booking.startOtp}
+            {(booking.workerAvatar || booking.avatar || booking.selfieUri) ? (
+              <Image
+                source={{ uri: booking.workerAvatar || booking.avatar || booking.selfieUri }}
+                style={styles.avatarImg}
+              />
+            ) : (
+              <Text style={styles.avatarEmoji}>👷</Text>
+            )}
+          </View>
+
+          <View style={styles.workerDetails}>
+            <Text style={[styles.workerName, { color: theme.textPrimary }]}>
+              {booking.workerName || 'Assigned Partner'}
+            </Text>
+            <Text style={[styles.workerMeta, { color: theme.textSecondary }]}>
+              ⭐ {booking.workerRating || '4.8'} • {booking.estimatedArrival ? `Arriving in ${booking.estimatedArrival}` : 'On the way'}
             </Text>
           </View>
-        ) : null}
-      </View>
+
+          {booking.startOtp ? (
+            <View
+              style={[
+                styles.otpBox,
+                {
+                  backgroundColor: theme.primaryLight,
+                  borderColor: theme.border,
+                  borderWidth: 1
+                }
+              ]}
+            >
+              <Text style={[styles.otpLabel, { color: theme.textSecondary }]}>START OTP</Text>
+              <Text style={[styles.otpValue, { color: theme.textPrimary }]}>
+                {booking.startOtp}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      )}
 
       {/* Prominent Pricing Row */}
       <View
@@ -152,7 +183,7 @@ export default function GlassBookingCard({
 
       {/* Bottom CTA */}
       <GlassButton
-        title="Live Tracking & Worker Details →"
+        title={isSearching ? 'Live Radar & Request Status →' : 'Live Tracking & Worker Details →'}
         onPress={() => onTrackBooking && onTrackBooking(booking)}
         variant="primary"
         size="md"
@@ -184,6 +215,35 @@ const styles = StyleSheet.create({
   tradeText: {
     fontSize: 13,
     fontWeight: '800'
+  },
+  searchingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingVertical: 4
+  },
+  radarIconBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12
+  },
+  radarEmoji: {
+    fontSize: 22
+  },
+  searchingDetails: {
+    flex: 1
+  },
+  searchingTitle: {
+    fontSize: 14,
+    fontWeight: '800'
+  },
+  searchingSub: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 2
   },
   workerRow: {
     flexDirection: 'row',

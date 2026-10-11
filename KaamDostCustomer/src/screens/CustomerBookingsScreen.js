@@ -153,17 +153,27 @@ export default function CustomerBookingsScreen({
           {/* TAB 1: ACTIVE BOOKINGS */}
           {activeTab === 'active' && (
             <View>
-              {activeBooking ? (
+              {activeBooking ? (() => {
+                const isSearching = !activeBooking.workerId || activeBooking.status === 'REQUESTED' || activeBooking.status === 'SEARCHING';
+                return (
                 <GlassCard style={styles.activeCard} variant="strong">
                   <View style={styles.cardHeaderRow}>
                     <View
                       style={[
                         styles.statusBadge,
-                        { backgroundColor: theme.primaryLight, borderColor: theme.accentPrimary }
+                        {
+                          backgroundColor: isSearching ? theme.warningLight : theme.primaryLight,
+                          borderColor: isSearching ? theme.warning : theme.accentPrimary
+                        }
                       ]}
                     >
-                      <Text style={[styles.statusText, { color: theme.accentPrimary }]}>
-                        ● {activeBooking.status || 'En Route'}
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: isSearching ? theme.warning : theme.accentPrimary }
+                        ]}
+                      >
+                        ● {isSearching ? 'SEARCHING' : (activeBooking.status || 'En Route')}
                       </Text>
                     </View>
                     <Text style={[styles.bookingIdText, { color: theme.textSecondary }]}>
@@ -171,29 +181,48 @@ export default function CustomerBookingsScreen({
                     </Text>
                   </View>
 
-                  <View style={styles.workerRow}>
-                    <View style={[styles.workerAvatar, { backgroundColor: theme.primaryLight }]}>
-                      {(activeBooking.workerAvatar || activeBooking.avatar || activeBooking.selfieUri) ? (
-                        <Image
-                          source={{ uri: activeBooking.workerAvatar || activeBooking.avatar || activeBooking.selfieUri }}
-                          style={{ width: 50, height: 50, borderRadius: 25 }}
-                        />
-                      ) : (
-                        <Text style={styles.workerEmoji}>👷</Text>
-                      )}
+                  {isSearching ? (
+                    <View style={styles.workerRow}>
+                      <View style={[styles.workerAvatar, { backgroundColor: theme.primaryLight }]}>
+                        <Text style={styles.workerEmoji}>📡</Text>
+                      </View>
+                      <View style={styles.workerInfo}>
+                        <Text style={[styles.workerName, { color: theme.textPrimary }]}>
+                          Finding Nearby Specialist...
+                        </Text>
+                        <Text style={[styles.tradeTitle, { color: theme.textSecondary }]}>
+                          {activeBooking.tradeName || 'Specialist'}
+                        </Text>
+                        <Text style={[styles.workerRating, { color: theme.textMuted }]}>
+                          Request broadcasted • Waiting for acceptance
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.workerInfo}>
-                      <Text style={[styles.workerName, { color: theme.textPrimary }]}>
-                        {activeBooking.workerName || 'Assigned Dost'}
-                      </Text>
-                      <Text style={[styles.tradeTitle, { color: theme.textSecondary }]}>
-                        {activeBooking.tradeName || 'Specialist'}
-                      </Text>
-                      <Text style={[styles.workerRating, { color: theme.accentPrimary }]}>
-                        ⭐ {activeBooking.workerRating || 4.9} Verified Partner
-                      </Text>
+                  ) : (
+                    <View style={styles.workerRow}>
+                      <View style={[styles.workerAvatar, { backgroundColor: theme.primaryLight }]}>
+                        {(activeBooking.workerAvatar || activeBooking.avatar || activeBooking.selfieUri) ? (
+                          <Image
+                            source={{ uri: activeBooking.workerAvatar || activeBooking.avatar || activeBooking.selfieUri }}
+                            style={{ width: 50, height: 50, borderRadius: 25 }}
+                          />
+                        ) : (
+                          <Text style={styles.workerEmoji}>👷</Text>
+                        )}
+                      </View>
+                      <View style={styles.workerInfo}>
+                        <Text style={[styles.workerName, { color: theme.textPrimary }]}>
+                          {activeBooking.workerName || 'Assigned Partner'}
+                        </Text>
+                        <Text style={[styles.tradeTitle, { color: theme.textSecondary }]}>
+                          {activeBooking.tradeName || 'Specialist'}
+                        </Text>
+                        <Text style={[styles.workerRating, { color: theme.accentPrimary }]}>
+                          ⭐ {activeBooking.workerRating || 4.9} Verified Partner
+                        </Text>
+                      </View>
                     </View>
-                  </View>
+                  )}
 
                   {/* Start OTP */}
                   <View
@@ -210,17 +239,17 @@ export default function CustomerBookingsScreen({
                         Job Start OTP Code
                       </Text>
                       <Text style={[styles.otpSub, { color: theme.textMuted }]}>
-                        Share with partner at arrival
+                        {isSearching ? 'Revealed once a partner accepts' : 'Share with partner at arrival'}
                       </Text>
                     </View>
                     <View
                       style={[
                         styles.otpBadge,
-                        { backgroundColor: theme.accentPrimary }
+                        { backgroundColor: isSearching ? '#94A3B8' : theme.accentPrimary }
                       ]}
                     >
                       <Text style={styles.otpValue}>
-                        {activeBooking.startOtp || '4829'}
+                        {isSearching ? '••••' : (activeBooking.startOtp || '4829')}
                       </Text>
                     </View>
                   </View>
@@ -243,14 +272,15 @@ export default function CustomerBookingsScreen({
                   </View>
 
                   <GlassButton
-                    title="Track Live Partner & ETA ➔"
+                    title={isSearching ? 'Track Live Request ➔' : 'Track Live Partner & ETA ➔'}
                     onPress={onOpenTracking}
                     variant="primary"
                     size="md"
                     style={{ marginTop: 14 }}
                   />
                 </GlassCard>
-              ) : (
+                );
+              })() : (
                 <GlassCard style={styles.emptyCard} variant="default">
                   <Text style={styles.emptyEmoji}>📋</Text>
                   <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>

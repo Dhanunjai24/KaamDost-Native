@@ -12,6 +12,7 @@ import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 import { STATUS_LABELS } from '../../../shared/constants/states';
 import { t } from '../../../shared/i18n';
 import socketService from '../services/socketService';
+import realtimeService from '../../../shared/services/realtimeService';
 
 export default function TrackingScreen({
   booking,
@@ -28,28 +29,79 @@ export default function TrackingScreen({
   const [showPayment, setShowPayment] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [showSos, setShowSos] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(booking?.status || 'ARRIVING');
+  const [liveBooking, setLiveBooking] = useState(booking);
+  const [currentStatus, setCurrentStatus] = useState(booking?.status || 'REQUESTED');
   const [liveEta, setLiveEta] = useState(booking?.estimatedArrival || '12 mins');
   const [liveDistance, setLiveDistance] = useState('1.4');
+  const [workerCoords, setWorkerCoords] = useState({ lat: 17.6275, lng: 78.0890 });
 
   useEffect(() => {
-    if (booking?.status) {
-      setCurrentStatus(booking.status);
+    if (booking) {
+      setLiveBooking(booking);
+      if (booking.status) {
+        setCurrentStatus(booking.status);
+      }
     }
-  }, [booking?.status]);
+  }, [booking]);
 
-  // Sync live tracking & worker telemetry
+  // Sync real-time acceptance & live worker telemetry
   useEffect(() => {
-    if (!booking?.id) return;
-    const unsub = socketService.subscribeToWorkerLocation(booking.id, (data) => {
-      if (data.etaText) setLiveEta(data.etaText);
-      if (data.distanceKm) setLiveDistance(data.distanceKm);
-      if (data.status === 'ARRIVED' && currentStatus === 'ARRIVING') {
-        setCurrentStatus('ARRIVED');
+    // 1. Listen for real-time booking acceptance by worker
+    const unsubAccept = realtimeService.on('booking_accepted', (data) => {
+      console.log('[TrackingScreen] Worker accepted booking:', data);
+      if (data && data.worker) {
+        setLiveBooking((prev) => ({
+          ...(prev || {}),
+          id: data.bookingId || (prev && prev.id),
+          workerId: data.workerId || data.worker.id,
+          workerName: data.worker.name,
+          workerPhone: data.worker.phone || '',
+          workerRating: data.worker.rating || '4.9',
+          workerAvatar: data.worker.avatar || data.worker.selfieUri || null,
+          workerTrade: data.worker.trade,
+          tradeName: data.worker.tradeName || (prev && prev.tradeName) || 'Specialist',
+          status: 'ARRIVING',
+          estimatedArrival: data.worker.etaMinutes ? `${data.worker.etaMinutes} mins` : '12 mins'
+        }));
+        setCurrentStatus('ARRIVING');
+        if (data.worker.etaMinutes) setLiveEta(`${data.worker.etaMinutes} mins`);
       }
     });
+
+    // 2. Listen for live worker GPS telemetry
+    const unsubLoc = realtimeService.on('worker_location_update', (data) => {
+      if (data.latitude && data.longitude) {
+        setWorkerCoords({ lat: data.latitude, lng: data.longitude });
+      }
+      if (data.etaMinutes) setLiveEta(`${data.etaMinutes} mins`);
+      if (data.distanceKm) setLiveDistance(String(data.distanceKm));
+      if (data.status) setCurrentStatus(data.status);
+    });
+
+    // 3. Listen for job status changes
+    const unsubStatus = realtimeService.on('job_status_updated', (data) => {
+      if (data && data.status) {
+        setCurrentStatus(data.status);
+        setLiveBooking((prev) => (prev ? { ...prev, status: data.status } : null));
+      }
+    });
+
+    // 4. Socket fallback
+    const unsubSocket = booking?.id
+      ? socketService.subscribeToWorkerLocation(booking.id, (data) => {
+          if (data.etaText) setLiveEta(data.etaText);
+          if (data.distanceKm) setLiveDistance(data.distanceKm);
+          if (data.status === 'ARRIVED' && currentStatus === 'ARRIVING') {
+            setCurrentStatus('ARRIVED');
+          }
+        })
+      : null;
+
     return () => {
-      if (unsub) unsub();
+      if (unsubAccept) unsubAccept();
+      if (unsubLoc) unsubLoc();
+      if (unsubStatus) unsubStatus();
+      if (unsubSocket) unsubSocket();
     };
   }, [booking?.id, currentStatus]);
 
@@ -79,9 +131,11 @@ export default function TrackingScreen({
     );
   }
 
+  const isSearching = currentStatus === 'REQUESTED' || currentStatus === 'SEARCHING' || !liveBooking?.workerId;
+
   const steps = [
-    { key: 'ACCEPTED', label: 'Partner Assigned', icon: '👤' },
-    { key: 'ARRIVING', label: 'Partner En Route', icon: '🚚' },
+    { key: 'REQUESTED', label: 'Request Sent', icon: '📡' },
+    { key: 'ARRIVING', label: 'Partner Assigned', icon: '👤' },
     { key: 'STARTED', label: 'Work in Progress', icon: '⚡' },
     { key: 'COMPLETED', label: 'Job Completed', icon: '✅' }
   ];
@@ -90,8 +144,10 @@ export default function TrackingScreen({
     switch (status) {
       case 'REQUESTED':
       case 'OFFERED':
-      case 'ACCEPTED':
+      case 'SEARCHING':
         return 0;
+      case 'ACCEPTED':
+      case 'ASSIGNED':
       case 'ARRIVING':
         return 1;
       case 'STARTED':
@@ -101,7 +157,7 @@ export default function TrackingScreen({
       case 'RATED':
         return 3;
       default:
-        return 1;
+        return isSearching ? 0 : 1;
     }
   };
 
@@ -109,7 +165,18 @@ export default function TrackingScreen({
 
   // Simulation controls for testing the complete lifecycle
   const advanceStatus = () => {
-    if (currentStatus === 'ARRIVING') {
+    if (currentStatus === 'REQUESTED' || isSearching) {
+      setCurrentStatus('ARRIVING');
+      setLiveBooking((prev) => ({
+        ...(prev || {}),
+        workerId: 'worker_demo_101',
+        workerName: 'Ramesh Kumar',
+        workerPhone: '9848012345',
+        workerRating: '4.9',
+        status: 'ARRIVING',
+        estimatedArrival: '12 mins'
+      }));
+    } else if (currentStatus === 'ARRIVING') {
       setCurrentStatus('STARTED');
     } else if (currentStatus === 'STARTED') {
       setCurrentStatus('COMPLETED');
@@ -126,7 +193,9 @@ export default function TrackingScreen({
         <TouchableOpacity onPress={onBack} style={styles.backBtn}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Live GPS Tracking</Text>
+        <Text style={styles.headerTitle}>
+          {isSearching ? 'Finding Nearby Partner' : 'Live Partner Tracking'}
+        </Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.sosHeaderBtn} onPress={() => setShowSos(true)}>
             <Text style={styles.sosHeaderText}>🚨 SOS</Text>
@@ -138,7 +207,7 @@ export default function TrackingScreen({
                 'Are you sure you want to cancel this booking? Free cancellation applies.',
                 [
                   { text: 'No', style: 'cancel' },
-                  { text: 'Yes, Cancel', style: 'destructive', onPress: () => onCancelBooking && onCancelBooking(booking.id) }
+                  { text: 'Yes, Cancel', style: 'destructive', onPress: () => onCancelBooking && onCancelBooking(liveBooking?.id || booking?.id) }
                 ]
               );
             }}
@@ -149,26 +218,52 @@ export default function TrackingScreen({
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Interactive OpenStreetMap Leaflet GPS View */}
-        <View style={styles.leafletWrapper}>
-          <LeafletMapView
-            customerLocation={{ lat: 17.6190, lng: 78.0805, title: booking.address || 'Customer Site' }}
-            workerLocation={{ lat: 17.6275, lng: 78.0890, title: booking.workerName || 'Worker Live' }}
-            height={260}
-          />
-          <View style={styles.etaBar}>
-            <Text style={styles.etaText}>
-ETA: <Text style={styles.etaBold}>{liveEta || booking?.estimatedArrival || '12 mins'}</Text> ({liveDistance} km away)
+        {/* If Searching, show animated radar view. If assigned, show Leaflet map! */}
+        {isSearching ? (
+          <View style={styles.radarCardBox}>
+            <View style={styles.radarPulseRing}>
+              <View style={styles.radarPulseCore}>
+                <Text style={styles.radarEmojiBig}>📡</Text>
+              </View>
+            </View>
+            <Text style={styles.radarHeading}>
+              Searching for Nearby Specialist
             </Text>
+            <Text style={styles.radarAddressSub}>
+              {liveBooking?.tradeName || 'Specialist'} • {liveBooking?.address || 'Sangareddy, Telangana'}
+            </Text>
+            <Text style={styles.radarDescription}>
+              Request broadcasted to verified workers within 15 km. The nearest available worker will receive a sound and vibration alert on their phone to accept.
+            </Text>
+            <View style={styles.radarPulseBadge}>
+              <Text style={styles.radarPulseText}>● Real-time dispatch radar active</Text>
+            </View>
           </View>
-        </View>
+        ) : (
+          <View style={styles.leafletWrapper}>
+            <LeafletMapView
+              customerLocation={{ lat: 17.6190, lng: 78.0805, title: liveBooking?.address || 'Customer Site' }}
+              workerLocation={{ lat: workerCoords.lat, lng: workerCoords.lng, title: liveBooking?.workerName || 'Worker Live' }}
+              height={260}
+            />
+            <View style={styles.etaBar}>
+              <Text style={styles.etaText}>
+                ETA: <Text style={styles.etaBold}>{liveEta || liveBooking?.estimatedArrival || '12 mins'}</Text> ({liveDistance} km away)
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Regional Voice Audio Speech Player */}
         <View style={styles.voiceSection}>
           <VoicePlayer
-            text={`మీ వర్కర్ ${booking.workerName || 'నిపుణుడు'} మీ లొకేషన్‌కు వస్తున్నారు. అంచనా సమయం పన్నెండు నిమిషాలు.`}
+            text={
+              isSearching
+                ? 'మీ పని అభ్యర్థన సమీపంలోని కార్మికులకు పంపబడింది. వర్కర్ అంగీకరించే వరకు దయచేసి వేచి ఉండండి.'
+                : `మీ వర్కర్ ${liveBooking?.workerName || 'నిపుణుడు'} మీ లొకేషన్‌కు వస్తున్నారు. అంచనా సమయం ${liveEta || 'పన్నెండు నిమిషాలు'}.`
+            }
             lang="te"
-            label="వాయిస్ అప్‌డేట్ వినండి (Telugu Audio ETA)"
+            label={isSearching ? 'వాయిస్ అప్‌డేట్ వినండి (Telugu Request Status)' : 'వాయిస్ అప్‌డేట్ వినండి (Telugu Audio ETA)'}
           />
         </View>
 
@@ -193,55 +288,82 @@ ETA: <Text style={styles.etaBold}>{liveEta || booking?.estimatedArrival || '12 m
         </View>
 
         {/* Start OTP Display */}
-        <View style={styles.otpCard}>
-          <View style={styles.otpLeft}>
-            <Text style={styles.otpTitle}>Job Security Start OTP</Text>
-            <Text style={styles.otpSub}>Share this 4-digit code with worker to begin work</Text>
-          </View>
-          <View style={styles.otpBadge}>
-            <Text style={styles.otpDigits}>{booking.startOtp || '----'}</Text>
-          </View>
-        </View>
-
-        {/* Worker Card */}
-        <View style={styles.workerCard}>
-          <View style={styles.workerAvatar}>
-            {(booking.workerAvatar || booking.avatar || booking.selfieUri) ? (
-              <Image
-                source={{ uri: booking.workerAvatar || booking.avatar || booking.selfieUri }}
-                style={styles.workerAvatarImg}
-              />
-            ) : (
-              <Text style={styles.workerEmoji}>👷</Text>
-            )}
-          </View>
-          <View style={styles.workerInfo}>
-            <Text style={styles.workerName}>{booking.workerName || 'Assigned Partner'}</Text>
-            <Text style={styles.workerTrade}>{booking.tradeName || booking.workerTradeName || 'Specialist'}</Text>
-            <View style={styles.workerMetaRow}>
-              <Text style={styles.workerRating}>{booking.workerRating ? (`⭐ ${booking.workerRating}`) : '⭐ 4.9 Verified'}</Text>
-              {booking.workerPhone ? (
-                <Text style={styles.workerPhoneText}> • +91 {booking.workerPhone}</Text>
-              ) : null}
+        {isSearching ? (
+          <View style={styles.otpCardPending}>
+            <View style={styles.otpLeft}>
+              <Text style={styles.otpTitle}>Job Security Start OTP</Text>
+              <Text style={styles.otpSub}>OTP will be revealed once a worker accepts your request</Text>
+            </View>
+            <View style={styles.otpBadgePending}>
+              <Text style={styles.otpDigitsPending}>••••</Text>
             </View>
           </View>
-          <View style={styles.workerActions}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => setShowChat(true)}>
-              <Text style={styles.actionIcon}>💬</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => {
-                const phone = booking.workerPhone || '9848012345';
-                Linking.openURL(`tel:${phone}`).catch(() => {
-                  Alert.alert('Call Partner', `Partner Contact: +91 ${phone}`);
-                });
-              }}
-            >
-              <Text style={styles.actionIcon}>📞</Text>
-            </TouchableOpacity>
+        ) : (
+          <View style={styles.otpCard}>
+            <View style={styles.otpLeft}>
+              <Text style={styles.otpTitle}>Job Security Start OTP</Text>
+              <Text style={styles.otpSub}>Share this 4-digit code with worker to begin work</Text>
+            </View>
+            <View style={styles.otpBadge}>
+              <Text style={styles.otpDigits}>{liveBooking?.startOtp || '----'}</Text>
+            </View>
           </View>
-        </View>
+        )}
+
+        {/* Worker Card */}
+        {isSearching ? (
+          <View style={styles.workerCardPending}>
+            <View style={[styles.workerAvatar, { backgroundColor: '#F1F5F9' }]}>
+              <Text style={styles.workerEmoji}>⏳</Text>
+            </View>
+            <View style={styles.workerInfo}>
+              <Text style={styles.workerName}>Waiting for Worker Acceptance...</Text>
+              <Text style={styles.workerTrade}>{liveBooking?.tradeName || 'Specialist'} • Sangareddy</Text>
+              <Text style={[styles.workerRating, { color: COLORS.textMuted }]}>
+                Verified partner details, direct call & chat options will appear upon acceptance
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.workerCard}>
+            <View style={styles.workerAvatar}>
+              {(liveBooking?.workerAvatar || liveBooking?.avatar || liveBooking?.selfieUri) ? (
+                <Image
+                  source={{ uri: liveBooking.workerAvatar || liveBooking.avatar || liveBooking.selfieUri }}
+                  style={styles.workerAvatarImg}
+                />
+              ) : (
+                <Text style={styles.workerEmoji}>👷</Text>
+              )}
+            </View>
+            <View style={styles.workerInfo}>
+              <Text style={styles.workerName}>{liveBooking?.workerName || 'Assigned Partner'}</Text>
+              <Text style={styles.workerTrade}>{liveBooking?.tradeName || liveBooking?.workerTradeName || 'Specialist'}</Text>
+              <View style={styles.workerMetaRow}>
+                <Text style={styles.workerRating}>{liveBooking?.workerRating ? (`⭐ ${liveBooking.workerRating} Verified`) : '⭐ 4.9 Verified'}</Text>
+                {liveBooking?.workerPhone ? (
+                  <Text style={styles.workerPhoneText}> • +91 {liveBooking.workerPhone}</Text>
+                ) : null}
+              </View>
+            </View>
+            <View style={styles.workerActions}>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => setShowChat(true)}>
+                <Text style={styles.actionIcon}>💬</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => {
+                  const phone = liveBooking?.workerPhone || '9848012345';
+                  Linking.openURL(`tel:${phone}`).catch(() => {
+                    Alert.alert('Call Partner', `Partner Contact: +91 ${phone}`);
+                  });
+                }}
+              >
+                <Text style={styles.actionIcon}>📞</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Booking Details */}
         <View style={styles.detailsCard}>
@@ -398,6 +520,73 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 90
   },
+  radarCardBox: {
+    backgroundColor: '#F0F9FF',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#7DD3FC',
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 16,
+    ...SHADOWS.small
+  },
+  radarPulseRing: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(56, 189, 248, 0.18)',
+    borderWidth: 2,
+    borderColor: '#38BDF8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14
+  },
+  radarPulseCore: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#0284C7',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  radarEmojiBig: {
+    fontSize: 28
+  },
+  radarHeading: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#0369A1',
+    textAlign: 'center',
+    marginBottom: 4
+  },
+  radarAddressSub: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'center',
+    marginBottom: 8
+  },
+  radarDescription: {
+    fontSize: 12,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 14,
+    maxWidth: 280
+  },
+  radarPulseBadge: {
+    backgroundColor: '#E0F2FE',
+    borderWidth: 1,
+    borderColor: '#0284C7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12
+  },
+  radarPulseText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0284C7'
+  },
   mapCard: {
     height: 140,
     backgroundColor: '#cbd5e1',
@@ -546,6 +735,41 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: COLORS.primary,
     letterSpacing: 2
+  },
+  otpCardPending: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12
+  },
+  otpBadgePending: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#CBD5E1'
+  },
+  otpDigitsPending: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#94A3B8',
+    letterSpacing: 2
+  },
+  workerCardPending: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12
   },
   workerCard: {
     flexDirection: 'row',

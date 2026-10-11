@@ -119,23 +119,26 @@ export default function BookingModal({
     setTimeout(() => {
       setIsSubmitting(false);
       const bookingId = 'BK-' + Date.now();
+      const hasSpecificWorker = Boolean(worker?.id);
       onConfirmBooking({
         id: bookingId,
         trade: trade?.id || worker?.trade || 'masonry',
         tradeName: trade?.name || worker?.tradeName || 'Mason',
-        workerId: worker?.id || null,
-        workerName: worker?.name || 'Assigned Partner',
-        workerPhone: worker?.phone || '',
-        workerRating: worker?.rating || 4.9,
+        workerId: hasSpecificWorker ? worker.id : null,
+        workerName: hasSpecificWorker ? worker.name : null,
+        workerPhone: hasSpecificWorker ? (worker.phone || '') : null,
+        workerRating: hasSpecificWorker ? (worker.rating || 4.9) : null,
+        workerAvatar: hasSpecificWorker ? (worker.avatar || null) : null,
         days,
         dailyRate,
         totalAmount: total,
-        address,
+        address: address || (customer?.address?.street ? `${customer.address.street}, ${customer.address.city || 'Sangareddy'}` : 'Sangareddy, Telangana'),
         workNotes,
         images,
-        status: 'ARRIVING',
+        status: hasSpecificWorker ? 'ARRIVING' : 'REQUESTED',
         startOtp: String(Math.floor(1000 + Math.random() * 9000)),
-        estimatedArrival: '15 mins'
+        estimatedArrival: hasSpecificWorker ? '15 mins' : null,
+        createdAt: new Date().toISOString()
       });
       onClose();
     }, 250);
