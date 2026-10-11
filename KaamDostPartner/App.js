@@ -18,11 +18,29 @@ import PartnerSupportScreen from './src/screens/PartnerSupportScreen';
 
 enableScreens();
 
+const DEFAULT_PARTNER = {
+  id: 'w1',
+  workerId: 'w1',
+  name: 'Ramesh Kumar',
+  phone: '9849012345',
+  trade: 'electrician',
+  tradeName: 'Electrician (House Wiring)',
+  rating: '4.9',
+  reviewsCount: 142,
+  jobsCompleted: 156,
+  hoursWorked: 8.5,
+  todayEarnings: 1450,
+  walletBalance: 3200,
+  kycVerified: true,
+  city: 'Sangareddy',
+  activeDuty: true
+};
+
 export default function App({ onSwitchToCustomer }) {
-  // Screen routing: language -> login -> register -> address -> kyc -> accountComplete -> dashboard
-  const [currentScreen, setCurrentScreen] = useState('language');
+  // Direct access: defaults directly to partner dashboard for immediate duty & operations
+  const [currentScreen, setCurrentScreen] = useState('dashboard');
   const [partnerLang, setPartnerLang] = useState('te');
-  const [partner, setPartner] = useState(null);
+  const [partner, setPartner] = useState(DEFAULT_PARTNER);
 
   // Native Android hardware back button handler
   useEffect(() => {
