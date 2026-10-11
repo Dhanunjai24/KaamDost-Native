@@ -8,7 +8,7 @@ import {
   StatusBar,
   RefreshControl,
   Alert
-} from 'react-native';
+, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../../shared/theme/ThemeContext';
@@ -173,7 +173,14 @@ export default function CustomerBookingsScreen({
 
                   <View style={styles.workerRow}>
                     <View style={[styles.workerAvatar, { backgroundColor: theme.primaryLight }]}>
-                      <Text style={styles.workerEmoji}>👷</Text>
+                      {(activeBooking.workerAvatar || activeBooking.avatar || activeBooking.selfieUri) ? (
+                        <Image
+                          source={{ uri: activeBooking.workerAvatar || activeBooking.avatar || activeBooking.selfieUri }}
+                          style={{ width: 50, height: 50, borderRadius: 25 }}
+                        />
+                      ) : (
+                        <Text style={styles.workerEmoji}>👷</Text>
+                      )}
                     </View>
                     <View style={styles.workerInfo}>
                       <Text style={[styles.workerName, { color: theme.textPrimary }]}>

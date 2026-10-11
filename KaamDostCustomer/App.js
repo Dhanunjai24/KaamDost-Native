@@ -52,6 +52,22 @@ export default function App({ onSwitchToPartner }) {
           if (isRegistered) {
             setCustomer(parsed);
             socketService.connect(parsed.id || parsed.phone);
+            let restoredBooking = null;
+            try {
+              const storedBooking = await AsyncStorage.getItem('@kaamdost_active_booking');
+              if (storedBooking) {
+                const parsedBooking = JSON.parse(storedBooking);
+                if (parsedBooking && parsedBooking.status !== 'COMPLETED' && parsedBooking.status !== 'CANCELLED') {
+                  restoredBooking = parsedBooking;
+                  setActiveBooking(parsedBooking);
+                }
+              }
+            } catch (err) {}
+            realtimeService.connect({
+              userId: parsed.id || parsed.phone || 'cust_live',
+              role: 'customer',
+              bookingId: restoredBooking?.id || null
+            });
             setCurrentScreen('home');
             return;
           } else if (parsed && parsed.phone) {
@@ -84,19 +100,34 @@ export default function App({ onSwitchToPartner }) {
     // Listen for partner acceptance via real-time gateway
     const unsubAccepted = realtimeService.on('booking_accepted', (data) => {
       if (data && data.worker) {
-        setActiveBooking((prev) => prev ? {
-          ...prev,
-          workerName: data.worker.name || prev.workerName,
-          workerPhone: data.worker.phone || prev.workerPhone,
-          workerRating: data.worker.rating || prev.workerRating,
-          status: 'ASSIGNED'
-        } : prev);
+        setActiveBooking((prev) => {
+          const updated = {
+            ...(prev || {}),
+            id: (prev && prev.id) || data.bookingId,
+            workerId: data.workerId || data.worker.id,
+            workerName: data.worker.name || (prev && prev.workerName) || 'Assigned Partner',
+            workerPhone: data.worker.phone || (prev && prev.workerPhone) || '9848012345',
+            workerRating: data.worker.rating || (prev && prev.workerRating) || '4.9',
+            workerAvatar: data.worker.avatar || data.worker.selfieUri || (prev && prev.workerAvatar) || null,
+            workerTrade: data.worker.trade || (prev && prev.workerTrade) || 'masonry',
+            tradeName: data.worker.tradeName || (prev && prev.tradeName) || 'Specialist',
+            status: 'ASSIGNED',
+            assignedAt: new Date().toISOString()
+          };
+          AsyncStorage.setItem('@kaamdost_active_booking', JSON.stringify(updated)).catch(() => {});
+          return updated;
+        });
       }
     });
 
     const unsubStatus = realtimeService.on('job_status_updated', (data) => {
       if (data && data.status) {
-        setActiveBooking((prev) => prev ? { ...prev, status: data.status } : prev);
+        setActiveBooking((prev) => {
+          if (!prev) return null;
+          const updated = { ...prev, status: data.status };
+          AsyncStorage.setItem('@kaamdost_active_booking', JSON.stringify(updated)).catch(() => {});
+          return updated;
+        });
       }
     });
 
@@ -108,7 +139,13 @@ export default function App({ onSwitchToPartner }) {
 
   const handleBookingCreated = (newBooking) => {
     setActiveBooking(newBooking);
+    AsyncStorage.setItem('@kaamdost_active_booking', JSON.stringify(newBooking)).catch(() => {});
     socketService.connect(customer?.id || 'cust_live', newBooking?.id);
+    realtimeService.connect({
+      userId: customer?.id || customer?.phone || 'cust_live',
+      role: 'customer',
+      bookingId: newBooking?.id
+    });
     realtimeService.bookOrder(newBooking);
     setCurrentScreen('tracking');
   };
@@ -128,11 +165,13 @@ export default function App({ onSwitchToPartner }) {
         await AsyncStorage.setItem('@kaamdost_booking_history', JSON.stringify([newHistoryItem, ...list]));
       } catch (e) {}
     }
+    await AsyncStorage.removeItem('@kaamdost_active_booking').catch(() => {});
     setActiveBooking(null);
     setCurrentScreen('home');
   };
 
-  const handleCancelBooking = () => {
+  const handleCancelBooking = async () => {
+    await AsyncStorage.removeItem('@kaamdost_active_booking').catch(() => {});
     setActiveBooking(null);
     setCurrentScreen('home');
   };
@@ -188,10 +227,26 @@ export default function App({ onSwitchToPartner }) {
       {/* Step 2: Mobile Number + OTP Login */}
       {currentScreen === 'login' && (
         <PhoneLoginScreen
-          onLoginSuccess={(user) => {
+          onLoginSuccess={async (user) => {
             setCustomer(user);
             socketService.connect(user.id || user.phone);
-            AsyncStorage.setItem('@kaamdost_user', JSON.stringify(user)).catch(() => {});
+            await AsyncStorage.setItem('@kaamdost_user', JSON.stringify(user)).catch(() => {});
+            let restoredBooking = null;
+            try {
+              const storedBooking = await AsyncStorage.getItem('@kaamdost_active_booking');
+              if (storedBooking) {
+                const parsedBooking = JSON.parse(storedBooking);
+                if (parsedBooking && parsedBooking.status !== 'COMPLETED' && parsedBooking.status !== 'CANCELLED') {
+                  restoredBooking = parsedBooking;
+                  setActiveBooking(parsedBooking);
+                }
+              }
+            } catch (err) {}
+            realtimeService.connect({
+              userId: user.id || user.phone || 'cust_live',
+              role: 'customer',
+              bookingId: restoredBooking?.id || null
+            });
             setCurrentScreen('home');
           }}
           onGoToRegister={(data) => {
@@ -345,6 +400,7 @@ export default function App({ onSwitchToPartner }) {
             try {
               await AsyncStorage.removeItem('@kaamdost_user');
               await AsyncStorage.removeItem('@kaamdost_auth_token');
+              await AsyncStorage.removeItem('@kaamdost_active_booking');
             } catch (e) {}
             socketService.disconnect();
             setCustomer(null);
@@ -358,6 +414,7 @@ export default function App({ onSwitchToPartner }) {
               }
               await AsyncStorage.removeItem('@kaamdost_user');
               await AsyncStorage.removeItem('@kaamdost_auth_token');
+              await AsyncStorage.removeItem('@kaamdost_active_booking');
               await AsyncStorage.removeItem('@kaamdost_language');
             } catch (e) {}
             socketService.disconnect();
@@ -369,6 +426,7 @@ export default function App({ onSwitchToPartner }) {
             try {
               await AsyncStorage.removeItem('@kaamdost_user');
               await AsyncStorage.removeItem('@kaamdost_auth_token');
+              await AsyncStorage.removeItem('@kaamdost_active_booking');
             } catch (e) {}
             socketService.disconnect();
             setCustomer(null);

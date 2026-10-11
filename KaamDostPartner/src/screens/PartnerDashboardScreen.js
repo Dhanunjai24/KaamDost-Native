@@ -137,6 +137,7 @@ const [showThemeModal, setShowThemeModal] = useState(false);
       trade: partner?.trade || job.trade || 'masonry',
       tradeName: job.tradeName || 'Mason / Civil Work',
       rating: rating || '4.9',
+      avatar: partner?.avatar || partner?.selfieUri || partner?.photoUri || null,
       dailyRate: job.dailyRate || partner?.dailyRate || 950
     };
 

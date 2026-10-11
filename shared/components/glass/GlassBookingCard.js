@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import GlassButton from './GlassButton';
 import GlassStatusBadge from './GlassStatusBadge';
@@ -91,7 +91,14 @@ export default function GlassBookingCard({
             }
           ]}
         >
-          <Text style={styles.avatarEmoji}>👷</Text>
+          {(booking.workerAvatar || booking.avatar || booking.selfieUri) ? (
+            <Image
+              source={{ uri: booking.workerAvatar || booking.avatar || booking.selfieUri }}
+              style={styles.avatarImg}
+            />
+          ) : (
+            <Text style={styles.avatarEmoji}>👷</Text>
+          )}
         </View>
 
         <View style={styles.workerDetails}>
@@ -190,6 +197,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10
+  },
+  avatarImg: {
+    width: 46,
+    height: 46,
+    borderRadius: 23
   },
   avatarEmoji: {
     fontSize: 22

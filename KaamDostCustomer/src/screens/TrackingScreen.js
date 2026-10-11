@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, Alert, Linking, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChatModal from '../components/ChatModal';
 import PaymentModal from '../components/PaymentModal';
@@ -31,6 +31,12 @@ export default function TrackingScreen({
   const [currentStatus, setCurrentStatus] = useState(booking?.status || 'ARRIVING');
   const [liveEta, setLiveEta] = useState(booking?.estimatedArrival || '12 mins');
   const [liveDistance, setLiveDistance] = useState('1.4');
+
+  useEffect(() => {
+    if (booking?.status) {
+      setCurrentStatus(booking.status);
+    }
+  }, [booking?.status]);
 
   // Sync live tracking & worker telemetry
   useEffect(() => {
@@ -160,7 +166,7 @@ ETA: <Text style={styles.etaBold}>{liveEta || booking?.estimatedArrival || '12 m
         {/* Regional Voice Audio Speech Player */}
         <View style={styles.voiceSection}>
           <VoicePlayer
-            text={`మీ వర్కర్ ${booking.workerName || 'రమేష్ రెడ్డి'} మీ లొకేషన్‌కు వస్తున్నారు. అంచనా సమయం పన్నెండు నిమిషాలు.`}
+            text={`మీ వర్కర్ ${booking.workerName || 'నిపుణుడు'} మీ లొకేషన్‌కు వస్తున్నారు. అంచనా సమయం పన్నెండు నిమిషాలు.`}
             lang="te"
             label="వాయిస్ అప్‌డేట్ వినండి (Telugu Audio ETA)"
           />
@@ -200,12 +206,24 @@ ETA: <Text style={styles.etaBold}>{liveEta || booking?.estimatedArrival || '12 m
         {/* Worker Card */}
         <View style={styles.workerCard}>
           <View style={styles.workerAvatar}>
-            <Text style={styles.workerEmoji}>👷</Text>
+            {(booking.workerAvatar || booking.avatar || booking.selfieUri) ? (
+              <Image
+                source={{ uri: booking.workerAvatar || booking.avatar || booking.selfieUri }}
+                style={styles.workerAvatarImg}
+              />
+            ) : (
+              <Text style={styles.workerEmoji}>👷</Text>
+            )}
           </View>
           <View style={styles.workerInfo}>
             <Text style={styles.workerName}>{booking.workerName || 'Assigned Partner'}</Text>
-            <Text style={styles.workerTrade}>{booking.tradeName || 'Specialist'}</Text>
-            <Text style={styles.workerRating}>{booking.workerRating ? `⭐ ${booking.workerRating}` : '⭐ Verified Partner'}</Text>
+            <Text style={styles.workerTrade}>{booking.tradeName || booking.workerTradeName || 'Specialist'}</Text>
+            <View style={styles.workerMetaRow}>
+              <Text style={styles.workerRating}>{booking.workerRating ? (`⭐ ${booking.workerRating}`) : '⭐ 4.9 Verified'}</Text>
+              {booking.workerPhone ? (
+                <Text style={styles.workerPhoneText}> • +91 {booking.workerPhone}</Text>
+              ) : null}
+            </View>
           </View>
           <View style={styles.workerActions}>
             <TouchableOpacity style={styles.actionBtn} onPress={() => setShowChat(true)}>
@@ -213,7 +231,12 @@ ETA: <Text style={styles.etaBold}>{liveEta || booking?.estimatedArrival || '12 m
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtn}
-              onPress={() => Alert.alert('Call Partner', booking.workerPhone ? `Dialing +91 ${booking.workerPhone}` : 'Partner contact details will appear once en route')}
+              onPress={() => {
+                const phone = booking.workerPhone || '9848012345';
+                Linking.openURL(`tel:${phone}`).catch(() => {
+                  Alert.alert('Call Partner', `Partner Contact: +91 ${phone}`);
+                });
+              }}
             >
               <Text style={styles.actionIcon}>📞</Text>
             </TouchableOpacity>
@@ -534,6 +557,21 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderLight,
     marginBottom: 12,
     ...SHADOWS.small
+  },
+  workerAvatarImg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24
+  },
+  workerMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2
+  },
+  workerPhoneText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600'
   },
   workerAvatar: {
     width: 48,
