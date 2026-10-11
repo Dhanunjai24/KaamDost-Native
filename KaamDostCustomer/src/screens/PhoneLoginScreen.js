@@ -74,15 +74,22 @@ export default function PhoneLoginScreen({ onLoginSuccess, onGoToRegister, onSwi
     setLoading(true);
     try {
       const res = await authService.verifyOtp(phone, otp);
-      if (res && res.isAlreadyVerified && (res.user || res.customer)) {
-        // Customer was already verified previously -> DIRECT LOGIN TO HOME!
-        onLoginSuccess(res.user || res.customer);
+      const isAlreadyRegistered = res && (
+        res.isAlreadyVerified === true ||
+        res.isAlreadyRegistered === true ||
+        res.isNewCustomer === false
+      ) && (res.user || res.customer);
+
+      if (isAlreadyRegistered) {
+        // Customer is ALREADY REGISTERED -> DIRECT LOGIN TO HOME DASHBOARD!
+        const profile = res.user || res.customer;
+        onLoginSuccess(profile);
       } else {
-        // Customer MUST BE VERIFIED at the beginning (Step 3: Register -> Address -> Aadhaar)!
+        // Brand new customer -> go to onboarding/registration
         if (onGoToRegister) {
           onGoToRegister({ phone });
         } else {
-          onLoginSuccess({ phone, id: 'cust_' + Date.now() });
+          onLoginSuccess({ phone, id: 'cust_' + Date.now(), isVerified: true, isRegistered: true });
         }
       }
     } catch (e) {

@@ -41,15 +41,26 @@ export default function App({ onSwitchToPartner }) {
         const stored = await AsyncStorage.getItem('@kaamdost_user');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (parsed && (parsed.id || parsed.phone) && parsed.isVerified) {
+          const isRegistered = parsed && (parsed.id || parsed.phone) && (
+            parsed.isVerified === true ||
+            parsed.isRegistered === true ||
+            parsed.accountCompleted === true ||
+            (parsed.name && parsed.name !== 'Customer') ||
+            (parsed.fullName && parsed.fullName !== 'Customer')
+          );
+
+          if (isRegistered) {
             setCustomer(parsed);
             socketService.connect(parsed.id || parsed.phone);
             setCurrentScreen('home');
-          } else if (parsed && parsed.phone && !parsed.isVerified) {
+            return;
+          } else if (parsed && parsed.phone) {
             setCustomer(parsed);
             setCurrentScreen('register');
+            return;
           } else if (savedLang) {
             setCurrentScreen('login');
+            return;
           }
         } else if (savedLang) {
           setCurrentScreen('login');
