@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, Vibration, NativeModules } from 'react-native';
 import { COLORS, SHADOWS } from '../../../shared/theme/theme';
 
 export default function JobRequestModal({ visible, job, onAccept, onDecline }) {
@@ -7,21 +7,54 @@ export default function JobRequestModal({ visible, job, onAccept, onDecline }) {
 
   useEffect(() => {
     let interval;
-    if (visible) {
+    if (visible && job) {
       setSecondsLeft(30);
+
+      // 1. Play Native Audio Alert Sound (Notification / Ringtone)
+      if (NativeModules.AlertSoundModule && NativeModules.AlertSoundModule.playJobAlert) {
+        NativeModules.AlertSoundModule.playJobAlert().catch(() => {});
+      }
+
+      // 2. High-Priority Urgent Vibration Pattern (vibrate 500ms, pause 200ms, repeat)
+      Vibration.vibrate([0, 500, 200, 500, 200, 800, 200, 1000], true);
+
       interval = setInterval(() => {
         setSecondsLeft((s) => {
           if (s <= 1) {
             clearInterval(interval);
-            onDecline();
+            handleDecline();
             return 0;
           }
           return s - 1;
         });
       }, 1000);
     }
-    return () => clearInterval(interval);
-  }, [visible]);
+
+    return () => {
+      if (interval) clearInterval(interval);
+      // Stop alert sound and vibration
+      if (NativeModules.AlertSoundModule && NativeModules.AlertSoundModule.stopJobAlert) {
+        NativeModules.AlertSoundModule.stopJobAlert().catch(() => {});
+      }
+      Vibration.cancel();
+    };
+  }, [visible, job]);
+
+  const handleAccept = () => {
+    if (NativeModules.AlertSoundModule && NativeModules.AlertSoundModule.stopJobAlert) {
+      NativeModules.AlertSoundModule.stopJobAlert().catch(() => {});
+    }
+    Vibration.cancel();
+    if (onAccept) onAccept(job);
+  };
+
+  const handleDecline = () => {
+    if (NativeModules.AlertSoundModule && NativeModules.AlertSoundModule.stopJobAlert) {
+      NativeModules.AlertSoundModule.stopJobAlert().catch(() => {});
+    }
+    Vibration.cancel();
+    if (onDecline) onDecline();
+  };
 
   if (!job) return null;
 
@@ -86,11 +119,11 @@ export default function JobRequestModal({ visible, job, onAccept, onDecline }) {
 
           {/* Accept / Decline CTAs */}
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.declineBtn} onPress={onDecline}>
+            <TouchableOpacity style={styles.declineBtn} onPress={handleDecline}>
               <Text style={styles.declineText}>Decline</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.acceptBtn} onPress={() => onAccept(job)}>
+            <TouchableOpacity style={styles.acceptBtn} onPress={handleAccept}>
               <Text style={styles.acceptText}>⚡ Accept Job ({secondsLeft}s)</Text>
             </TouchableOpacity>
           </View>

@@ -148,7 +148,11 @@ class RealtimeService {
     const { type } = data;
     switch (type) {
       case 'NEW_BOOKING_ALERT':
-        this.emitLocal('new_booking_alert', data.booking);
+      case 'NEARBY_JOB_ALERT':
+      case 'NEARBY_WORK_ALERT':
+      case 'JOB_ALERT':
+        this.emitLocal('new_booking_alert', data.booking || data.job || data);
+        this.emitLocal('nearby_job_alert', data.booking || data.job || data);
         break;
       case 'BOOKING_ACCEPTED':
         this.emitLocal('booking_accepted', data);

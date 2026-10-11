@@ -83,6 +83,22 @@ const [showThemeModal, setShowThemeModal] = useState(false);
     }
   }, [isOnline, partnerId, partner?.trade]);
 
+  const handleTestAlert = () => {
+    const testJob = {
+      id: 'job_nearby_' + Math.floor(1000 + Math.random() * 9000),
+      trade: partner?.trade || 'masonry',
+      tradeName: partner?.tradeName || 'Mason / Civil Work',
+      dailyRate: partner?.dailyRate || 950,
+      customerName: 'Nearby Customer',
+      address: 'Near Gandhi Chowk, Sangareddy (0.8 km away)',
+      distance: '0.8 km',
+      workNotes: 'Urgent brick wall plastering and civil repair work required today',
+      serviceDuration: '1 Day (8 hrs)'
+    };
+    setIncomingJobRequest(testJob);
+    setShowJobModal(true);
+  };
+
   const jobsList = [];
 
   const ledgerTransactions = [];
@@ -214,6 +230,39 @@ onOpenEarnings={() => setActiveTab('wallet')}
               />
 
               {/* Active Job / Incoming Lead Card */}
+                            {/* Nearby Work Radar Alert Banner */}
+              <TouchableOpacity
+                style={{
+                  marginHorizontal: 16,
+                  marginTop: 12,
+                  marginBottom: 8,
+                  padding: 16,
+                  borderRadius: 16,
+                  backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                  borderColor: '#2563EB',
+                  borderWidth: 1.5,
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}
+                activeOpacity={0.8}
+                onPress={handleTestAlert}
+              >
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#2563EB', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                  <Text style={{ fontSize: 22 }}>🚨</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary || '#0F172A' }}>
+                    Nearby Work Alert Active
+                  </Text>
+                  <Text style={{ fontSize: 12, color: theme.textSecondary || '#64748B', marginTop: 2 }}>
+                    Vibration & Sound alert for jobs within 15 km • Tap to Test
+                  </Text>
+                </View>
+                <View style={{ backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>TEST 🔔</Text>
+                </View>
+              </TouchableOpacity>
+
               <ActiveJobCard
                 job={activeJob}
                 onStatusChange={handleJobStatusChange}

@@ -9,7 +9,10 @@ import com.facebook.react.uimanager.ViewManager
 
 class FaceRecognitionPackage : ReactPackage {
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        return listOf(FaceRecognitionModule(reactContext))
+        return listOf(
+            FaceRecognitionModule(reactContext),
+            AlertSoundModule(reactContext)
+        )
     }
 
     override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<View, ReactShadowNode<*>>> {
